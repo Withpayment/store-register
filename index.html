@@ -257,7 +257,7 @@ function renderSuccess(){
   </div>`;
 }
 
-function compressImage(file, maxDim=1400, quality=0.72){
+function compressImage(file, maxDim=1000, quality=0.6){
   return new Promise((resolve, reject)=>{
     const reader = new FileReader();
     reader.onload = e => {
