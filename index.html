@@ -163,7 +163,7 @@ body{
 
 <script>
 // ★ 여기에 본인의 SheetDB API 주소를 꼭 넣어주세요!
-const API_URL = "https://sheetdb.io/api/v1/2exyd9s1iw2mr";
+const API_URL = "여기에_본인_SheetDB_API주소_입력";
 
 const DOCS = [
   { key:'idCard', label:'신분증', accept:'image/*', hint:'주민등록증 또는 운전면허증 사진' },
@@ -185,6 +185,14 @@ let state = {
   adminOpen: {},
   adminSearch: ''
 };
+
+// 입력창 내용 실시간 동기화용 함수
+function syncFields(){
+  state.fields.storeName = document.getElementById('f_storeName')?.value || state.fields.storeName;
+  state.fields.storePhone = document.getElementById('f_storePhone')?.value || state.fields.storePhone;
+  state.fields.ownerPhone = document.getElementById('f_ownerPhone')?.value || state.fields.ownerPhone;
+  state.fields.email = document.getElementById('f_email')?.value || state.fields.email;
+}
 
 function toast(msg){
   const t = document.getElementById('toast');
@@ -388,6 +396,7 @@ function readAsDataURL(file){
 const App = {
   async handleFile(key, file){
     if(!file) return;
+    syncFields(); // 파일 처리 전 입력된 정보 먼저 저장!
     const docDef = DOCS.find(d=>d.key===key);
     if(file.size > 15*1024*1024){ toast('파일 용량이 너무 큽니다 (15MB 이하)'); return; }
     toast('파일 처리 중...');
@@ -403,17 +412,18 @@ const App = {
       toast('파일 처리 중 오류가 발생했습니다');
     }
   },
-  removeFile(key){ delete state.files[key]; render(); },
+  removeFile(key){
+    syncFields(); // 파일 삭제 전 입력된 정보 먼저 저장!
+    delete state.files[key];
+    render();
+  },
 
   collectFields(){
-    state.fields.storeName = document.getElementById('f_storeName')?.value.trim() || '';
-    state.fields.storePhone = document.getElementById('f_storePhone')?.value.trim() || '';
-    state.fields.ownerPhone = document.getElementById('f_ownerPhone')?.value.trim() || '';
-    state.fields.email = document.getElementById('f_email')?.value.trim() || '';
+    syncFields();
   },
 
   async submit(){
-    this.collectFields();
+    syncFields();
     const f = state.fields;
     if(!f.storeName || !f.storePhone || !f.ownerPhone || !f.email){
       toast('필수 정보를 모두 입력해 주세요'); return;
@@ -491,12 +501,10 @@ const App = {
     if(val === 'pos1212!@'){
       state.adminUnlocked = true;
       try {
-        // SheetDB에서 전체 접수 목록 불러오기 시도
         const res = await fetch(API_URL);
         const data = await res.json();
         state.adminMerchants = Array.isArray(data) ? data.reverse() : [];
       } catch(e) {
-        // 인터넷 연결이나 시트 조회 실패 시 로컬 백업 데이터 활용
         try {
           const localData = localStorage.getItem('merchant_index_v2');
           state.adminMerchants = localData ? JSON.parse(localData) : [];
