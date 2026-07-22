@@ -161,79 +161,6 @@ body{
 <div class="toast" id="toast"></div>
 
 <script>
-// 1. 페이지가 열리자마자 구글 시트에서 데이터를 불러오는 함수 실행
-window.addEventListener('DOMContentLoaded', () => {
-    fetchAdminSubmissions();
-});
-
-// 2. 구글 앱스 스크립트(서버)에 접속해서 데이터를 가져오는 함수
-async function fetchAdminSubmissions() {
-    const tableBody = document.getElementById('adminTableBody'); // 테이블 <tbody>의 id가 이와 같아야 합니다.
-    
-    if (tableBody) {
-        tableBody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 20px;">데이터를 불러오는 중입니다...</td></tr>`;
-    }
-
-    try {
-        // 상단에 선언되어 있는 구글 앱스 스크립트 웹 앱 URL (API_URL) 사용
-        const response = await fetch(API_URL);
-        const result = await response.json();
-
-        if (result.status === 'success') {
-            renderAdminTable(result.data); // 성공 시 화면에 렌더링
-        } else {
-            alert('데이터 불러오기 실패: ' + (result.message || ''));
-            if (tableBody) tableBody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:red;">데이터를 불러오지 못했습니다.</td></tr>`;
-        }
-    } catch (error) {
-        console.error('통신 에러:', error);
-        if (tableBody) tableBody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:red;">서버 통신 중 오류가 발생했습니다.</td></tr>`;
-    }
-}
-
-// 3. 가져온 데이터를 화면의 표(Table)에 그려주는 함수
-function renderAdminTable(dataList) {
-    const tableBody = document.getElementById('adminTableBody');
-    if (!tableBody) return;
-    
-    tableBody.innerHTML = '';
-    
-    if (!dataList || dataList.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 20px;">접수된 내역이 없습니다.</td></tr>`;
-        return;
-    }
-
-    // 최신 접수 건이 맨 위에 오도록 역순으로 출력 (원하지 않으시며 .reverse()를 지우세요)
-    dataList.reverse().forEach(item => {
-        const tr = document.createElement('tr');
-        
-        // 날짜 형식 예쁘게 다듬기
-        let formattedDate = item.createdAt;
-        try {
-            formattedDate = new Date(item.createdAt).toLocaleString('ko-KR');
-        } catch(e) {}
-
-        // 구글 드라이브 폴더 또는 파일 링크 처리
-        let fileLinkHtml = '파일 없음';
-        if (item.files) {
-            // 여러 파일 링크가 줄바꿈으로 들어있을 경우 첫 번째 링크 또는 전체 링크 처리
-            const links = item.files.split('\n').filter(l => l.trim() !== '');
-            if (links.length > 0) {
-                fileLinkHtml = `<a href="${links[0]}" target="_blank" style="color: #0066cc; text-decoration: underline;">사진 보기 (${links.length개})</a>`;
-            }
-        }
-
-        tr.innerHTML = `
-            <td style="padding: 10px; border-bottom: 1px solid #ddd;">${item.storeName || ''}</td>
-            <td style="padding: 10px; border-bottom: 1px solid #ddd;">${item.storePhone || ''}</td>
-            <td style="padding: 10px; border-bottom: 1px solid #ddd;">${item.ownerPhone || ''}</td>
-            <td style="padding: 10px; border-bottom: 1px solid #ddd;">${item.email || ''}</td>
-            <td style="padding: 10px; border-bottom: 1px solid #ddd;">${formattedDate}</td>
-            <td style="padding: 10px; border-bottom: 1px solid #ddd;">${fileLinkHtml}</td>
-        `;
-        tableBody.appendChild(tr);
-    });
-}
 const API_URL = "https://script.google.com/macros/s/AKfycby2yS5MrHkCFX7dE1JgztPvWNgnDOe1Sa_3Uhc3MY13tN_C0Yj0JvX9xkgvDc-8CC36/exec";
 
 const DOCS = [
@@ -380,7 +307,6 @@ function renderAdminLogin(){
 }
 
 function renderAdmin(){
-  // 검색 필터 적용
   const list = (state.adminMerchants || []).filter(m => {
     if(!state.adminSearch) return true;
     const q = state.adminSearch.toLowerCase();
@@ -446,31 +372,6 @@ function renderAdmin(){
     </table>
   </div>`;
 }
-function renderMerchantCard(m){
-  const open = !!state.adminOpen[m.id];
-  return `
-  <div class="merchant-card">
-    <div class="mc-top" onclick="App.toggleMerchant('${m.id}')">
-      <div>
-        <div class="mc-name">${m.storeName || '(상호명 미입력)'}</div>
-        <div class="mc-meta">전화: ${m.storePhone || '-'} · 대표번호: ${m.ownerPhone || '-'}</div>
-        <div class="mc-meta">이메일: ${m.email || '-'} · 접수일시: ${new Date(m.createdAt).toLocaleString('ko-KR')}</div>
-      </div>
-      <div class="mc-right">
-        <div class="mc-badge">접수완료</div>
-      </div>
-    </div>
-    <div class="mc-detail ${open?'open':''}" id="detail_${m.id}">
-      <div class="mc-detail-grid">
-        <div><span class="l">접수번호</span><br><span class="mono">${m.id}</span></div>
-        <div><span class="l">구글 드라이브 연동</span><br>사진 파일 저장됨</div>
-      </div>
-      <div style="font-size:12.5px;color:var(--ink-soft);background:var(--bg);padding:10px;border-radius:8px;">
-        💡 첨부된 서류 사진들은 연결된 <b>구글 드라이브 폴더</b>에서 직접 확인하실 수 있습니다.
-      </div>
-    </div>
-  </div>`;
-}
 
 function compressImage(file, maxDim=1600, quality=0.85){
   return new Promise((resolve, reject)=>{
@@ -525,28 +426,30 @@ const App = {
       toast('파일 처리 중 오류가 발생했습니다');
     }
   },
+  
   removeFile(key){
     syncFields();
     delete state.files[key];
     render();
   },
-// App 객체 안에 이 함수를 추가해 주세요
-async function loadGoogleData() {
-  toast('구글 시트에서 최신 데이터를 불러오는 중...');
-  try {
-    const response = await fetch(API_URL);
-    const result = await response.json();
-    if(result.status === 'success') {
-      state.adminMerchants = result.data || [];
-      render();
-      toast('최신 데이터 동기화 완료!');
-    } else {
-      toast('데이터 불러오기 실패');
+
+  async loadGoogleData() {
+    toast('구글 시트에서 최신 데이터를 불러오는 중...');
+    try {
+      const response = await fetch(API_URL);
+      const result = await response.json();
+      if(result.status === 'success') {
+        state.adminMerchants = result.data || [];
+        render();
+        toast('최신 데이터 동기화 완료!');
+      } else {
+        toast('데이터 불러오기 실패');
+      }
+    } catch(e) {
+      toast('서버 통신 오류');
     }
-  } catch(e) {
-    toast('서버 통신 오류');
-  }
-}
+  },
+
   collectFields(){
     syncFields();
   },
@@ -568,7 +471,6 @@ async function loadGoogleData() {
     const createdAt = new Date().toISOString();
 
     try {
-      // CORS 우회를 위해 URLSearchParams (폼 전송 방식) 사용
       const params = new URLSearchParams();
       params.append('id', id);
       params.append('createdAt', createdAt);
@@ -622,12 +524,6 @@ async function loadGoogleData() {
     const val = document.getElementById('admin_pass').value;
     if(val === 'pos1212!@'){
       state.adminUnlocked = true;
-      try {
-        const localData = localStorage.getItem('merchant_index_v4');
-        state.adminMerchants = localData ? JSON.parse(localData) : [];
-      } catch(err) {
-        state.adminMerchants = [];
-      }
       App.loadGoogleData();
       state.view = 'admin';
       render();
