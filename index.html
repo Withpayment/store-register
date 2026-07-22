@@ -530,7 +530,23 @@ const App = {
     delete state.files[key];
     render();
   },
-
+// App 객체 안에 이 함수를 추가해 주세요
+async function loadGoogleData() {
+  toast('구글 시트에서 최신 데이터를 불러오는 중...');
+  try {
+    const response = await fetch(API_URL);
+    const result = await response.json();
+    if(result.status === 'success') {
+      state.adminMerchants = result.data || [];
+      render();
+      toast('최신 데이터 동기화 완료!');
+    } else {
+      toast('데이터 불러오기 실패');
+    }
+  } catch(e) {
+    toast('서버 통신 오류');
+  }
+}
   collectFields(){
     syncFields();
   },
@@ -612,6 +628,7 @@ const App = {
       } catch(err) {
         state.adminMerchants = [];
       }
+      App.loadGoogleData();
       state.view = 'admin';
       render();
     } else {
