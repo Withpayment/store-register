@@ -318,7 +318,7 @@ function renderAdmin(){
     <div class="brand">
       <div class="brand-mark">P</div>
       <div>
-        <div class="brand-text">가맹점 접수 현황 (폴더 바로가기)</div>
+        <div class="brand-text">가맹점 접수 현황 (구글 드라이브 폴더 연동)</div>
         <div class="brand-sub">실시간 동기화 완료</div>
       </div>
     </div>
@@ -351,10 +351,8 @@ function renderAdmin(){
           
           let folderBtnHtml = '사진 없음';
           if (m.files) {
-            // 저장된 구글 드라이브 링크들 중 첫 번째 링크(또는 상위 폴더 링크 추출) 활용
             const links = m.files.split('\n').filter(l => l.trim() !== '');
             if (links.length > 0) {
-              // 개별 파일 링크에서 구글 드라이브 주소 형식을 이용해 폴더로 연결하거나 저장된 링크 사용
               folderBtnHtml = `<a href="${links[0]}" target="_blank" style="background: var(--teal); color: white; padding: 6px 12px; border-radius: 6px; font-weight: 600; text-decoration: none; font-size: 12px; display: inline-block;">폴더 열기</a>`;
             }
           }
