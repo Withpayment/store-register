@@ -161,7 +161,7 @@ body{
 <div class="toast" id="toast"></div>
 
 <script>
-const API_URL = "https://script.google.com/macros/s/AKfycby2yS5MrHkCFX7dE1JgztPvWNgnDOe1Sa_3Uhc3MY13tN_C0Yj0JvX9xkgvDc-8CC36/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbyFyDROvKNiB0-eVSnkHW6baKVtWExQ3pgW9MUjUTUEiQJxMjysBItF-yzd-htRaojg/exec";
 
 const DOCS = [
   { key:'idCard', label:'신분증', accept:'image/*', hint:'주민등록증 또는 운전면허증 사진' },
@@ -318,7 +318,7 @@ function renderAdmin(){
     <div class="brand">
       <div class="brand-mark">P</div>
       <div>
-        <div class="brand-text">가맹점 접수 현황 (구글 시트 연동)</div>
+        <div class="brand-text">가맹점 접수 현황 (사진 ZIP 다운로드)</div>
         <div class="brand-sub">실시간 동기화 완료</div>
       </div>
     </div>
@@ -339,7 +339,7 @@ function renderAdmin(){
           <th style="padding: 14px 16px;">대표 폰번호</th>
           <th style="padding: 14px 16px;">이메일</th>
           <th style="padding: 14px 16px;">접수일시</th>
-          <th style="padding: 14px 16px;">서류 사진</th>
+          <th style="padding: 14px 16px;">서류 다운로드</th>
         </tr>
       </thead>
       <tbody id="adminTableBody">
@@ -349,12 +349,10 @@ function renderAdmin(){
           let formattedDate = m.createdAt;
           try { formattedDate = new Date(m.createdAt).toLocaleString('ko-KR'); } catch(e){}
           
-          let fileLinkHtml = '사진 없음';
+          let downloadBtnHtml = '사진 없음';
           if (m.files) {
-            const links = m.files.split('\n').filter(l => l.trim() !== '');
-            if (links.length > 0) {
-              fileLinkHtml = `<a href="${links[0]}" target="_blank" style="color: var(--teal-deep); font-weight: 600; text-decoration: underline;">사진 보기 (${links.length}장)</a>`;
-            }
+            const zipDownloadUrl = `${API_URL}?action=downloadZip&storeName=${encodeURIComponent(m.storeName)}`;
+            downloadBtnHtml = `<a href="${zipDownloadUrl}" target="_blank" style="background: var(--teal); color: white; padding: 6px 12px; border-radius: 6px; font-weight: 600; text-decoration: none; font-size: 12px; display: inline-block;">ZIP 다운로드</a>`;
           }
 
           return `
@@ -364,7 +362,7 @@ function renderAdmin(){
               <td style="padding: 14px 16px;">${m.ownerPhone || ''}</td>
               <td style="padding: 14px 16px; color: var(--ink-soft);">${m.email || ''}</td>
               <td style="padding: 14px 16px; font-size: 12.5px; color: var(--ink-soft);">${formattedDate}</td>
-              <td style="padding: 14px 16px;">${fileLinkHtml}</td>
+              <td style="padding: 14px 16px;">${downloadBtnHtml}</td>
             </tr>
           `;
         }).join('')}
