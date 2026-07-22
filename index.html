@@ -161,7 +161,80 @@ body{
 <div class="toast" id="toast"></div>
 
 <script>
-const API_URL = "https://script.google.com/macros/s/AKfycbwkhu33hsg-Q_64GVfx79LqT0Ty9yMjgpWfBX1xjiBXwqh7Aen-RIUtvdPw2-ucZFs/exec";
+// 1. 페이지가 열리자마자 구글 시트에서 데이터를 불러오는 함수 실행
+window.addEventListener('DOMContentLoaded', () => {
+    fetchAdminSubmissions();
+});
+
+// 2. 구글 앱스 스크립트(서버)에 접속해서 데이터를 가져오는 함수
+async function fetchAdminSubmissions() {
+    const tableBody = document.getElementById('adminTableBody'); // 테이블 <tbody>의 id가 이와 같아야 합니다.
+    
+    if (tableBody) {
+        tableBody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 20px;">데이터를 불러오는 중입니다...</td></tr>`;
+    }
+
+    try {
+        // 상단에 선언되어 있는 구글 앱스 스크립트 웹 앱 URL (API_URL) 사용
+        const response = await fetch(API_URL);
+        const result = await response.json();
+
+        if (result.status === 'success') {
+            renderAdminTable(result.data); // 성공 시 화면에 렌더링
+        } else {
+            alert('데이터 불러오기 실패: ' + (result.message || ''));
+            if (tableBody) tableBody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:red;">데이터를 불러오지 못했습니다.</td></tr>`;
+        }
+    } catch (error) {
+        console.error('통신 에러:', error);
+        if (tableBody) tableBody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:red;">서버 통신 중 오류가 발생했습니다.</td></tr>`;
+    }
+}
+
+// 3. 가져온 데이터를 화면의 표(Table)에 그려주는 함수
+function renderAdminTable(dataList) {
+    const tableBody = document.getElementById('adminTableBody');
+    if (!tableBody) return;
+    
+    tableBody.innerHTML = '';
+    
+    if (!dataList || dataList.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 20px;">접수된 내역이 없습니다.</td></tr>`;
+        return;
+    }
+
+    // 최신 접수 건이 맨 위에 오도록 역순으로 출력 (원하지 않으시며 .reverse()를 지우세요)
+    dataList.reverse().forEach(item => {
+        const tr = document.createElement('tr');
+        
+        // 날짜 형식 예쁘게 다듬기
+        let formattedDate = item.createdAt;
+        try {
+            formattedDate = new Date(item.createdAt).toLocaleString('ko-KR');
+        } catch(e) {}
+
+        // 구글 드라이브 폴더 또는 파일 링크 처리
+        let fileLinkHtml = '파일 없음';
+        if (item.files) {
+            // 여러 파일 링크가 줄바꿈으로 들어있을 경우 첫 번째 링크 또는 전체 링크 처리
+            const links = item.files.split('\n').filter(l => l.trim() !== '');
+            if (links.length > 0) {
+                fileLinkHtml = `<a href="${links[0]}" target="_blank" style="color: #0066cc; text-decoration: underline;">사진 보기 (${links.length개})</a>`;
+            }
+        }
+
+        tr.innerHTML = `
+            <td style="padding: 10px; border-bottom: 1px solid #ddd;">${item.storeName || ''}</td>
+            <td style="padding: 10px; border-bottom: 1px solid #ddd;">${item.storePhone || ''}</td>
+            <td style="padding: 10px; border-bottom: 1px solid #ddd;">${item.ownerPhone || ''}</td>
+            <td style="padding: 10px; border-bottom: 1px solid #ddd;">${item.email || ''}</td>
+            <td style="padding: 10px; border-bottom: 1px solid #ddd;">${formattedDate}</td>
+            <td style="padding: 10px; border-bottom: 1px solid #ddd;">${fileLinkHtml}</td>
+        `;
+        tableBody.appendChild(tr);
+    });
+}
+const API_URL = "https://script.google.com/macros/s/AKfycby2yS5MrHkCFX7dE1JgztPvWNgnDOe1Sa_3Uhc3MY13tN_C0Yj0JvX9xkgvDc-8CC36/exec";
 
 const DOCS = [
   { key:'idCard', label:'신분증', accept:'image/*', hint:'주민등록증 또는 운전면허증 사진' },
@@ -307,28 +380,72 @@ function renderAdminLogin(){
 }
 
 function renderAdmin(){
+  // 검색 필터 적용
   const list = (state.adminMerchants || []).filter(m => {
     if(!state.adminSearch) return true;
     const q = state.adminSearch.toLowerCase();
     return (m.storeName||'').toLowerCase().includes(q) || (m.storePhone||'').includes(q);
   });
+
   return `
   <div class="topbar">
     <div class="brand">
       <div class="brand-mark">P</div>
       <div>
-        <div class="brand-text">가맹점 접수 현황</div>
-        <div class="brand-sub">총 ${state.adminMerchants.length}건 접수됨</div>
+        <div class="brand-text">가맹점 접수 현황 (구글 시트 연동)</div>
+        <div class="brand-sub">실시간 동기화 완료</div>
       </div>
     </div>
-    <div class="admin-link" onclick="App.goForm()">접수 화면 보기</div>
+    <div style="display:flex; gap:8px;">
+      <div class="admin-link" onclick="App.loadGoogleData()" style="background:var(--teal); color:white; border:none;">새로고침</div>
+      <div class="admin-link" onclick="App.goForm()">접수 화면 보기</div>
+    </div>
   </div>
-  <input class="admin-search" placeholder="상호명 또는 전화번호로 검색" value="${state.adminSearch}" oninput="App.setAdminSearch(this.value)">
-  ${list.length===0 ? `<div class="empty-admin card">접수된 가맹점이 없습니다.</div>` :
-    list.map(m => renderMerchantCard(m)).join('')
-  }`;
-}
 
+  <input class="admin-search" placeholder="상호명 또는 전화번호로 검색" value="${state.adminSearch}" oninput="App.setAdminSearch(this.value)">
+
+  <div class="card" style="padding: 0; overflow: hidden;">
+    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13.5px;">
+      <thead>
+        <tr style="background: #F8FAFC; border-bottom: 1.5px solid var(--line); color: var(--ink-soft);">
+          <th style="padding: 14px 16px;">상호명</th>
+          <th style="padding: 14px 16px;">매장 전화</th>
+          <th style="padding: 14px 16px;">대표 폰번호</th>
+          <th style="padding: 14px 16px;">이메일</th>
+          <th style="padding: 14px 16px;">접수일시</th>
+          <th style="padding: 14px 16px;">서류 사진</th>
+        </tr>
+      </thead>
+      <tbody id="adminTableBody">
+        ${list.length === 0 ? `
+          <tr><td colspan="6" style="text-align:center; padding: 40px; color: var(--ink-soft);">접수된 내역이 없습니다.</td></tr>
+        ` : list.map(m => {
+          let formattedDate = m.createdAt;
+          try { formattedDate = new Date(m.createdAt).toLocaleString('ko-KR'); } catch(e){}
+          
+          let fileLinkHtml = '사진 없음';
+          if (m.files) {
+            const links = m.files.split('\n').filter(l => l.trim() !== '');
+            if (links.length > 0) {
+              fileLinkHtml = `<a href="${links[0]}" target="_blank" style="color: var(--teal-deep); font-weight: 600; text-decoration: underline;">사진 보기 (${links.length}장)</a>`;
+            }
+          }
+
+          return `
+            <tr style="border-bottom: 1px solid var(--line); transition: .1s;">
+              <td style="padding: 14px 16px; font-weight: 700;">${m.storeName || ''}</td>
+              <td style="padding: 14px 16px;">${m.storePhone || ''}</td>
+              <td style="padding: 14px 16px;">${m.ownerPhone || ''}</td>
+              <td style="padding: 14px 16px; color: var(--ink-soft);">${m.email || ''}</td>
+              <td style="padding: 14px 16px; font-size: 12.5px; color: var(--ink-soft);">${formattedDate}</td>
+              <td style="padding: 14px 16px;">${fileLinkHtml}</td>
+            </tr>
+          `;
+        }).join('')}
+      </tbody>
+    </table>
+  </div>`;
+}
 function renderMerchantCard(m){
   const open = !!state.adminOpen[m.id];
   return `
