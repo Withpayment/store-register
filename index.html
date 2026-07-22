@@ -49,7 +49,7 @@ body{
 }
 .mono{font-family:'Plex Mono','Pretendard',monospace;}
 
-#app{max-width:800px;margin:0 auto;padding:28px 20px 80px;}
+#app{max-width:900px;margin:0 auto;padding:28px 20px 80px;}
 
 .topbar{
   display:flex;align-items:center;justify-content:space-between;
@@ -115,8 +115,6 @@ body{
 .btn-primary{background:var(--ink);color:white;}
 .btn-primary:hover{background:#0A1A2E;}
 .btn-primary:disabled{background:var(--line-strong);color:#9AA5B1;cursor:not-allowed;}
-.btn-ghost{background:transparent;color:var(--ink-soft);border:1.5px solid var(--line);}
-.btn-ghost:hover{border-color:var(--line-strong);color:var(--ink);}
 .btn-row{margin-top:24px;display:flex;gap:10px;}
 
 .toast{
@@ -139,20 +137,6 @@ body{
 }
 
 .admin-login{max-width:360px;margin:60px auto;}
-.merchant-card{
-  background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin-bottom:12px;
-  box-shadow:var(--shadow);
-}
-.mc-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;cursor:pointer;}
-.mc-name{font-size:15.5px;font-weight:700;}
-.mc-meta{font-size:12px;color:var(--ink-soft);margin-top:3px;}
-.mc-right{text-align:right;flex:0 0 auto;}
-.mc-badge{display:inline-block;font-size:11px;font-weight:700;padding:4px 10px;border-radius:100px;margin-top:6px;background:var(--forest-bg);color:var(--forest);}
-.mc-detail{margin-top:16px;padding-top:16px;border-top:1px dashed var(--line-strong);display:none;}
-.mc-detail.open{display:block;}
-.mc-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;font-size:12.5px;}
-.mc-detail-grid .l{color:var(--ink-soft);}
-.empty-admin{text-align:center;padding:60px 20px;color:var(--ink-soft);font-size:13.5px;}
 .admin-search{width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:13.5px;margin-bottom:16px;font-family:'Pretendard';}
 </style>
 </head>
@@ -180,7 +164,6 @@ let state = {
   receiptId: null,
   adminUnlocked: false,
   adminMerchants: [],
-  adminOpen: {},
   adminSearch: ''
 };
 
@@ -318,7 +301,7 @@ function renderAdmin(){
     <div class="brand">
       <div class="brand-mark">P</div>
       <div>
-        <div class="brand-text">가맹점 접수 현황 (구글 드라이브 폴더 연동)</div>
+        <div class="brand-text">가맹점 접수 현황 (구글 드라이브 폴더 연결)</div>
         <div class="brand-sub">실시간 동기화 완료</div>
       </div>
     </div>
@@ -339,22 +322,19 @@ function renderAdmin(){
           <th style="padding: 14px 16px;">대표 폰번호</th>
           <th style="padding: 14px 16px;">이메일</th>
           <th style="padding: 14px 16px;">접수일시</th>
-          <th style="padding: 14px 16px;">서류 폴더</th>
+          <th style="padding: 14px 16px;">구글 드라이브 폴더</th>
         </tr>
       </thead>
-      <tbody id="adminTableBody">
+      <tbody>
         ${list.length === 0 ? `
-          <tr><td colspan="6" style="text-align:center; padding: 40px; color: var(--ink-soft);">접수된 내역이 없습니다.</td></tr>
+          <tr><td colspan="6" style="text-align:center; padding: 40px; color: var(--ink-soft);">접수된 내역이 없습니다. (새로운 코드로 다시 테스트 접수를 해주세요)</td></tr>
         ` : list.map(m => {
           let formattedDate = m.createdAt;
           try { formattedDate = new Date(m.createdAt).toLocaleString('ko-KR'); } catch(e){}
           
-          let folderBtnHtml = '사진 없음';
-          if (m.files) {
-            const links = m.files.split('\n').filter(l => l.trim() !== '');
-            if (links.length > 0) {
-              folderBtnHtml = `<a href="${links[0]}" target="_blank" style="background: var(--teal); color: white; padding: 6px 12px; border-radius: 6px; font-weight: 600; text-decoration: none; font-size: 12px; display: inline-block;">폴더 열기</a>`;
-            }
+          let folderBtnHtml = '폴더 없음';
+          if (m.files && m.files.startsWith('http')) {
+            folderBtnHtml = `<a href="${m.files}" target="_blank" style="background: var(--teal); color: white; padding: 6px 12px; border-radius: 6px; font-weight: 600; text-decoration: none; font-size: 12px; display: inline-block;">폴더 열기</a>`;
           }
 
           return `
@@ -450,10 +430,6 @@ const App = {
     }
   },
 
-  collectFields(){
-    syncFields();
-  },
-
   async submit(){
     syncFields();
     const f = state.fields;
@@ -485,23 +461,6 @@ const App = {
         body: params
       });
 
-      const idxKey = 'merchant_index_v4';
-      let list = [];
-      try{
-        const localData = localStorage.getItem(idxKey);
-        if(localData) list = JSON.parse(localData);
-      }catch(e){ list = []; }
-
-      list.unshift({
-        id: id,
-        createdAt: createdAt,
-        storeName: f.storeName,
-        storePhone: f.storePhone,
-        ownerPhone: f.ownerPhone,
-        email: f.email
-      });
-      localStorage.setItem(idxKey, JSON.stringify(list));
-
       state.receiptId = id;
       state.view = 'success';
       render();
@@ -512,7 +471,7 @@ const App = {
   },
 
   resetAll(){
-    state = { view:'form', fields:{storeName:'',storePhone:'',ownerPhone:'',email:''}, files:{}, receiptId:null, adminUnlocked:false, adminMerchants:[], adminOpen:{}, adminSearch:'' };
+    state = { view:'form', fields:{storeName:'',storePhone:'',ownerPhone:'',email:''}, files:{}, receiptId:null, adminUnlocked:false, adminMerchants:[], adminSearch:'' };
     location.hash='';
     render();
   },
@@ -532,12 +491,7 @@ const App = {
     }
   },
 
-  setAdminSearch(v){ state.adminSearch = v; render(); },
-
-  toggleMerchant(id){
-    state.adminOpen[id] = !state.adminOpen[id];
-    render();
-  }
+  setAdminSearch(v){ state.adminSearch = v; render(); }
 };
 window.App = App;
 
