@@ -145,7 +145,7 @@ body{
 <div class="toast" id="toast"></div>
 
 <script>
-const API_URL = "https://script.google.com/macros/s/AKfycbwSiayHORoJUVvR7xSssRXJaWt-FY3DUFpLCeEBq3ZEPO0S7ixELFgDd00ZGv8yriHu/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbzOJCwii25zY7H49JYqIfNJrA0F99hblyf-Guk4ui-ehC7LLy_1esP_kZO2CMHraDKD/exec";
 
 const DOCS = [
   { key:'idCard', label:'신분증', accept:'image/*', hint:'주민등록증 또는 운전면허증 사진' },
@@ -302,7 +302,7 @@ function renderAdmin(){
       <div class="brand-mark">P</div>
       <div>
         <div class="brand-text">가맹점 접수 현황 (구글 드라이브 폴더 연결)</div>
-        <div class="brand-sub">실시간 동기화 완료</div>
+        <div class="brand-sub">실시간 동기화 완료 (우측 버튼으로 폴더 이동 및 일괄 다운로드 가능)</div>
       </div>
     </div>
     <div style="display:flex; gap:8px;">
@@ -334,7 +334,7 @@ function renderAdmin(){
           
           let folderBtnHtml = '폴더 없음';
           if (m.files && m.files.startsWith('http')) {
-            folderBtnHtml = `<a href="${m.files}" target="_blank" style="background: var(--teal); color: white; padding: 6px 12px; border-radius: 6px; font-weight: 600; text-decoration: none; font-size: 12px; display: inline-block;">폴더 열기</a>`;
+            folderBtnHtml = `<a href="${m.files}" target="_blank" style="background: var(--teal); color: white; padding: 6px 12px; border-radius: 6px; font-weight: 600; text-decoration: none; font-size: 12px; display: inline-block;">📁 폴더 열기 / 다운로드</a>`;
           }
 
           return `
