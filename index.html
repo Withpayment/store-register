@@ -138,7 +138,6 @@ body{
   border-radius:9px;padding:9px 16px;font-weight:600;letter-spacing:.02em;margin-bottom:24px;
 }
 
-/* 관리자 모드 스타일 */
 .admin-login{max-width:360px;margin:60px auto;}
 .merchant-card{
   background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin-bottom:12px;
@@ -162,8 +161,7 @@ body{
 <div class="toast" id="toast"></div>
 
 <script>
-// 방금 발급받으신 구글 앱스 스크립트 웹 앱 URL 적용완료
-const API_URL = "https://script.google.com/macros/s/AKfycbwKn983QaDTxEereDDEFGXm89R6YZrFjaJCyQYVNmuL16Fncd1AMAB39je3IKDXo4NW/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbysWR6wt-Eph2NxquKsOHV_xvYfv9vdPwrpp_gWhsP14bcczLkshHZOmAzsykzhFAg3/exec";
 
 const DOCS = [
   { key:'idCard', label:'신분증', accept:'image/*', hint:'주민등록증 또는 운전면허증 사진' },
@@ -437,23 +435,22 @@ const App = {
     const createdAt = new Date().toISOString();
 
     try {
-      // 구글 앱스 스크립트로 텍스트 및 사진 데이터 전송 (CORS 우회를 위해 no-cors 대신 일반 fetch 사용)
+      // CORS 우회를 위해 URLSearchParams (폼 전송 방식) 사용
+      const params = new URLSearchParams();
+      params.append('id', id);
+      params.append('createdAt', createdAt);
+      params.append('storeName', f.storeName);
+      params.append('storePhone', f.storePhone);
+      params.append('ownerPhone', f.ownerPhone);
+      params.append('email', f.email);
+      params.append('filesData', JSON.stringify(state.files));
+
       await fetch(API_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({
-          id: id,
-          createdAt: createdAt,
-          storeName: f.storeName,
-          storePhone: f.storePhone,
-          ownerPhone: f.ownerPhone,
-          email: f.email,
-          files: state.files
-        })
+        body: params
       });
 
-      // 브라우저 로컬 저장소 백업 (관리자 모드용)
-      const idxKey = 'merchant_index_v3';
+      const idxKey = 'merchant_index_v4';
       let list = [];
       try{
         const localData = localStorage.getItem(idxKey);
@@ -493,7 +490,7 @@ const App = {
     if(val === 'pos1212!@'){
       state.adminUnlocked = true;
       try {
-        const localData = localStorage.getItem('merchant_index_v3');
+        const localData = localStorage.getItem('merchant_index_v4');
         state.adminMerchants = localData ? JSON.parse(localData) : [];
       } catch(err) {
         state.adminMerchants = [];
