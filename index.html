@@ -94,6 +94,11 @@ body{
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
 @media(max-width:520px){.grid2{grid-template-columns:1fr;}}
 
+/* 라디오 버튼 스타일 */
+.radio-group{display:flex;gap:20px;margin-top:8px;}
+.radio-label{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:500;cursor:pointer;}
+.radio-label input{accent-color:var(--teal);width:18px;height:18px;cursor:pointer;}
+
 .opt-group-label{font-size:13.5px;font-weight:600;color:var(--ink);margin-bottom:12px;display:flex;align-items:center;gap:6px;}
 
 .doc-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
@@ -167,11 +172,8 @@ const COMMON_DOCS = [
   { key:'idCard', label:'신분증', accept:'image/*', hint:'주민등록증 또는 운전면허증 사진', required:true },
   { key:'bankbook', label:'통장사본', accept:'image/*,.pdf', hint:'입금 계좌 통장 첫 페이지', required:true },
   { key:'bizLicense', label:'사업자등록증', accept:'image/*,.pdf', hint:'사업자등록증 사본', required:true },
-  { key:'exteriorPhoto', label:'외부 사진 (간판 포함)', accept:'image/*', hint:'간판이 잘 보이도록 촬영', required:true },
   { key:'interiorPhoto', label:'매장 내부 사진', accept:'image/*', hint:'매장 내부 전경', required:true },
-  { key:'insideOutsidePhoto', label:'내부에서 외부가 보이는 사진', accept:'image/*', hint:'출입구 방향으로 촬영', required:true },
-  { key:'addressPlate', label:'도로명주소판 사진 (간판 없을 시)', accept:'image/*', hint:'건물에 부착된 도로명주소판 근접 촬영', required:true },
-  { key:'addressBuildingPhoto', label:'도로명주소 포함 건물 사진 (간판 없을 시)', accept:'image/*', hint:'도로명주소와 건물이 함께 나오게 촬영', required:true }
+  { key:'insideOutsidePhoto', label:'내부에서 외부가 보이는 사진', accept:'image/*', hint:'출입구 방향으로 촬영', required:true }
 ];
 
 const EXTRA_DOCS = {
@@ -180,17 +182,28 @@ const EXTRA_DOCS = {
   academy: { key:'permitLicense', label:'학원(교습소) 설립운영 등록증', accept:'image/*,.pdf', hint:'등록증 사본', required:true }
 };
 
-function getRequiredDocs(businessType){
+function getRequiredDocs(businessType, hasSign){
   let docs = [...COMMON_DOCS];
+  
+  // 업종별 허가증 삽입 (보통 4번째 위치)
   if(EXTRA_DOCS[businessType]){
     docs.splice(3, 0, EXTRA_DOCS[businessType]);
   }
+
+  // 간판 유무에 따라 서류 다르게 구성
+  if(hasSign === 'yes') {
+    docs.push({ key:'exteriorPhoto', label:'외부 사진 (간판 포함)', accept:'image/*', hint:'간판이 잘 보이도록 촬영', required:true });
+  } else {
+    docs.push({ key:'addressPlate', label:'도로명주소판 사진', accept:'image/*', hint:'건물에 부착된 도로명주소판 근접 촬영', required:true });
+    docs.push({ key:'addressBuildingPhoto', label:'도로명주소 포함 건물 사진', accept:'image/*', hint:'도로명주소와 건물이 함께 나오게 촬영', required:true });
+  }
+
   return docs;
 }
 
 let state = {
   view: location.hash === '#admin' ? 'adminLogin' : 'form',
-  fields: { storeName:'', businessType:'general', storePhone:'', ownerPhone:'', email:'' },
+  fields: { storeName:'', businessType:'general', storePhone:'', ownerPhone:'', email:'', hasSign:'yes' },
   files: {},
   receiptId: null,
   adminUnlocked: false,
@@ -204,6 +217,9 @@ function syncFields(){
   state.fields.storePhone = document.getElementById('f_storePhone')?.value || state.fields.storePhone;
   state.fields.ownerPhone = document.getElementById('f_ownerPhone')?.value || state.fields.ownerPhone;
   state.fields.email = document.getElementById('f_email')?.value || state.fields.email;
+  
+  const signRadio = document.querySelector('input[name="f_hasSign"]:checked');
+  if(signRadio) state.fields.hasSign = signRadio.value;
 }
 
 function toast(msg){
@@ -238,14 +254,14 @@ function topbar(){
 
 function renderForm(){
   const f = state.fields;
-  const currentDocs = getRequiredDocs(f.businessType);
+  const currentDocs = getRequiredDocs(f.businessType, f.hasSign);
   const requiredDocsCount = currentDocs.filter(d => d.required).length;
   const filledRequiredCount = currentDocs.filter(d => d.required && state.files[d.key]).length;
 
   return `
   <div class="card">
     <div class="section-title">가맹점 정보 및 서류 제출</div>
-    <div class="section-sub">업종을 선택하시면 해당 업종에 맞는 서류 항목이 안내됩니다.</div>
+    <div class="section-sub">업종 및 간판 유무에 따라 필요한 서류 항목이 자동으로 변경됩니다.</div>
 
     <div class="field">
       <label>상호명(매장명) <span class="req">*</span></label>
@@ -254,12 +270,20 @@ function renderForm(){
 
     <div class="field">
       <label>업종 선택 <span class="req">*</span></label>
-      <select id="f_businessType" onchange="App.changeBusinessType(this.value)">
+      <select id="f_businessType" onchange="App.changeFormState()">
         ${BUSINESS_TYPES.map(b => `<option value="${b.id}" ${f.businessType===b.id?'selected':''}>${b.name}</option>`).join('')}
       </select>
     </div>
 
-    <div class="grid2">
+    <div class="field">
+      <label>간판 유무 선택 <span class="req">*</span></label>
+      <div class="radio-group">
+        <label class="radio-label"><input type="radio" name="f_hasSign" value="yes" ${f.hasSign==='yes'?'checked':''} onchange="App.changeFormState()"> 간판 있음</label>
+        <label class="radio-label"><input type="radio" name="f_hasSign" value="no" ${f.hasSign==='no'?'checked':''} onchange="App.changeFormState()"> 간판 없음</label>
+      </div>
+    </div>
+
+    <div class="grid2" style="margin-top:18px;">
       <div class="field">
         <label>매장전화번호 <span class="req">*</span></label>
         <input type="tel" id="f_storePhone" placeholder="02-1234-5678" value="${f.storePhone}">
@@ -450,16 +474,15 @@ const App = {
     }
   },
 
-  changeBusinessType(val){
+  changeFormState(){
     syncFields();
-    state.fields.businessType = val;
     render();
   },
 
   async handleFile(key, file){
     if(!file) return;
     syncFields();
-    const currentDocs = getRequiredDocs(state.fields.businessType);
+    const currentDocs = getRequiredDocs(state.fields.businessType, state.fields.hasSign);
     const docDef = currentDocs.find(d=>d.key===key);
     if(file.size > 15*1024*1024){ toast('파일 용량이 너무 큽니다 (15MB 이하)'); return; }
     toast('파일 처리 중...');
@@ -530,7 +553,7 @@ const App = {
     if(!f.storeName || !f.storePhone || !f.ownerPhone || !f.email){
       toast('필수 정보를 모두 입력해 주세요'); return;
     }
-    const currentDocs = getRequiredDocs(f.businessType);
+    const currentDocs = getRequiredDocs(f.businessType, f.hasSign);
     const missing = currentDocs.filter(d => d.required && !state.files[d.key]);
     if(missing.length > 0){
       toast(missing[0].label + ' 등 필수 서류를 첨부해 주세요'); return;
@@ -560,7 +583,7 @@ const App = {
 
       state.receiptId = id;
       state.files = {};
-      state.fields = { storeName:'', businessType:'general', storePhone:'', ownerPhone:'', email:'' };
+      state.fields = { storeName:'', businessType:'general', storePhone:'', ownerPhone:'', email:'', hasSign:'yes' };
       state.view = 'success';
       render();
     } catch(e) {
@@ -570,7 +593,7 @@ const App = {
   },
 
   resetAll(){
-    state = { view:'form', fields:{storeName:'',businessType:'general',storePhone:'',ownerPhone:'',email:''}, files:{}, receiptId:null, adminUnlocked:false, adminMerchants:[], adminSearch:'' };
+    state = { view:'form', fields:{storeName:'',businessType:'general',storePhone:'',ownerPhone:'',email:'',hasSign:'yes'}, files:{}, receiptId:null, adminUnlocked:false, adminMerchants:[], adminSearch:'' };
     location.hash='';
     render();
   },
