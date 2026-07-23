@@ -145,7 +145,7 @@ body{
 <div class="toast" id="toast"></div>
 
 <script>
-const API_URL = "https://script.google.com/macros/s/AKfycbzW8aA2g3tlxRXgvoy5hu5-Jemj38DC1wJD9M4cHPotvmgaHghZ0WrVSelwP7TvUdNb/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbw8EykWeU7cT2xWIFfASWYhd4gc4sG8QQ1QupJFMGjPA5mt52hDv5SUV_y_F8gz_EaO/exec";
 
 const BUSINESS_TYPES = [
   { id: 'general', name: '일반 도소매/서비스업 (일반 사업자)' },
@@ -479,19 +479,16 @@ const App = {
 
     toast('처리 완료 및 데이터 삭제 중...');
     try {
-      const params = new URLSearchParams();
-      params.append('action', 'deleteMerchant');
-      params.append('id', id);
-
       const response = await fetch(API_URL, {
         method: 'POST',
-        body: params
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'deleteMerchant', id: id })
       });
       const result = await response.json();
 
       if(result.status === 'success') {
         toast('처리가 완료되어 해당 정보와 파일이 안전하게 삭제되었습니다.');
-        App.loadGoogleData(); // 목록 새로고침
+        App.loadGoogleData();
       } else {
         toast('삭제 처리에 실패했습니다.');
       }
@@ -518,18 +515,20 @@ const App = {
     const createdAt = new Date().toISOString();
 
     try {
-      const params = new URLSearchParams();
-      params.append('id', id);
-      params.append('createdAt', createdAt);
-      params.append('storeName', f.storeName);
-      params.append('storePhone', f.storePhone);
-      params.append('ownerPhone', f.ownerPhone);
-      params.append('email', f.email);
-      params.append('filesData', JSON.stringify(state.files));
+      const payload = {
+        id: id,
+        createdAt: createdAt,
+        storeName: f.storeName,
+        storePhone: f.storePhone,
+        ownerPhone: f.ownerPhone,
+        email: f.email,
+        filesData: state.files
+      };
 
       await fetch(API_URL, {
         method: 'POST',
-        body: params
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload)
       });
 
       state.receiptId = id;
