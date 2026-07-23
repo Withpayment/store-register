@@ -65,8 +65,16 @@ body{
 }
 .brand-text{font-weight:700;font-size:16px;letter-spacing:-0.01em;}
 .brand-sub{font-size:12px;color:var(--ink-soft);margin-top:1px;}
-.admin-link{font-size:12.5px;color:var(--ink-soft);text-decoration:none;border:1px solid var(--line);padding:7px 12px;border-radius:100px;background:var(--paper);cursor:pointer;transition:.15s;}
-.admin-link:hover{border-color:var(--line-strong);color:var(--ink);}
+
+/* 관리자 진입용 숨겨진 영역 (우측 상단 빈 공간 두 번 터치/클릭) */
+.secret-zone {
+  width: 70px; 
+  height: 40px; 
+  background: transparent; 
+  cursor: default; 
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
 
 .card{
   background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);
@@ -147,6 +155,7 @@ body{
 <div class="toast" id="toast"></div>
 
 <script>
+// 새로운 구글 앱스 스크립트 웹 앱 URL 적용
 const API_URL = "https://script.google.com/macros/s/AKfycbzymJQHqJXEcduknYh5HEYMWO8D2foA2ah5tzHPmn_hyHrPqIWyW5IWTZlcqHy-AHUn/exec";
 
 const BUSINESS_TYPES = [
@@ -224,7 +233,8 @@ function topbar(){
         <div class="brand-sub">정보 입력 및 서류 제출</div>
       </div>
     </div>
-    <div class="admin-link" onclick="App.goAdmin()">관리자 모드</div>
+    <!-- 우측 빈 공간을 0.5초 내에 두 번 누르면 관리자 로그인으로 진입 -->
+    <div class="secret-zone" onclick="App.handleSecretClick()"></div>
   </div>`;
 }
 
@@ -316,7 +326,6 @@ function renderAdminLogin(){
     <div class="section-title">관리자 확인</div>
     <div class="section-sub">접수된 가맹점 목록을 확인하려면 접근 코드를 입력하세요.</div>
     <div class="field">
-      <!-- 비밀번호 마스킹을 위해 type을 password로 변경 -->
       <input type="password" id="admin_pass" placeholder="접근 코드" style="width:100%;padding:12px;border:1.5px solid var(--line);border-radius:10px;font-size:14.5px;">
     </div>
     <button class="btn btn-primary" onclick="App.tryAdminLogin()">확인</button>
@@ -343,8 +352,8 @@ function renderAdmin(){
       </div>
     </div>
     <div style="display:flex; gap:8px;">
-      <div class="admin-link" onclick="App.loadGoogleData()" style="background:var(--teal); color:white; border:none;">새로고침</div>
-      <div class="admin-link" onclick="App.goForm()">접수 화면 보기</div>
+      <div class="admin-link" onclick="App.loadGoogleData()" style="background:var(--teal); color:white; border:none; padding:7px 12px; border-radius:100px; cursor:pointer; font-size:12.5px;">새로고침</div>
+      <div class="admin-link" onclick="App.goForm()" style="border:1px solid var(--line); padding:7px 12px; border-radius:100px; background:var(--paper); cursor:pointer; font-size:12.5px;">접수 화면 보기</div>
     </div>
   </div>
 
@@ -429,6 +438,20 @@ function readAsDataURL(file){
 }
 
 const App = {
+  secretClickTimer: null,
+  secretClicks: 0,
+  
+  handleSecretClick(){
+    this.secretClicks++;
+    if(this.secretClicks >= 2){
+      this.goAdmin();
+      this.secretClicks = 0;
+      clearTimeout(this.secretClickTimer);
+    } else {
+      this.secretClickTimer = setTimeout(() => { this.secretClicks = 0; }, 500);
+    }
+  },
+
   changeBusinessType(val){
     syncFields();
     state.fields.businessType = val;
