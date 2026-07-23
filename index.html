@@ -49,7 +49,7 @@ body{
 }
 .mono{font-family:'Plex Mono','Pretendard',monospace;}
 
-#app{max-width:900px;margin:0 auto;padding:28px 20px 80px;}
+#app{max-width:960px;margin:0 auto;padding:28px 20px 80px;}
 
 .topbar{
   display:flex;align-items:center;justify-content:space-between;
@@ -145,9 +145,8 @@ body{
 <div class="toast" id="toast"></div>
 
 <script>
-const API_URL = "https://script.google.com/macros/s/AKfycbzOJCwii25zY7H49JYqIfNJrA0F99hblyf-Guk4ui-ehC7LLy_1esP_kZO2CMHraDKD/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbwfjeXSyci2I01tlj8-x4MfFp1vvFSM9eSzzgrqcnmSKH62OWdDKkIPgVVZKyCeWfo/exec";
 
-// 업종별 정의 및 필요 서류 설정
 const BUSINESS_TYPES = [
   { id: 'general', name: '일반 도소매/서비스업 (일반 사업자)' },
   { id: 'food', name: '음식점 / 카페 / 유흥주점 (식품위생업)' },
@@ -155,7 +154,6 @@ const BUSINESS_TYPES = [
   { id: 'academy', name: '학원 / 교습소' }
 ];
 
-// 공통 기본 서류
 const COMMON_DOCS = [
   { key:'idCard', label:'신분증', accept:'image/*', hint:'주민등록증 또는 운전면허증 사진' },
   { key:'bankbook', label:'통장사본', accept:'image/*,.pdf', hint:'입금 계좌 통장 첫 페이지' },
@@ -165,7 +163,6 @@ const COMMON_DOCS = [
   { key:'insideOutsidePhoto', label:'내부에서 외부가 보이는 사진', accept:'image/*', hint:'출입구 방향으로 촬영' }
 ];
 
-// 업종별 추가 서류 매핑
 const EXTRA_DOCS = {
   food: { key:'permitLicense', label:'영업신고증', accept:'image/*,.pdf', hint:'식품영업신고증 사본' },
   beauty: { key:'permitLicense', label:'공중위생 영업신고증', accept:'image/*,.pdf', hint:'영업신고증 사본' },
@@ -175,7 +172,6 @@ const EXTRA_DOCS = {
 function getRequiredDocs(businessType){
   let docs = [...COMMON_DOCS];
   if(EXTRA_DOCS[businessType]){
-    // 사업자등록증 바로 밑이나 맨 뒤에 추가
     docs.splice(3, 0, EXTRA_DOCS[businessType]);
   }
   return docs;
@@ -336,8 +332,8 @@ function renderAdmin(){
     <div class="brand">
       <div class="brand-mark">P</div>
       <div>
-        <div class="brand-text">가맹점 접수 현황 (구글 드라이브 폴더 연결)</div>
-        <div class="brand-sub">실시간 동기화 완료</div>
+        <div class="brand-text">가맹점 접수 현황 (보안 관리)</div>
+        <div class="brand-sub">서류 처리 완료 시 체크하면 데이터가 자동 삭제됩니다.</div>
       </div>
     </div>
     <div style="display:flex; gap:8px;">
@@ -357,19 +353,20 @@ function renderAdmin(){
           <th style="padding: 14px 16px;">대표 폰번호</th>
           <th style="padding: 14px 16px;">이메일</th>
           <th style="padding: 14px 16px;">접수일시</th>
-          <th style="padding: 14px 16px;">구글 드라이브 폴더</th>
+          <th style="padding: 14px 16px;">서류 폴더</th>
+          <th style="padding: 14px 16px; text-align:center;">처리 완료 / 삭제</th>
         </tr>
       </thead>
       <tbody>
         ${list.length === 0 ? `
-          <tr><td colspan="6" style="text-align:center; padding: 40px; color: var(--ink-soft);">접수된 내역이 없습니다.</td></tr>
+          <tr><td colspan="7" style="text-align:center; padding: 40px; color: var(--ink-soft);">접수된 내역이 없습니다.</td></tr>
         ` : list.map(m => {
           let formattedDate = m.createdAt;
           try { formattedDate = new Date(m.createdAt).toLocaleString('ko-KR'); } catch(e){}
           
           let folderBtnHtml = '폴더 없음';
           if (m.files && m.files.startsWith('http')) {
-            folderBtnHtml = `<a href="${m.files}" target="_blank" style="background: var(--teal); color: white; padding: 6px 12px; border-radius: 6px; font-weight: 600; text-decoration: none; font-size: 12px; display: inline-block;">🔍 드라이브 폴더 검색</a>`;
+            folderBtnHtml = `<a href="${m.files}" target="_blank" style="background: var(--teal); color: white; padding: 5px 10px; border-radius: 6px; font-weight: 600; text-decoration: none; font-size: 11.5px; display: inline-block;">🔍 폴더 열기</a>`;
           }
 
           return `
@@ -380,6 +377,9 @@ function renderAdmin(){
               <td style="padding: 14px 16px; color: var(--ink-soft);">${m.email || ''}</td>
               <td style="padding: 14px 16px; font-size: 12.5px; color: var(--ink-soft);">${formattedDate}</td>
               <td style="padding: 14px 16px;">${folderBtnHtml}</td>
+              <td style="padding: 14px 16px; text-align:center;">
+                <button onclick="App.completeAndDelete('${m.id}', '${m.storeName}')" style="background: var(--red); color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 11.5px;">처리완료/삭제</button>
+              </td>
             </tr>
           `;
         }).join('')}
@@ -472,6 +472,34 @@ const App = {
     }
   },
 
+  async completeAndDelete(id, storeName) {
+    if(!confirm(`[${storeName}] 가맹점 서류 확인 및 접수 처리를 완료하셨습니까?\n확인을 누르면 시트 내역과 드라이브의 모든 사진 파일이 개인정보 보호를 위해 영구 삭제됩니다.`)) {
+      return;
+    }
+
+    toast('처리 완료 및 데이터 삭제 중...');
+    try {
+      const params = new URLSearchParams();
+      params.append('action', 'deleteMerchant');
+      params.append('id', id);
+
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        body: params
+      });
+      const result = await response.json();
+
+      if(result.status === 'success') {
+        toast('처리가 완료되어 해당 정보와 파일이 안전하게 삭제되었습니다.');
+        App.loadGoogleData(); // 목록 새로고침
+      } else {
+        toast('삭제 처리에 실패했습니다.');
+      }
+    } catch(e) {
+      toast('서버 통신 오류가 발생했습니다.');
+    }
+  },
+
   async submit(){
     syncFields();
     const f = state.fields;
@@ -505,6 +533,8 @@ const App = {
       });
 
       state.receiptId = id;
+      state.files = {};
+      state.fields = { storeName:'', businessType:'general', storePhone:'', ownerPhone:'', email:'' };
       state.view = 'success';
       render();
     } catch(e) {
