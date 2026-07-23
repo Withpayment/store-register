@@ -78,11 +78,11 @@ body{
 .field{margin-bottom:18px;}
 .field label{display:block;font-size:13px;font-weight:600;margin-bottom:7px;}
 .field .req{color:var(--red);margin-left:2px;}
-.field input[type=text],.field input[type=tel],.field input[type=email]{
+.field input[type=text],.field input[type=tel],.field input[type=email],.field select{
   width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14.5px;
   font-family:'Pretendard';background:#FCFCFD;transition:.12s;
 }
-.field input:focus{outline:none;border-color:var(--teal);background:white;}
+.field input:focus,.field select:focus{outline:none;border-color:var(--teal);background:white;}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
 @media(max-width:520px){.grid2{grid-template-columns:1fr;}}
 
@@ -147,19 +147,43 @@ body{
 <script>
 const API_URL = "https://script.google.com/macros/s/AKfycbzOJCwii25zY7H49JYqIfNJrA0F99hblyf-Guk4ui-ehC7LLy_1esP_kZO2CMHraDKD/exec";
 
-const DOCS = [
+// 업종별 정의 및 필요 서류 설정
+const BUSINESS_TYPES = [
+  { id: 'general', name: '일반 도소매/서비스업 (일반 사업자)' },
+  { id: 'food', name: '음식점 / 카페 / 유흥주점 (식품위생업)' },
+  { id: 'beauty', name: '미용실 / 피부샵 / 네일샵 (공중위생업)' },
+  { id: 'academy', name: '학원 / 교습소' }
+];
+
+// 공통 기본 서류
+const COMMON_DOCS = [
   { key:'idCard', label:'신분증', accept:'image/*', hint:'주민등록증 또는 운전면허증 사진' },
   { key:'bankbook', label:'통장사본', accept:'image/*,.pdf', hint:'입금 계좌 통장 첫 페이지' },
   { key:'bizLicense', label:'사업자등록증', accept:'image/*,.pdf', hint:'사업자등록증 사본' },
-  { key:'permitLicense', label:'영업신고증', accept:'image/*,.pdf', hint:'영업신고증(허가증) 사본' },
   { key:'exteriorPhoto', label:'외부 사진 (간판 포함)', accept:'image/*', hint:'간판이 잘 보이도록 촬영' },
   { key:'interiorPhoto', label:'매장 내부 사진', accept:'image/*', hint:'매장 내부 전경' },
   { key:'insideOutsidePhoto', label:'내부에서 외부가 보이는 사진', accept:'image/*', hint:'출입구 방향으로 촬영' }
 ];
 
+// 업종별 추가 서류 매핑
+const EXTRA_DOCS = {
+  food: { key:'permitLicense', label:'영업신고증', accept:'image/*,.pdf', hint:'식품영업신고증 사본' },
+  beauty: { key:'permitLicense', label:'공중위생 영업신고증', accept:'image/*,.pdf', hint:'영업신고증 사본' },
+  academy: { key:'permitLicense', label:'학원(교습소) 설립운영 등록증', accept:'image/*,.pdf', hint:'등록증 사본' }
+};
+
+function getRequiredDocs(businessType){
+  let docs = [...COMMON_DOCS];
+  if(EXTRA_DOCS[businessType]){
+    // 사업자등록증 바로 밑이나 맨 뒤에 추가
+    docs.splice(3, 0, EXTRA_DOCS[businessType]);
+  }
+  return docs;
+}
+
 let state = {
   view: location.hash === '#admin' ? 'adminLogin' : 'form',
-  fields: { storeName:'', storePhone:'', ownerPhone:'', email:'' },
+  fields: { storeName:'', businessType:'general', storePhone:'', ownerPhone:'', email:'' },
   files: {},
   receiptId: null,
   adminUnlocked: false,
@@ -169,6 +193,7 @@ let state = {
 
 function syncFields(){
   state.fields.storeName = document.getElementById('f_storeName')?.value || state.fields.storeName;
+  state.fields.businessType = document.getElementById('f_businessType')?.value || state.fields.businessType;
   state.fields.storePhone = document.getElementById('f_storePhone')?.value || state.fields.storePhone;
   state.fields.ownerPhone = document.getElementById('f_ownerPhone')?.value || state.fields.ownerPhone;
   state.fields.email = document.getElementById('f_email')?.value || state.fields.email;
@@ -206,16 +231,26 @@ function topbar(){
 
 function renderForm(){
   const f = state.fields;
-  const filledCount = DOCS.filter(d=>state.files[d.key]).length;
+  const currentDocs = getRequiredDocs(f.businessType);
+  const filledCount = currentDocs.filter(d=>state.files[d.key]).length;
+
   return `
   <div class="card">
     <div class="section-title">가맹점 정보 및 서류 제출</div>
-    <div class="section-sub">매장 정보를 입력하고 필수 서류를 첨부해 주세요.</div>
+    <div class="section-sub">업종을 선택하시면 해당 업종에 맞는 필수 서류 항목이 자동으로 안내됩니다.</div>
 
     <div class="field">
       <label>상호명(매장명) <span class="req">*</span></label>
       <input type="text" id="f_storeName" placeholder="예: 카페 온기" value="${f.storeName}">
     </div>
+
+    <div class="field">
+      <label>업종 선택 <span class="req">*</span></label>
+      <select id="f_businessType" onchange="App.changeBusinessType(this.value)">
+        ${BUSINESS_TYPES.map(b => `<option value="${b.id}" ${f.businessType===b.id?'selected':''}>${b.name}</option>`).join('')}
+      </select>
+    </div>
+
     <div class="grid2">
       <div class="field">
         <label>매장전화번호 <span class="req">*</span></label>
@@ -231,9 +266,9 @@ function renderForm(){
       <input type="email" id="f_email" placeholder="example@email.com" value="${f.email}">
     </div>
 
-    <div class="opt-group-label" style="margin-top:26px;">필요 서류 (${filledCount}/${DOCS.length}) <span class="req">*</span></div>
+    <div class="opt-group-label" style="margin-top:26px;">필요 서류 (${filledCount}/${currentDocs.length}) <span class="req">*</span></div>
     <div class="doc-grid">
-      ${DOCS.map(d => renderDropzone(d)).join('')}
+      ${currentDocs.map(d => renderDropzone(d)).join('')}
     </div>
 
     <div class="btn-row">
@@ -302,7 +337,7 @@ function renderAdmin(){
       <div class="brand-mark">P</div>
       <div>
         <div class="brand-text">가맹점 접수 현황 (구글 드라이브 폴더 연결)</div>
-        <div class="brand-sub">실시간 동기화 완료 (우측 버튼으로 폴더 이동 및 일괄 다운로드 가능)</div>
+        <div class="brand-sub">실시간 동기화 완료</div>
       </div>
     </div>
     <div style="display:flex; gap:8px;">
@@ -327,14 +362,14 @@ function renderAdmin(){
       </thead>
       <tbody>
         ${list.length === 0 ? `
-          <tr><td colspan="6" style="text-align:center; padding: 40px; color: var(--ink-soft);">접수된 내역이 없습니다. (새로운 코드로 다시 테스트 접수를 해주세요)</td></tr>
+          <tr><td colspan="6" style="text-align:center; padding: 40px; color: var(--ink-soft);">접수된 내역이 없습니다.</td></tr>
         ` : list.map(m => {
           let formattedDate = m.createdAt;
           try { formattedDate = new Date(m.createdAt).toLocaleString('ko-KR'); } catch(e){}
           
           let folderBtnHtml = '폴더 없음';
           if (m.files && m.files.startsWith('http')) {
-            folderBtnHtml = `<a href="${m.files}" target="_blank" style="background: var(--teal); color: white; padding: 6px 12px; border-radius: 6px; font-weight: 600; text-decoration: none; font-size: 12px; display: inline-block;">📁 폴더 열기 / 다운로드</a>`;
+            folderBtnHtml = `<a href="${m.files}" target="_blank" style="background: var(--teal); color: white; padding: 6px 12px; border-radius: 6px; font-weight: 600; text-decoration: none; font-size: 12px; display: inline-block;">🔍 드라이브 폴더 검색</a>`;
           }
 
           return `
@@ -388,10 +423,17 @@ function readAsDataURL(file){
 }
 
 const App = {
+  changeBusinessType(val){
+    syncFields();
+    state.fields.businessType = val;
+    render();
+  },
+
   async handleFile(key, file){
     if(!file) return;
     syncFields();
-    const docDef = DOCS.find(d=>d.key===key);
+    const currentDocs = getRequiredDocs(state.fields.businessType);
+    const docDef = currentDocs.find(d=>d.key===key);
     if(file.size > 15*1024*1024){ toast('파일 용량이 너무 큽니다 (15MB 이하)'); return; }
     toast('파일 처리 중...');
     try{
@@ -436,7 +478,8 @@ const App = {
     if(!f.storeName || !f.storePhone || !f.ownerPhone || !f.email){
       toast('필수 정보를 모두 입력해 주세요'); return;
     }
-    const missing = DOCS.filter(d => !state.files[d.key]);
+    const currentDocs = getRequiredDocs(f.businessType);
+    const missing = currentDocs.filter(d => !state.files[d.key]);
     if(missing.length > 0){
       toast(missing[0].label + ' 등 필요 서류를 첨부해 주세요'); return;
     }
@@ -471,7 +514,7 @@ const App = {
   },
 
   resetAll(){
-    state = { view:'form', fields:{storeName:'',storePhone:'',ownerPhone:'',email:''}, files:{}, receiptId:null, adminUnlocked:false, adminMerchants:[], adminSearch:'' };
+    state = { view:'form', fields:{storeName:'',businessType:'general',storePhone:'',ownerPhone:'',email:''}, files:{}, receiptId:null, adminUnlocked:false, adminMerchants:[], adminSearch:'' };
     location.hash='';
     render();
   },
