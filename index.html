@@ -78,6 +78,7 @@ body{
 .field{margin-bottom:18px;}
 .field label{display:block;font-size:13px;font-weight:600;margin-bottom:7px;}
 .field .req{color:var(--red);margin-left:2px;}
+.field .optional{color:var(--ink-soft);font-weight:400;font-size:11.5px;margin-left:4px;}
 .field input[type=text],.field input[type=tel],.field input[type=email],.field select{
   width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14.5px;
   font-family:'Pretendard';background:#FCFCFD;transition:.12s;
@@ -99,6 +100,7 @@ body{
 .dz-head{display:flex;align-items:center;justify-content:space-between;gap:8px;}
 .dz-title{font-size:13px;font-weight:600;}
 .dz-title .req{color:var(--red);}
+.dz-title .optional{color:var(--ink-soft);font-weight:400;font-size:11px;}
 .dz-status{font-size:11px;color:var(--ink-soft);}
 .dz-status.ok{color:var(--forest);font-weight:600;}
 .dz-preview{margin-top:9px;display:flex;align-items:center;gap:9px;}
@@ -155,18 +157,19 @@ const BUSINESS_TYPES = [
 ];
 
 const COMMON_DOCS = [
-  { key:'idCard', label:'신분증', accept:'image/*', hint:'주민등록증 또는 운전면허증 사진' },
-  { key:'bankbook', label:'통장사본', accept:'image/*,.pdf', hint:'입금 계좌 통장 첫 페이지' },
-  { key:'bizLicense', label:'사업자등록증', accept:'image/*,.pdf', hint:'사업자등록증 사본' },
-  { key:'exteriorPhoto', label:'외부 사진 (간판 포함)', accept:'image/*', hint:'간판이 잘 보이도록 촬영' },
-  { key:'interiorPhoto', label:'매장 내부 사진', accept:'image/*', hint:'매장 내부 전경' },
-  { key:'insideOutsidePhoto', label:'내부에서 외부가 보이는 사진', accept:'image/*', hint:'출입구 방향으로 촬영' }
+  { key:'idCard', label:'신분증', accept:'image/*', hint:'주민등록증 또는 운전면허증 사진', required:true },
+  { key:'bankbook', label:'통장사본', accept:'image/*,.pdf', hint:'입금 계좌 통장 첫 페이지', required:true },
+  { key:'bizLicense', label:'사업자등록증', accept:'image/*,.pdf', hint:'사업자등록증 사본', required:true },
+  { key:'exteriorPhoto', label:'외부 사진 (간판 포함)', accept:'image/*', hint:'간판이 잘 보이도록 촬영', required:true },
+  { key:'interiorPhoto', label:'매장 내부 사진', accept:'image/*', hint:'매장 내부 전경', required:true },
+  { key:'insideOutsidePhoto', label:'내부에서 외부가 보이는 사진', accept:'image/*', hint:'출입구 방향으로 촬영', required:true },
+  { key:'addressPlate', label:'도로명주소판', accept:'image/*', hint:'간판 없을 시 건물 부착 도로명주소', required:false }
 ];
 
 const EXTRA_DOCS = {
-  food: { key:'permitLicense', label:'영업신고증', accept:'image/*,.pdf', hint:'식품영업신고증 사본' },
-  beauty: { key:'permitLicense', label:'공중위생 영업신고증', accept:'image/*,.pdf', hint:'영업신고증 사본' },
-  academy: { key:'permitLicense', label:'학원(교습소) 설립운영 등록증', accept:'image/*,.pdf', hint:'등록증 사본' }
+  food: { key:'permitLicense', label:'영업신고증', accept:'image/*,.pdf', hint:'식품영업신고증 사본', required:true },
+  beauty: { key:'permitLicense', label:'공중위생 영업신고증', accept:'image/*,.pdf', hint:'영업신고증 사본', required:true },
+  academy: { key:'permitLicense', label:'학원(교습소) 설립운영 등록증', accept:'image/*,.pdf', hint:'등록증 사본', required:true }
 };
 
 function getRequiredDocs(businessType){
@@ -228,12 +231,13 @@ function topbar(){
 function renderForm(){
   const f = state.fields;
   const currentDocs = getRequiredDocs(f.businessType);
-  const filledCount = currentDocs.filter(d=>state.files[d.key]).length;
+  const requiredDocsCount = currentDocs.filter(d => d.required).length;
+  const filledRequiredCount = currentDocs.filter(d => d.required && state.files[d.key]).length;
 
   return `
   <div class="card">
     <div class="section-title">가맹점 정보 및 서류 제출</div>
-    <div class="section-sub">업종을 선택하시면 해당 업종에 맞는 필수 서류 항목이 자동으로 안내됩니다.</div>
+    <div class="section-sub">업종을 선택하시면 해당 업종에 맞는 서류 항목이 안내됩니다.</div>
 
     <div class="field">
       <label>상호명(매장명) <span class="req">*</span></label>
@@ -262,7 +266,7 @@ function renderForm(){
       <input type="email" id="f_email" placeholder="example@email.com" value="${f.email}">
     </div>
 
-    <div class="opt-group-label" style="margin-top:26px;">필요 서류 (${filledCount}/${currentDocs.length}) <span class="req">*</span></div>
+    <div class="opt-group-label" style="margin-top:26px;">필수 서류 (${filledRequiredCount}/${requiredDocsCount}) <span class="req">*</span></div>
     <div class="doc-grid">
       ${currentDocs.map(d => renderDropzone(d)).join('')}
     </div>
@@ -275,11 +279,12 @@ function renderForm(){
 
 function renderDropzone(d){
   const f = state.files[d.key];
+  const labelBadge = d.required ? `<span class="req">*</span>` : `<span class="optional">(선택)</span>`;
   return `
   <div class="dropzone ${f?'filled':''}" onclick="document.getElementById('file_${d.key}').click()">
     <input type="file" id="file_${d.key}" accept="${d.accept}" style="display:none" onchange="App.handleFile('${d.key}', this.files[0])">
     <div class="dz-head">
-      <div class="dz-title">${d.label} <span class="req">*</span></div>
+      <div class="dz-title">${d.label} ${labelBadge}</div>
       <div class="dz-status ${f?'ok':''}">${f?'첨부완료':'미첨부'}</div>
     </div>
     ${f ? `
@@ -504,9 +509,10 @@ const App = {
       toast('필수 정보를 모두 입력해 주세요'); return;
     }
     const currentDocs = getRequiredDocs(f.businessType);
-    const missing = currentDocs.filter(d => !state.files[d.key]);
+    // 필수(required: true) 서류만 체크
+    const missing = currentDocs.filter(d => d.required && !state.files[d.key]);
     if(missing.length > 0){
-      toast(missing[0].label + ' 등 필요 서류를 첨부해 주세요'); return;
+      toast(missing[0].label + ' 등 필수 서류를 첨부해 주세요'); return;
     }
     const submitBtn = document.querySelector('.btn-primary');
     if(submitBtn){ submitBtn.disabled = true; submitBtn.textContent = '제출 중...'; }
