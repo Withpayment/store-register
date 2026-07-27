@@ -7,77 +7,77 @@
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
 <style>
 @font-face{
-  font-family:'Pretendard';
-  src:url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/woff2/Pretendard-Regular.woff2') format('woff2');
-  font-weight:400; font-display:swap;
+  font-family:'Pretendard';
+  src:url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/woff2/Pretendard-Regular.woff2') format('woff2');
+  font-weight:400; font-display:swap;
 }
 @font-face{
-  font-family:'Pretendard';
-  src:url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/woff2/Pretendard-Bold.woff2') format('woff2');
-  font-weight:700; font-display:swap;
+  font-family:'Pretendard';
+  src:url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/woff2/Pretendard-Bold.woff2') format('woff2');
+  font-weight:700; font-display:swap;
 }
 @font-face{
-  font-family:'Plex Mono';
-  src:url('https://cdn.jsdelivr.net/npm/@fontsource/ibm-plex-mono@5.0.13/files/ibm-plex-mono-latin-500-normal.woff2') format('woff2');
-  font-weight:500; font-display:swap;
+  font-family:'Plex Mono';
+  src:url('https://cdn.jsdelivr.net/npm/@fontsource/ibm-plex-mono@5.0.13/files/ibm-plex-mono-latin-500-normal.woff2') format('woff2');
+  font-weight:500; font-display:swap;
 }
 
 :root{
-  --bg:#F1F3F6;
-  --paper:#FFFFFF;
-  --ink:#10233D;
-  --ink-soft:#5B6B7A;
-  --line:#E1E5EA;
-  --line-strong:#C7CFD8;
-  --teal:#12A398;
-  --teal-deep:#0B7A72;
-  --forest:#2F8F5B;
-  --forest-bg:#EAF6EF;
-  --red:#E24C4C;
-  --red-bg:#FDEDED;
-  --radius:14px;
-  --shadow:0 1px 2px rgba(16,35,61,0.04), 0 8px 24px rgba(16,35,61,0.06);
+  --bg:#F1F3F6;
+  --paper:#FFFFFF;
+  --ink:#10233D;
+  --ink-soft:#5B6B7A;
+  --line:#E1E5EA;
+  --line-strong:#C7CFD8;
+  --teal:#12A398;
+  --teal-deep:#0B7A72;
+  --forest:#2F8F5B;
+  --forest-bg:#EAF6EF;
+  --red:#E24C4C;
+  --red-bg:#FDEDED;
+  --radius:14px;
+  --shadow:0 1px 2px rgba(16,35,61,0.04), 0 8px 24px rgba(16,35,61,0.06);
 }
 *{box-sizing:border-box;}
 html,body{margin:0;padding:0;}
 body{
-  background:var(--bg);
-  color:var(--ink);
-  font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif;
-  min-height:100vh;
-  -webkit-font-smoothing:antialiased;
+  background:var(--bg);
+  color:var(--ink);
+  font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif;
+  min-height:100vh;
+  -webkit-font-smoothing:antialiased;
 }
 .mono{font-family:'Plex Mono','Pretendard',monospace;}
 
 #app{max-width:960px;margin:0 auto;padding:28px 20px 80px;}
 
 .topbar{
-  display:flex;align-items:center;justify-content:space-between;
-  margin-bottom:28px;
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:28px;
 }
 .brand{display:flex;align-items:center;gap:10px;}
 .brand-mark{
-  width:34px;height:34px;border-radius:9px;
-  background:linear-gradient(135deg,var(--teal),var(--teal-deep));
-  display:flex;align-items:center;justify-content:center;
-  color:white;font-weight:700;font-size:15px;
-  box-shadow:var(--shadow);
+  width:34px;height:34px;border-radius:9px;
+  background:linear-gradient(135deg,var(--teal),var(--teal-deep));
+  display:flex;align-items:center;justify-content:center;
+  color:white;font-weight:700;font-size:15px;
+  box-shadow:var(--shadow);
 }
 .brand-text{font-weight:700;font-size:16px;letter-spacing:-0.01em;}
 .brand-sub{font-size:12px;color:var(--ink-soft);margin-top:1px;}
 
 .secret-zone {
-  width: 70px; 
-  height: 40px; 
-  background: transparent; 
-  cursor: default; 
-  user-select: none;
-  -webkit-tap-highlight-color: transparent;
+  width: 70px; 
+  height: 40px; 
+  background: transparent; 
+  cursor: default; 
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .card{
-  background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);
-  padding:28px;box-shadow:var(--shadow);
+  background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);
+  padding:28px;box-shadow:var(--shadow);
 }
 .section-title{font-size:18px;font-weight:700;margin:0 0 6px;letter-spacing:-0.01em;}
 .section-sub{font-size:13.5px;color:var(--ink-soft);margin:0 0 24px;line-height:1.5;}
@@ -87,8 +87,8 @@ body{
 .field .req{color:var(--red);margin-left:2px;}
 .field .optional{color:var(--ink-soft);font-weight:400;font-size:11.5px;margin-left:4px;}
 .field input[type=text],.field input[type=tel],.field input[type=email],.field input[type=password],.field select{
-  width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14.5px;
-  font-family:'Pretendard';background:#FCFCFD;transition:.12s;
+  width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14.5px;
+  font-family:'Pretendard';background:#FCFCFD;transition:.12s;
 }
 .field input:focus,.field select:focus{outline:none;border-color:var(--teal);background:white;}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
@@ -104,8 +104,8 @@ body{
 .doc-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
 @media(max-width:600px){.doc-grid{grid-template-columns:1fr;}}
 .dropzone{
-  border:1.5px dashed var(--line-strong);border-radius:12px;padding:14px;cursor:pointer;
-  transition:.14s;position:relative;overflow:hidden;background:#FBFBFC;
+  border:1.5px dashed var(--line-strong);border-radius:12px;padding:14px;cursor:pointer;
+  transition:.14s;position:relative;overflow:hidden;background:#FBFBFC;
 }
 .dropzone:hover{border-color:var(--teal);background:#F1FBFA;}
 .dropzone.filled{border-style:solid;border-color:var(--forest);background:var(--forest-bg);}
@@ -122,9 +122,9 @@ body{
 .dz-remove{font-size:11px;color:var(--red);background:none;border:none;cursor:pointer;padding:0;margin-left:auto;flex:0 0 auto;}
 
 .btn{
-  display:inline-flex;align-items:center;justify-content:center;gap:6px;
-  font-family:'Pretendard';font-size:15px;font-weight:600;padding:14px 20px;border-radius:11px;
-  border:none;cursor:pointer;transition:.14s;width:100%;
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  font-family:'Pretendard';font-size:15px;font-weight:600;padding:14px 20px;border-radius:11px;
+  border:none;cursor:pointer;transition:.14s;width:100%;
 }
 .btn-primary{background:var(--ink);color:white;}
 .btn-primary:hover{background:#0A1A2E;}
@@ -132,686 +132,517 @@ body{
 .btn-row{margin-top:24px;display:flex;gap:10px;}
 
 .toast{
-  position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
-  background:var(--ink);color:white;padding:12px 20px;border-radius:100px;font-size:13.5px;font-weight:500;
-  box-shadow:var(--shadow);z-index:50;opacity:0;pointer-events:none;transition:.2s;
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+  background:var(--ink);color:white;padding:12px 20px;border-radius:100px;font-size:13.5px;font-weight:500;
+  box-shadow:var(--shadow);z-index:50;opacity:0;pointer-events:none;transition:.2s;
 }
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
 .success-wrap{max-width:520px;margin:40px auto;text-align:center;}
 .success-badge{
-  width:72px;height:72px;border-radius:50%;background:var(--forest-bg);color:var(--forest);
-  display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 20px;
+  width:72px;height:72px;border-radius:50%;background:var(--forest-bg);color:var(--forest);
+  display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 20px;
 }
 .success-wrap h2{font-size:22px;margin:0 0 8px;}
 .success-wrap p{font-size:14px;color:var(--ink-soft);line-height:1.6;margin:0 0 22px;}
 .receipt-num{
-  display:inline-block;font-family:'Plex Mono';font-size:14px;background:var(--bg);border:1px solid var(--line);
-  border-radius:9px;padding:9px 16px;font-weight:600;letter-spacing:.02em;margin-bottom:24px;
+  display:inline-block;font-family:'Plex Mono';font-size:14px;background:var(--bg);border:1px solid var(--line);
+  border-radius:9px;padding:9px 16px;font-weight:600;letter-spacing:.02em;margin-bottom:24px;
 }
 
 .admin-login{max-width:360px;margin:60px auto;}
 .admin-search{width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:13.5px;margin-bottom:16px;font-family:'Pretendard';}
-
-/* ★ 추가된 PDF 인쇄용 최적화 스타일 ★ */
-@media print {
-  body { background: white; margin: 0; padding: 0; }
-  #app, .toast { display: none !important; }
-  #contractGeneratorWrapper { 
-    display: block !important; 
-    margin: 0 !important; 
-    padding: 0 !important; 
-    max-width: 100% !important; 
-  }
-  .contract-container {
-    box-shadow: none !important;
-    border: none !important;
-    padding: 0 !important;
-  }
-  .no-print { display: none !important; }
-  input { border: none !important; outline: none !important; background: transparent !important; }
-}
 </style>
 </head>
 <body>
-
-<!-- 기존 앱 렌더링 영역 -->
 <div id="app"></div>
-
-<!-- ★ 계약서 폼 렌더링 영역 (관리자 화면에서만 보임) ★ -->
-<div id="contractGeneratorWrapper" style="display:none; max-width:960px; margin: 0 auto 80px; padding: 0 20px;">
-  <div class="contract-container" style="background: var(--paper); padding: 30px; border-radius: var(--radius); box-shadow: var(--shadow); border: 1px solid var(--line);">
-    
-    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--ink); padding-bottom: 15px; margin-bottom: 20px;">
-      <div>
-        <h2 style="margin: 0; font-size: 22px; font-weight: 700; color: var(--ink);">임대서비스계약서 발급</h2>
-        <div class="no-print" style="font-size: 13px; color: var(--ink-soft); margin-top: 4px;">가맹점 서류 기반 확인 후 장비/위약금 커스텀 수정</div>
-      </div>
-      <button class="no-print" onclick="window.print()" style="background: var(--teal); color: white; border: none; padding: 10px 18px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 13.5px;">🖨️ PDF 저장 / 인쇄</button>
-    </div>
-
-    <!-- 계약 기본일자 및 조건 설정 -->
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px;">
-      <div>
-        <label style="display:block; font-size:12.5px; font-weight:600; margin-bottom:6px; color:var(--ink-soft);">설치일</label>
-        <input type="date" id="c_installDate" style="width:100%; padding:10px; border:1.5px solid var(--line); border-radius:8px; font-family:'Pretendard';">
-      </div>
-      <div>
-        <label style="display:block; font-size:12.5px; font-weight:600; margin-bottom:6px; color:var(--ink-soft);">만료일 (3년 자동)</label>
-        <input type="date" id="c_expireDate" style="width:100%; padding:10px; border:1.5px solid var(--line); border-radius:8px; font-family:'Pretendard';">
-      </div>
-    </div>
-
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 24px;">
-      <div>
-        <label style="display:block; font-size:12.5px; font-weight:600; margin-bottom:6px; color:var(--ink-soft);">월 임대료 (VAT 포함)</label>
-        <input type="text" id="c_monthlyFee" value="16,500원/월" style="width:100%; padding:10px; border:1.5px solid var(--line); border-radius:8px; font-family:'Pretendard';">
-      </div>
-      <div>
-        <label style="display:block; font-size:12.5px; font-weight:600; margin-bottom:6px; color:var(--ink-soft);">해지시 위약금 조건</label>
-        <input type="text" id="c_penaltyRule" value="30,000원 × 잔여 계약 개월 수" style="width:100%; padding:10px; border:1.5px solid var(--line); border-radius:8px; font-family:'Pretendard';">
-      </div>
-    </div>
-
-    <!-- 임대 장비 동적 편집 테이블 -->
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-      <div style="font-weight: 700; font-size: 15px;">📦 임대 장비 및 품목 구성</div>
-      <button class="no-print" onclick="ContractApp.addEquipmentRow()" style="background: var(--teal); color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 12px;">+ 장비 추가</button>
-    </div>
-
-    <div style="overflow-x: auto; margin-bottom: 10px;">
-      <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13.5px;">
-        <thead>
-          <tr style="background: #F8FAFC; border-bottom: 1.5px solid var(--line); color: var(--ink-soft);">
-            <th style="padding: 10px;">품목명</th>
-            <th style="padding: 10px; width: 70px; text-align: center;">수량</th>
-            <th style="padding: 10px; width: 130px; text-align: right;">단가 (원)</th>
-            <th style="padding: 10px; width: 130px; text-align: right;">금액 (원)</th>
-            <th class="no-print" style="padding: 10px; width: 50px; text-align: center;">삭제</th>
-          </tr>
-        </thead>
-        <tbody id="contractEquipmentRows">
-          <!-- 자바스크립트로 동적 렌더링 -->
-        </tbody>
-        <tfoot>
-          <tr style="background: #F8FAFC; font-weight: 700; border-top: 1.5px solid var(--line);">
-            <td colspan="3" style="padding: 14px; text-align: right;">총 공급가액 합계</td>
-            <td id="contractTotalSum" style="padding: 14px; text-align: right; color: var(--teal-deep); font-size: 14.5px;">0원</td>
-            <td class="no-print"></td>
-          </tr>
-        </tfoot>
-      </table>
-    </div>
-  </div>
-</div>
-
 <div class="toast" id="toast"></div>
 
 <script>
 const API_URL = "https://script.google.com/macros/s/AKfycbzS-v_pkDFfge_-ngUFXirsUEpNT3cva8oYBgOMRxeiyNq0MczGCNHBI1hLFnrtcTKM/exec";
 
 const BUSINESS_TYPES = [
-  { id: 'general', name: '일반 도소매/서비스업 (일반 사업자)' },
-  { id: 'food', name: '음식점 / 카페 / 유흥주점 (식품위생업)' },
-  { id: 'beauty', name: '미용실 / 피부샵 / 네일샵 (공중위생업)' },
-  { id: 'academy', name: '학원 / 교습소' }
+  { id: 'general', name: '일반 도소매/서비스업 (일반 사업자)' },
+  { id: 'food', name: '음식점 / 카페 / 유흥주점 (식품위생업)' },
+  { id: 'beauty', name: '미용실 / 피부샵 / 네일샵 (공중위생업)' },
+  { id: 'academy', name: '학원 / 교습소' }
 ];
 
 const COMMON_DOCS = [
-  { key:'bankbook', label:'통장사본', accept:'image/*,.pdf', hint:'입금 계좌 통장 첫 페이지', required:true },
-  { key:'bizLicense', label:'사업자등록증', accept:'image/*,.pdf', hint:'사업자등록증 사본', required:true },
-  { key:'interiorPhoto', label:'매장 내부 사진', accept:'image/*', hint:'매장 내부 전경', required:true },
-  { key:'insideOutsidePhoto', label:'내부에서 외부가 보이는 사진', accept:'image/*', hint:'출입구 방향으로 촬영', required:true }
+  { key:'bankbook', label:'통장사본', accept:'image/*,.pdf', hint:'입금 계좌 통장 첫 페이지', required:true },
+  { key:'bizLicense', label:'사업자등록증', accept:'image/*,.pdf', hint:'사업자등록증 사본', required:true },
+  { key:'interiorPhoto', label:'매장 내부 사진', accept:'image/*', hint:'매장 내부 전경', required:true },
+  { key:'insideOutsidePhoto', label:'내부에서 외부가 보이는 사진', accept:'image/*', hint:'출입구 방향으로 촬영', required:true }
 ];
 
 const EXTRA_DOCS = {
-  food: { key:'permitLicense', label:'영업신고증', accept:'image/*,.pdf', hint:'식품영업신고증 사본', required:true },
-  beauty: { key:'permitLicense', label:'공중위생 영업신고증', accept:'image/*,.pdf', hint:'영업신고증 사본', required:true },
-  academy: { key:'permitLicense', label:'학원(교습소) 설립운영 등록증', accept:'image/*,.pdf', hint:'등록증 사본', required:true }
+  food: { key:'permitLicense', label:'영업신고증', accept:'image/*,.pdf', hint:'식품영업신고증 사본', required:true },
+  beauty: { key:'permitLicense', label:'공중위생 영업신고증', accept:'image/*,.pdf', hint:'영업신고증 사본', required:true },
+  academy: { key:'permitLicense', label:'학원(교습소) 설립운영 등록증', accept:'image/*,.pdf', hint:'등록증 사본', required:true }
 };
 
 function getRequiredDocs(businessType, bizType, hasSign){
-  let docs = [...COMMON_DOCS];
-  
-  if(bizType === 'corporate') {
-    docs.unshift({ key:'corpReg', label:'법인등기부등본', accept:'image/*,.pdf', hint:'말일 포함 최근 등기부등본', required:true });
-    docs.unshift({ key:'corpSeal', label:'법인인감증명서', accept:'image/*,.pdf', hint:'최근 3개월 이내 발급분', required:true });
-    docs.push({ key:'shareholder', label:'주주명부', accept:'image/*,.pdf', hint:'최신 주주명부 사본', required:true });
-  } else {
-    docs.unshift({ key:'idCard', label:'대표자 신분증', accept:'image/*', hint:'주민등록증 또는 운전면허증 사진', required:true });
-  }
-  
-  if(EXTRA_DOCS[businessType]){
-    docs.splice(4, 0, EXTRA_DOCS[businessType]);
-  }
+  let docs = [...COMMON_DOCS];
+  
+  // 개인/법인에 따른 대표자 관련 서류 분기
+  if(bizType === 'corporate') {
+    docs.unshift({ key:'corpReg', label:'법인등기부등본', accept:'image/*,.pdf', hint:'말일 포함 최근 등기부등본', required:true });
+    docs.unshift({ key:'corpSeal', label:'법인인감증명서', accept:'image/*,.pdf', hint:'최근 3개월 이내 발급분', required:true });
+    docs.push({ key:'shareholder', label:'주주명부', accept:'image/*,.pdf', hint:'최신 주주명부 사본', required:true });
+  } else {
+    docs.unshift({ key:'idCard', label:'대표자 신분증', accept:'image/*', hint:'주민등록증 또는 운전면허증 사진', required:true });
+  }
+  
+  // 업종별 허가증 삽입
+  if(EXTRA_DOCS[businessType]){
+    docs.splice(4, 0, EXTRA_DOCS[businessType]);
+  }
 
-  if(hasSign === 'yes') {
-    docs.push({ key:'exteriorPhoto', label:'외부 사진 (간판 포함)', accept:'image/*', hint:'간판이 잘 보이도록 촬영', required:true });
-  } else {
-    docs.push({ key:'addressPlate', label:'도로명주소판 사진', accept:'image/*', hint:'건물에 부착된 도로명주소판 근접 촬영', required:true });
-    docs.push({ key:'addressBuildingPhoto', label:'도로명주소 포함 건물 사진', accept:'image/*', hint:'도로명주소와 건물이 함께 나오게 촬영', required:true });
-  }
+  // 간판 유무에 따라 서류 다르게 구성
+  if(hasSign === 'yes') {
+    docs.push({ key:'exteriorPhoto', label:'외부 사진 (간판 포함)', accept:'image/*', hint:'간판이 잘 보이도록 촬영', required:true });
+  } else {
+    docs.push({ key:'addressPlate', label:'도로명주소판 사진', accept:'image/*', hint:'건물에 부착된 도로명주소판 근접 촬영', required:true });
+    docs.push({ key:'addressBuildingPhoto', label:'도로명주소 포함 건물 사진', accept:'image/*', hint:'도로명주소와 건물이 함께 나오게 촬영', required:true });
+  }
 
-  return docs;
+  return docs;
 }
 
 let state = {
-  view: location.hash === '#admin' ? 'adminLogin' : 'form',
-  fields: { storeName:'', businessType:'general', bizType:'personal', storePhone:'', ownerPhone:'', email:'', hasSign:'yes' },
-  files: {},
-  receiptId: null,
-  adminUnlocked: false,
-  adminMerchants: [],
-  adminSearch: ''
+  view: location.hash === '#admin' ? 'adminLogin' : 'form',
+  fields: { storeName:'', businessType:'general', bizType:'personal', storePhone:'', ownerPhone:'', email:'', hasSign:'yes' },
+  files: {},
+  receiptId: null,
+  adminUnlocked: false,
+  adminMerchants: [],
+  adminSearch: ''
 };
 
 function syncFields(){
-  state.fields.storeName = document.getElementById('f_storeName')?.value || state.fields.storeName;
-  state.fields.businessType = document.getElementById('f_businessType')?.value || state.fields.businessType;
-  state.fields.storePhone = document.getElementById('f_storePhone')?.value || state.fields.storePhone;
-  state.fields.ownerPhone = document.getElementById('f_ownerPhone')?.value || state.fields.ownerPhone;
-  state.fields.email = document.getElementById('f_email')?.value || state.fields.email;
-  
-  const bizRadio = document.querySelector('input[name="f_bizType"]:checked');
-  if(bizRadio) state.fields.bizType = bizRadio.value;
+  state.fields.storeName = document.getElementById('f_storeName')?.value || state.fields.storeName;
+  state.fields.businessType = document.getElementById('f_businessType')?.value || state.fields.businessType;
+  state.fields.storePhone = document.getElementById('f_storePhone')?.value || state.fields.storePhone;
+  state.fields.ownerPhone = document.getElementById('f_ownerPhone')?.value || state.fields.ownerPhone;
+  state.fields.email = document.getElementById('f_email')?.value || state.fields.email;
+  
+  const bizRadio = document.querySelector('input[name="f_bizType"]:checked');
+  if(bizRadio) state.fields.bizType = bizRadio.value;
 
-  const signRadio = document.querySelector('input[name="f_hasSign"]:checked');
-  if(signRadio) state.fields.hasSign = signRadio.value;
+  const signRadio = document.querySelector('input[name="f_hasSign"]:checked');
+  if(signRadio) state.fields.hasSign = signRadio.value;
 }
 
 function toast(msg){
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  clearTimeout(window.__toastTimer);
-  window.__toastTimer = setTimeout(()=>t.classList.remove('show'), 2200);
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(window.__toastTimer);
+  window.__toastTimer = setTimeout(()=>t.classList.remove('show'), 2200);
 }
 
-// ★ 변경됨: 계약서 폼 노출 제어 로직 추가 ★
 function render(){
-  const app = document.getElementById('app');
-  const contractWrap = document.getElementById('contractGeneratorWrapper');
-
-  if(state.view === 'form') {
-    app.innerHTML = topbar() + renderForm();
-    if(contractWrap) contractWrap.style.display = 'none';
-  }
-  else if(state.view === 'success') {
-    app.innerHTML = topbar() + renderSuccess();
-    if(contractWrap) contractWrap.style.display = 'none';
-  }
-  else if(state.view === 'adminLogin') {
-    app.innerHTML = renderAdminLogin();
-    if(contractWrap) contractWrap.style.display = 'none';
-  }
-  else if(state.view === 'admin') {
-    app.innerHTML = renderAdmin();
-    if(contractWrap) {
-      contractWrap.style.display = 'block';
-      ContractApp.init(); // 관리자 화면 진입 시 장비 리스트 렌더링
-    }
-  }
+  const app = document.getElementById('app');
+  if(state.view === 'form') app.innerHTML = topbar() + renderForm();
+  else if(state.view === 'success') app.innerHTML = topbar() + renderSuccess();
+  else if(state.view === 'adminLogin') app.innerHTML = renderAdminLogin();
+  else if(state.view === 'admin') app.innerHTML = renderAdmin();
 }
 
 function topbar(){
-  return `
-  <div class="topbar">
-    <div class="brand">
-      <div class="brand-mark">P</div>
-      <div>
-        <div class="brand-text">가맹점 서류 접수</div>
-        <div class="brand-sub">정보 입력 및 서류 제출</div>
-      </div>
-    </div>
-    <div class="secret-zone" onclick="App.handleSecretClick()"></div>
-  </div>`;
+  return `
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-mark">P</div>
+      <div>
+        <div class="brand-text">가맹점 서류 접수</div>
+        <div class="brand-sub">정보 입력 및 서류 제출</div>
+      </div>
+    </div>
+    <div class="secret-zone" onclick="App.handleSecretClick()"></div>
+  </div>`;
 }
 
 function renderForm(){
-  const f = state.fields;
-  const currentDocs = getRequiredDocs(f.businessType, f.bizType, f.hasSign);
-  const requiredDocsCount = currentDocs.filter(d => d.required).length;
-  const filledRequiredCount = currentDocs.filter(d => d.required && state.files[d.key]).length;
+  const f = state.fields;
+  const currentDocs = getRequiredDocs(f.businessType, f.bizType, f.hasSign);
+  const requiredDocsCount = currentDocs.filter(d => d.required).length;
+  const filledRequiredCount = currentDocs.filter(d => d.required && state.files[d.key]).length;
 
-  return `
-  <div class="card">
-    <div class="section-title">가맹점 정보 및 서류 제출</div>
-    <div class="section-sub">사업자 형태, 업종 및 간판 유무에 따라 필요한 서류 항목이 자동으로 변경됩니다.</div>
+  return `
+  <div class="card">
+    <div class="section-title">가맹점 정보 및 서류 제출</div>
+    <div class="section-sub">사업자 형태, 업종 및 간판 유무에 따라 필요한 서류 항목이 자동으로 변경됩니다.</div>
 
-    <div class="field">
-      <label>사업자 구분 <span class="req">*</span></label>
-      <div class="radio-group">
-        <label class="radio-label"><input type="radio" name="f_bizType" value="personal" ${f.bizType==='personal'?'checked':''} onchange="App.changeFormState()"> 개인사업자</label>
-        <label class="radio-label"><input type="radio" name="f_bizType" value="corporate" ${f.bizType==='corporate'?'checked':''} onchange="App.changeFormState()"> 법인사업자</label>
-      </div>
-    </div>
+    <div class="field">
+      <label>사업자 구분 <span class="req">*</span></label>
+      <div class="radio-group">
+        <label class="radio-label"><input type="radio" name="f_bizType" value="personal" ${f.bizType==='personal'?'checked':''} onchange="App.changeFormState()"> 개인사업자</label>
+        <label class="radio-label"><input type="radio" name="f_bizType" value="corporate" ${f.bizType==='corporate'?'checked':''} onchange="App.changeFormState()"> 법인사업자</label>
+      </div>
+    </div>
 
-    <div class="field" style="margin-top:18px;">
-      <label>상호명(매장명) <span class="req">*</span></label>
-      <input type="text" id="f_storeName" placeholder="예: 카페 온기" value="${f.storeName}">
-    </div>
+    <div class="field" style="margin-top:18px;">
+      <label>상호명(매장명) <span class="req">*</span></label>
+      <input type="text" id="f_storeName" placeholder="예: 카페 온기" value="${f.storeName}">
+    </div>
 
-    <div class="field">
-      <label>업종 선택 <span class="req">*</span></label>
-      <select id="f_businessType" onchange="App.changeFormState()">
-        ${BUSINESS_TYPES.map(b => `<option value="${b.id}" ${f.businessType===b.id?'selected':''}>${b.name}</option>`).join('')}
-      </select>
-    </div>
+    <div class="field">
+      <label>업종 선택 <span class="req">*</span></label>
+      <select id="f_businessType" onchange="App.changeFormState()">
+        ${BUSINESS_TYPES.map(b => `<option value="${b.id}" ${f.businessType===b.id?'selected':''}>${b.name}</option>`).join('')}
+      </select>
+    </div>
 
-    <div class="field">
-      <label>간판 유무 선택 <span class="req">*</span></label>
-      <div class="radio-group">
-        <label class="radio-label"><input type="radio" name="f_hasSign" value="yes" ${f.hasSign==='yes'?'checked':''} onchange="App.changeFormState()"> 간판 있음</label>
-        <label class="radio-label"><input type="radio" name="f_hasSign" value="no" ${f.hasSign==='no'?'checked':''} onchange="App.changeFormState()"> 간판 없음</label>
-      </div>
-    </div>
+    <div class="field">
+      <label>간판 유무 선택 <span class="req">*</span></label>
+      <div class="radio-group">
+        <label class="radio-label"><input type="radio" name="f_hasSign" value="yes" ${f.hasSign==='yes'?'checked':''} onchange="App.changeFormState()"> 간판 있음</label>
+        <label class="radio-label"><input type="radio" name="f_hasSign" value="no" ${f.hasSign==='no'?'checked':''} onchange="App.changeFormState()"> 간판 없음</label>
+      </div>
+    </div>
 
-    <div class="grid2" style="margin-top:18px;">
-      <div class="field">
-        <label>매장전화번호 <span class="req">*</span></label>
-        <input type="tel" id="f_storePhone" placeholder="02-1234-5678" value="${f.storePhone}">
-      </div>
-      <div class="field">
-        <label>대표명의 폰번호 <span class="req">*</span></label>
-        <input type="tel" id="f_ownerPhone" placeholder="010-1234-5678" value="${f.ownerPhone}">
-      </div>
-    </div>
-    <div class="field">
-      <label>메일주소 <span class="req">*</span></label>
-      <input type="email" id="f_email" placeholder="example@email.com" value="${f.email}">
-    </div>
+    <div class="grid2" style="margin-top:18px;">
+      <div class="field">
+        <label>매장전화번호 <span class="req">*</span></label>
+        <input type="tel" id="f_storePhone" placeholder="02-1234-5678" value="${f.storePhone}">
+      </div>
+      <div class="field">
+        <label>대표명의 폰번호 <span class="req">*</span></label>
+        <input type="tel" id="f_ownerPhone" placeholder="010-1234-5678" value="${f.ownerPhone}">
+      </div>
+    </div>
+    <div class="field">
+      <label>메일주소 <span class="req">*</span></label>
+      <input type="email" id="f_email" placeholder="example@email.com" value="${f.email}">
+    </div>
 
-    <div class="opt-group-label" style="margin-top:26px;">필수 서류 (${filledRequiredCount}/${requiredDocsCount}) <span class="req">*</span></div>
-    <div class="doc-grid">
-      ${currentDocs.map(d => renderDropzone(d)).join('')}
-    </div>
+    <div class="opt-group-label" style="margin-top:26px;">필수 서류 (${filledRequiredCount}/${requiredDocsCount}) <span class="req">*</span></div>
+    <div class="doc-grid">
+      ${currentDocs.map(d => renderDropzone(d)).join('')}
+    </div>
 
-    <div class="btn-row">
-      <button class="btn btn-primary" onclick="App.submit()">접수 제출하기</button>
-    </div>
-  </div>`;
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="App.submit()">접수 제출하기</button>
+    </div>
+  </div>`;
 }
 
 function renderDropzone(d){
-  const f = state.files[d.key];
-  const labelBadge = d.required ? `<span class="req">*</span>` : `<span class="optional">(선택)</span>`;
-  return `
-  <div class="dropzone ${f?'filled':''}" onclick="document.getElementById('file_${d.key}').click()">
-    <input type="file" id="file_${d.key}" accept="${d.accept}" style="display:none" onchange="App.handleFile('${d.key}', this.files[0])">
-    <div class="dz-head">
-      <div class="dz-title">${d.label} ${labelBadge}</div>
-      <div class="dz-status ${f?'ok':''}">${f?'첨부완료':'미첨부'}</div>
-    </div>
-    ${f ? `
-      <div class="dz-preview">
-        ${f.isImage ? `<img class="dz-thumb" src="${f.dataUrl}">` : `<div class="dz-thumb" style="display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--ink-soft);">FILE</div>`}
-        <div class="dz-filename">${f.name}</div>
-        <button class="dz-remove" onclick="event.stopPropagation();App.removeFile('${d.key}')">삭제</button>
-      </div>
-    ` : `<div class="dz-placeholder">${d.hint}</div>`}
-  </div>`;
+  const f = state.files[d.key];
+  const labelBadge = d.required ? `<span class="req">*</span>` : `<span class="optional">(선택)</span>`;
+  return `
+  <div class="dropzone ${f?'filled':''}" onclick="document.getElementById('file_${d.key}').click()">
+    <input type="file" id="file_${d.key}" accept="${d.accept}" style="display:none" onchange="App.handleFile('${d.key}', this.files[0])">
+    <div class="dz-head">
+      <div class="dz-title">${d.label} ${labelBadge}</div>
+      <div class="dz-status ${f?'ok':''}">${f?'첨부완료':'미첨부'}</div>
+    </div>
+    ${f ? `
+      <div class="dz-preview">
+        ${f.isImage ? `<img class="dz-thumb" src="${f.dataUrl}">` : `<div class="dz-thumb" style="display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--ink-soft);">FILE</div>`}
+        <div class="dz-filename">${f.name}</div>
+        <button class="dz-remove" onclick="event.stopPropagation();App.removeFile('${d.key}')">삭제</button>
+      </div>
+    ` : `<div class="dz-placeholder">${d.hint}</div>`}
+  </div>`;
 }
 
 function renderSuccess(){
-  return `
-  <div class="success-wrap">
-    <div class="success-badge">✓</div>
-    <h2>접수가 완료되었습니다</h2>
-    <p>${state.fields.storeName} 가맹점 정보와 서류가 안전하게 접수되었습니다.<br>확인 후 빠르게 연락드리겠습니다.</p>
-    <div class="receipt-num">접수번호 ${state.receiptId}</div>
-    <div>
-      <button class="btn btn-primary" onclick="App.resetAll()" style="width:auto;padding:12px 24px;">새로운 접수하기</button>
-    </div>
-  </div>`;
+  return `
+  <div class="success-wrap">
+    <div class="success-badge">✓</div>
+    <h2>접수가 완료되었습니다</h2>
+    <p>${state.fields.storeName} 가맹점 정보와 서류가 안전하게 접수되었습니다.<br>확인 후 빠르게 연락드리겠습니다.</p>
+    <div class="receipt-num">접수번호 ${state.receiptId}</div>
+    <div>
+      <button class="btn btn-primary" onclick="App.resetAll()" style="width:auto;padding:12px 24px;">새로운 접수하기</button>
+    </div>
+  </div>`;
 }
 
 function renderAdminLogin(){
-  return `
-  <div class="admin-login card">
-    <div class="section-title">관리자 확인</div>
-    <div class="section-sub">접수된 가맹점 목록을 확인하려면 접근 코드를 입력하세요.</div>
-    <div class="field">
-      <input type="password" id="admin_pass" placeholder="접근 코드" style="width:100%;padding:12px;border:1.5px solid var(--line);border-radius:10px;font-size:14.5px;">
-    </div>
-    <button class="btn btn-primary" onclick="App.tryAdminLogin()">확인</button>
-    <div style="text-align:center;margin-top:14px;">
-      <span style="font-size:12.5px;color:var(--ink-soft);cursor:pointer;" onclick="App.goForm()">← 접수 화면으로 돌아가기</span>
-    </div>
-  </div>`;
+  return `
+  <div class="admin-login card">
+    <div class="section-title">관리자 확인</div>
+    <div class="section-sub">접수된 가맹점 목록을 확인하려면 접근 코드를 입력하세요.</div>
+    <div class="field">
+      <input type="password" id="admin_pass" placeholder="접근 코드" style="width:100%;padding:12px;border:1.5px solid var(--line);border-radius:10px;font-size:14.5px;">
+    </div>
+    <button class="btn btn-primary" onclick="App.tryAdminLogin()">확인</button>
+    <div style="text-align:center;margin-top:14px;">
+      <span style="font-size:12.5px;color:var(--ink-soft);cursor:pointer;" onclick="App.goForm()">← 접수 화면으로 돌아가기</span>
+    </div>
+  </div>`;
 }
 
 function renderAdmin(){
-  const list = (state.adminMerchants || []).filter(m => {
-    if(!state.adminSearch) return true;
-    const q = state.adminSearch.toLowerCase();
-    return (m.storeName||'').toLowerCase().includes(q) || (m.storePhone||'').includes(q);
-  });
+  const list = (state.adminMerchants || []).filter(m => {
+    if(!state.adminSearch) return true;
+    const q = state.adminSearch.toLowerCase();
+    return (m.storeName||'').toLowerCase().includes(q) || (m.storePhone||'').includes(q);
+  });
 
-  return `
-  <div class="topbar">
-    <div class="brand">
-      <div class="brand-mark">P</div>
-      <div>
-        <div class="brand-text">가맹점 접수 현황 (보안 관리)</div>
-        <div class="brand-sub">서류 처리 완료 시 체크하면 데이터가 자동 삭제됩니다.</div>
-      </div>
-    </div>
-    <div style="display:flex; gap:8px;">
-      <div class="admin-link" onclick="App.loadGoogleData()" style="background:var(--teal); color:white; border:none; padding:7px 12px; border-radius:100px; cursor:pointer; font-size:12.5px;">새로고침</div>
-      <div class="admin-link" onclick="App.goForm()" style="border:1px solid var(--line); padding:7px 12px; border-radius:100px; background:var(--paper); cursor:pointer; font-size:12.5px;">접수 화면 보기</div>
-    </div>
-  </div>
+  return `
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-mark">P</div>
+      <div>
+        <div class="brand-text">가맹점 접수 현황 (보안 관리)</div>
+        <div class="brand-sub">서류 처리 완료 시 체크하면 데이터가 자동 삭제됩니다.</div>
+      </div>
+    </div>
+    <div style="display:flex; gap:8px;">
+      <div class="admin-link" onclick="App.loadGoogleData()" style="background:var(--teal); color:white; border:none; padding:7px 12px; border-radius:100px; cursor:pointer; font-size:12.5px;">새로고침</div>
+      <div class="admin-link" onclick="App.goForm()" style="border:1px solid var(--line); padding:7px 12px; border-radius:100px; background:var(--paper); cursor:pointer; font-size:12.5px;">접수 화면 보기</div>
+    </div>
+  </div>
 
-  <input class="admin-search" placeholder="상호명 또는 전화번호로 검색" value="${state.adminSearch}" oninput="App.setAdminSearch(this.value)">
+  <input class="admin-search" placeholder="상호명 또는 전화번호로 검색" value="${state.adminSearch}" oninput="App.setAdminSearch(this.value)">
 
-  <div class="card" style="padding: 0; overflow: hidden;">
-    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13.5px;">
-      <thead>
-        <tr style="background: #F8FAFC; border-bottom: 1.5px solid var(--line); color: var(--ink-soft);">
-          <th style="padding: 14px 16px;">상호명</th>
-          <th style="padding: 14px 16px;">구분</th>
-          <th style="padding: 14px 16px;">매장 전화</th>
-          <th style="padding: 14px 16px;">대표 폰번호</th>
-          <th style="padding: 14px 16px;">이메일</th>
-          <th style="padding: 14px 16px;">접수일시</th>
-          <th style="padding: 14px 16px;">서류 폴더</th>
-          <th style="padding: 14px 16px; text-align:center;">처리 완료 / 삭제</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${list.length === 0 ? `
-          <tr><td colspan="8" style="text-align:center; padding: 40px; color: var(--ink-soft);">접수된 내역이 없습니다.</td></tr>
-        ` : list.map(m => {
-          let formattedDate = m.createdAt;
-          try { formattedDate = new Date(m.createdAt).toLocaleString('ko-KR'); } catch(e){}
-          
-          let folderBtnHtml = '폴더 없음';
-          if (m.files && m.files.startsWith('http')) {
-            folderBtnHtml = `<a href="${m.files}" target="_blank" style="background: var(--teal); color: white; padding: 5px 10px; border-radius: 6px; font-weight: 600; text-decoration: none; font-size: 11.5px; display: inline-block;">🔍 폴더 열기</a>`;
-          }
+  <div class="card" style="padding: 0; overflow: hidden;">
+    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13.5px;">
+      <thead>
+        <tr style="background: #F8FAFC; border-bottom: 1.5px solid var(--line); color: var(--ink-soft);">
+          <th style="padding: 14px 16px;">상호명</th>
+          <th style="padding: 14px 16px;">구분</th>
+          <th style="padding: 14px 16px;">매장 전화</th>
+          <th style="padding: 14px 16px;">대표 폰번호</th>
+          <th style="padding: 14px 16px;">이메일</th>
+          <th style="padding: 14px 16px;">접수일시</th>
+          <th style="padding: 14px 16px;">서류 폴더</th>
+          <th style="padding: 14px 16px; text-align:center;">처리 완료 / 삭제</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${list.length === 0 ? `
+          <tr><td colspan="8" style="text-align:center; padding: 40px; color: var(--ink-soft);">접수된 내역이 없습니다.</td></tr>
+        ` : list.map(m => {
+          let formattedDate = m.createdAt;
+          try { formattedDate = new Date(m.createdAt).toLocaleString('ko-KR'); } catch(e){}
+          
+          let folderBtnHtml = '폴더 없음';
+          if (m.files && m.files.startsWith('http')) {
+            folderBtnHtml = `<a href="${m.files}" target="_blank" style="background: var(--teal); color: white; padding: 5px 10px; border-radius: 6px; font-weight: 600; text-decoration: none; font-size: 11.5px; display: inline-block;">🔍 폴더 열기</a>`;
+          }
 
-          let bizTypeText = m.bizType === 'corporate' ? '법인' : '개인';
+          let bizTypeText = m.bizType === 'corporate' ? '법인' : '개인';
 
-          return `
-            <tr style="border-bottom: 1px solid var(--line); transition: .1s;">
-              <td style="padding: 14px 16px; font-weight: 700;">${m.storeName || ''}</td>
-              <td style="padding: 14px 16px;"><span style="background:${m.bizType==='corporate'?'#E8F4FD':'#EAF6EF'}; color:${m.bizType==='corporate'?'#0066CC':'#2F8F5B'}; padding:3px 8px; border-radius:4px; font-size:11.5px; font-weight:600;">${bizTypeText}</span></td>
-              <td style="padding: 14px 16px;">${m.storePhone || ''}</td>
-              <td style="padding: 14px 16px;">${m.ownerPhone || ''}</td>
-              <td style="padding: 14px 16px; color: var(--ink-soft);">${m.email || ''}</td>
-              <td style="padding: 14px 16px; font-size: 12.5px; color: var(--ink-soft);">${formattedDate}</td>
-              <td style="padding: 14px 16px;">${folderBtnHtml}</td>
-              <td style="padding: 14px 16px; text-align:center;">
-                <button onclick="App.completeAndDelete('${m.id}', '${m.storeName}')" style="background: var(--red); color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 11.5px;">처리완료/삭제</button>
-              </td>
-            </tr>
-          `;
-        }).join('')}
-      </tbody>
-    </table>
-  </div>`;
+          return `
+            <tr style="border-bottom: 1px solid var(--line); transition: .1s;">
+              <td style="padding: 14px 16px; font-weight: 700;">${m.storeName || ''}</td>
+              <td style="padding: 14px 16px;"><span style="background:${m.bizType==='corporate'?'#E8F4FD':'#EAF6EF'}; color:${m.bizType==='corporate'?'#0066CC':'#2F8F5B'}; padding:3px 8px; border-radius:4px; font-size:11.5px; font-weight:600;">${bizTypeText}</span></td>
+              <td style="padding: 14px 16px;">${m.storePhone || ''}</td>
+              <td style="padding: 14px 16px;">${m.ownerPhone || ''}</td>
+              <td style="padding: 14px 16px; color: var(--ink-soft);">${m.email || ''}</td>
+              <td style="padding: 14px 16px; font-size: 12.5px; color: var(--ink-soft);">${formattedDate}</td>
+              <td style="padding: 14px 16px;">${folderBtnHtml}</td>
+              <td style="padding: 14px 16px; text-align:center;">
+                <button onclick="App.completeAndDelete('${m.id}', '${m.storeName}')" style="background: var(--red); color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 11.5px;">처리완료/삭제</button>
+              </td>
+            </tr>
+          `;
+        }).join('')}
+      </tbody>
+    </table>
+  </div>`;
 }
 
 function compressImage(file, maxDim=1600, quality=0.85){
-  return new Promise((resolve, reject)=>{
-    const reader = new FileReader();
-    reader.onload = e => {
-      const img = new Image();
-      img.onload = () => {
-        let { width, height } = img;
-        if(width > maxDim || height > maxDim){
-          if(width > height){ height = Math.round(height * maxDim/width); width = maxDim; }
-          else { width = Math.round(width * maxDim/height); height = maxDim; }
-        }
-        const canvas = document.createElement('canvas');
-        canvas.width = width; canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, width, height);
-        resolve(canvas.toDataURL('image/jpeg', quality));
-      };
-      img.onerror = reject;
-      img.src = e.target.result;
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
+  return new Promise((resolve, reject)=>{
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        let { width, height } = img;
+        if(width > maxDim || height > maxDim){
+          if(width > height){ height = Math.round(height * maxDim/width); width = maxDim; }
+          else { width = Math.round(width * maxDim/height); height = maxDim; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width; canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 }
 
 function readAsDataURL(file){
-  return new Promise((resolve, reject)=>{
-    const reader = new FileReader();
-    reader.onload = e => resolve(e.target.result);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
+  return new Promise((resolve, reject)=>{
+    const reader = new FileReader();
+    reader.onload = e => resolve(e.target.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 }
 
 const App = {
-  secretClickTimer: null,
-  secretClicks: 0,
-  
-  handleSecretClick(){
-    this.secretClicks++;
-    if(this.secretClicks >= 2){
-      this.goAdmin();
-      this.secretClicks = 0;
-      clearTimeout(this.secretClickTimer);
-    } else {
-      this.secretClickTimer = setTimeout(() => { this.secretClicks = 0; }, 500);
-    }
-  },
+  secretClickTimer: null,
+  secretClicks: 0,
+  
+  handleSecretClick(){
+    this.secretClicks++;
+    if(this.secretClicks >= 2){
+      this.goAdmin();
+      this.secretClicks = 0;
+      clearTimeout(this.secretClickTimer);
+    } else {
+      this.secretClickTimer = setTimeout(() => { this.secretClicks = 0; }, 500);
+    }
+  },
 
-  changeFormState(){
-    syncFields();
-    render();
-  },
+  changeFormState(){
+    syncFields();
+    render();
+  },
 
-  async handleFile(key, file){
-    if(!file) return;
-    syncFields();
-    const currentDocs = getRequiredDocs(state.fields.businessType, state.fields.bizType, state.fields.hasSign);
-    const docDef = currentDocs.find(d=>d.key===key);
-    if(file.size > 15*1024*1024){ toast('파일 용량이 너무 큽니다 (15MB 이하)'); return; }
-    toast('파일 처리 중...');
-    try{
-      const isImage = file.type.startsWith('image/');
-      let dataUrl;
-      if(isImage) dataUrl = await compressImage(file);
-      else dataUrl = await readAsDataURL(file);
-      state.files[key] = { name:file.name, dataUrl, isImage };
-      render();
-      toast(docDef.label + ' 첨부 완료');
-    }catch(e){
-      toast('파일 처리 중 오류가 발생했습니다');
-    }
-  },
-  
-  removeFile(key){
-    syncFields();
-    delete state.files[key];
-    render();
-  },
+  async handleFile(key, file){
+    if(!file) return;
+    syncFields();
+    const currentDocs = getRequiredDocs(state.fields.businessType, state.fields.bizType, state.fields.hasSign);
+    const docDef = currentDocs.find(d=>d.key===key);
+    if(file.size > 15*1024*1024){ toast('파일 용량이 너무 큽니다 (15MB 이하)'); return; }
+    toast('파일 처리 중...');
+    try{
+      const isImage = file.type.startsWith('image/');
+      let dataUrl;
+      if(isImage) dataUrl = await compressImage(file);
+      else dataUrl = await readAsDataURL(file);
+      state.files[key] = { name:file.name, dataUrl, isImage };
+      render();
+      toast(docDef.label + ' 첨부 완료');
+    }catch(e){
+      toast('파일 처리 중 오류가 발생했습니다');
+    }
+  },
+  
+  removeFile(key){
+    syncFields();
+    delete state.files[key];
+    render();
+  },
 
-  async loadGoogleData() {
-    toast('구글 시트에서 최신 데이터를 불러오는 중...');
-    try {
-      const response = await fetch(API_URL);
-      const result = await response.json();
-      if(result.status === 'success') {
-        state.adminMerchants = result.data || [];
-        render();
-        toast('최신 데이터 동기화 완료!');
-      } else {
-        toast('데이터 불러오기 실패');
-      }
-    } catch(e) {
-      toast('서버 통신 오류');
-    }
-  },
+  async loadGoogleData() {
+    toast('구글 시트에서 최신 데이터를 불러오는 중...');
+    try {
+      const response = await fetch(API_URL);
+      const result = await response.json();
+      if(result.status === 'success') {
+        state.adminMerchants = result.data || [];
+        render();
+        toast('최신 데이터 동기화 완료!');
+      } else {
+        toast('데이터 불러오기 실패');
+      }
+    } catch(e) {
+      toast('서버 통신 오류');
+    }
+  },
 
-  async completeAndDelete(id, storeName) {
-    if(!confirm(`[${storeName}] 가맹점 서류 확인 및 접수 처리를 완료하셨습니까?\n확인을 누르면 시트 내역과 드라이브의 모든 사진 파일이 개인정보 보호를 위해 영구 삭제됩니다.`)) {
-      return;
-    }
+  async completeAndDelete(id, storeName) {
+    if(!confirm(`[${storeName}] 가맹점 서류 확인 및 접수 처리를 완료하셨습니까?\n확인을 누르면 시트 내역과 드라이브의 모든 사진 파일이 개인정보 보호를 위해 영구 삭제됩니다.`)) {
+      return;
+    }
 
-    toast('처리 완료 및 데이터 삭제 중...');
-    try {
-      const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action: 'deleteMerchant', id: id })
-      });
-      const result = await response.json();
+    toast('처리 완료 및 데이터 삭제 중...');
+    try {
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'deleteMerchant', id: id })
+      });
+      const result = await response.json();
 
-      if(result.status === 'success') {
-        toast('처리가 완료되어 해당 정보와 파일이 안전하게 삭제되었습니다.');
-        App.loadGoogleData();
-      } else {
-        toast('삭제 처리에 실패했습니다.');
-      }
-    } catch(e) {
-      toast('서버 통신 오류가 발생했습니다.');
-    }
-  },
+      if(result.status === 'success') {
+        toast('처리가 완료되어 해당 정보와 파일이 안전하게 삭제되었습니다.');
+        App.loadGoogleData();
+      } else {
+        toast('삭제 처리에 실패했습니다.');
+      }
+    } catch(e) {
+      toast('서버 통신 오류가 발생했습니다.');
+    }
+  },
 
-  async submit(){
-    syncFields();
-    const f = state.fields;
-    if(!f.storeName || !f.storePhone || !f.ownerPhone || !f.email){
-      toast('필수 정보를 모두 입력해 주세요'); return;
-    }
-    const currentDocs = getRequiredDocs(f.businessType, f.bizType, f.hasSign);
-    const missing = currentDocs.filter(d => d.required && !state.files[d.key]);
-    if(missing.length > 0){
-      toast(missing[0].label + ' 등 필수 서류를 첨부해 주세요'); return;
-    }
-    const submitBtn = document.querySelector('.btn-primary');
-    if(submitBtn){ submitBtn.disabled = true; submitBtn.textContent = '제출 중...'; }
+  async submit(){
+    syncFields();
+    const f = state.fields;
+    if(!f.storeName || !f.storePhone || !f.ownerPhone || !f.email){
+      toast('필수 정보를 모두 입력해 주세요'); return;
+    }
+    const currentDocs = getRequiredDocs(f.businessType, f.bizType, f.hasSign);
+    const missing = currentDocs.filter(d => d.required && !state.files[d.key]);
+    if(missing.length > 0){
+      toast(missing[0].label + ' 등 필수 서류를 첨부해 주세요'); return;
+    }
+    const submitBtn = document.querySelector('.btn-primary');
+    if(submitBtn){ submitBtn.disabled = true; submitBtn.textContent = '제출 중...'; }
 
-    const id = 'F' + new Date().toISOString().replace(/[-:.TZ]/g,'').slice(0,14) + '-' + Math.floor(Math.random()*900+100);
-    const createdAt = new Date().toISOString();
+    const id = 'F' + new Date().toISOString().replace(/[-:.TZ]/g,'').slice(0,14) + '-' + Math.floor(Math.random()*900+100);
+    const createdAt = new Date().toISOString();
 
-    try {
-      const payload = {
-        id: id,
-        createdAt: createdAt,
-        storeName: f.storeName,
-        storePhone: f.storePhone,
-        ownerPhone: f.ownerPhone,
-        email: f.email,
-        bizType: f.bizType === 'corporate' ? '법인' : '개인', // 서버로 법인/개인 전달
-        filesData: state.files
-      };
+    try {
+      const payload = {
+        id: id,
+        createdAt: createdAt,
+        storeName: f.storeName,
+        storePhone: f.storePhone,
+        ownerPhone: f.ownerPhone,
+        email: f.email,
+        bizType: f.bizType === 'corporate' ? '법인' : '개인', // 서버로 법인/개인 전달
+        filesData: state.files
+      };
 
-      await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify(payload)
-      });
+      await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload)
+      });
 
-      state.receiptId = id;
-      state.files = {};
-      state.fields = { storeName:'', businessType:'general', bizType:'personal', storePhone:'', ownerPhone:'', email:'', hasSign:'yes' };
-      state.view = 'success';
-      render();
-    } catch(e) {
-      toast('저장 중 오류가 발생했습니다. 다시 시도해 주세요.');
-      if(submitBtn){ submitBtn.disabled = false; submitBtn.textContent = '접수 제출하기'; }
-    }
-  },
+      state.receiptId = id;
+      state.files = {};
+      state.fields = { storeName:'', businessType:'general', bizType:'personal', storePhone:'', ownerPhone:'', email:'', hasSign:'yes' };
+      state.view = 'success';
+      render();
+    } catch(e) {
+      toast('저장 중 오류가 발생했습니다. 다시 시도해 주세요.');
+      if(submitBtn){ submitBtn.disabled = false; submitBtn.textContent = '접수 제출하기'; }
+    }
+  },
 
-  resetAll(){
-    state = { view:'form', fields:{storeName:'',businessType:'general',bizType:'personal',storePhone:'',ownerPhone:'',email:'',hasSign:'yes'}, files:{}, receiptId:null, adminUnlocked:false, adminMerchants:[], adminSearch:'' };
-    location.hash='';
-    render();
-  },
+  resetAll(){
+    state = { view:'form', fields:{storeName:'',businessType:'general',bizType:'personal',storePhone:'',ownerPhone:'',email:'',hasSign:'yes'}, files:{}, receiptId:null, adminUnlocked:false, adminMerchants:[], adminSearch:'' };
+    location.hash='';
+    render();
+  },
 
-  goForm(){ location.hash=''; state.view='form'; render(); },
-  goAdmin(){ location.hash='admin'; state.view='adminLogin'; render(); },
+  goForm(){ location.hash=''; state.view='form'; render(); },
+  goAdmin(){ location.hash='admin'; state.view='adminLogin'; render(); },
 
-  async tryAdminLogin(){
-    const val = document.getElementById('admin_pass').value;
-    if(val === 'pos1212!@'){ // 기존 설정하신 임시 비밀번호
-      state.adminUnlocked = true;
-      App.loadGoogleData();
-      state.view = 'admin';
-      render();
-    } else {
-      toast('접근 코드가 올바르지 않습니다');
-    }
-  },
+  async tryAdminLogin(){
+    const val = document.getElementById('admin_pass').value;
+    if(val === 'pos1212!@'){
+      state.adminUnlocked = true;
+      App.loadGoogleData();
+      state.view = 'admin';
+      render();
+    } else {
+      toast('접근 코드가 올바르지 않습니다');
+    }
+  },
 
-  setAdminSearch(v){ state.adminSearch = v; render(); }
+  setAdminSearch(v){ state.adminSearch = v; render(); }
 };
 window.App = App;
 
-
-// ★ 계약서 전용 자바스크립트 모듈 ★
-let contractEquipmentList = [
-  { name: '메인포스 (토스프론트 포함)', qty: 1, price: 1250000 },
-  { name: '주방프린터', qty: 1, price: 250000 }
-];
-
-const ContractApp = {
-  init() {
-    this.setDefaultDates();
-    this.renderRows();
-  },
-  setDefaultDates() {
-    // 설치일: 오늘 날짜
-    const today = new Date();
-    const instEl = document.getElementById('c_installDate');
-    const expEl = document.getElementById('c_expireDate');
-    if(instEl) instEl.value = today.toISOString().substring(0, 10);
-    
-    // 만료일: 3년 뒤
-    today.setFullYear(today.getFullYear() + 3);
-    if(expEl) expEl.value = today.toISOString().substring(0, 10);
-  },
-  renderRows() {
-    const tbody = document.getElementById('contractEquipmentRows');
-    if(!tbody) return;
-    tbody.innerHTML = contractEquipmentList.map((item, idx) => `
-      <tr style="border-bottom: 1px solid var(--line);">
-        <td style="padding: 8px;"><input type="text" value="${item.name}" oninput="contractEquipmentList[${idx}].name = this.value" style="width:100%; padding:7px; border:1px solid var(--line); border-radius:6px; font-size:13px; font-family:'Pretendard';"></td>
-        <td style="padding: 8px; text-align: center;"><input type="number" value="${item.qty}" min="0" oninput="contractEquipmentList[${idx}].qty = Number(this.value); ContractApp.calculate();" style="width:50px; padding:7px; text-align:center; border:1px solid var(--line); border-radius:6px; font-size:13px; font-family:'Pretendard';"></td>
-        <td style="padding: 8px; text-align: right;"><input type="text" value="${item.price.toLocaleString()}" oninput="ContractApp.handlePrice(${idx}, this)" style="width:100%; padding:7px; text-align:right; border:1px solid var(--line); border-radius:6px; font-size:13px; font-family:'Pretendard';"></td>
-        <td style="padding: 8px; text-align: right; font-weight: 600;" id="c_row_total_${idx}">${(item.qty * item.price).toLocaleString()}원</td>
-        <td class="no-print" style="padding: 8px; text-align: center;"><button onclick="ContractApp.removeRow(${idx})" style="background:var(--red-bg); color:var(--red); border:none; padding:5px 8px; border-radius:4px; cursor:pointer; font-size:11px; font-weight:600;">삭제</button></td>
-      </tr>
-    `).join('');
-    this.calculate();
-  },
-  handlePrice(idx, el) {
-    let val = el.value.replace(/[^0-9]/g, '');
-    contractEquipmentList[idx].price = Number(val) || 0;
-    el.value = Number(val).toLocaleString();
-    this.calculate();
-  },
-  addEquipmentRow() {
-    contractEquipmentList.push({ name: '', qty: 1, price: 0 });
-    this.renderRows();
-  },
-  removeRow(idx) {
-    contractEquipmentList.splice(idx, 1);
-    this.renderRows();
-  },
-  calculate() {
-    let sum = 0;
-    contractEquipmentList.forEach((item, idx) => {
-      let sub = item.qty * item.price;
-      sum += sub;
-      const el = document.getElementById(`c_row_total_${idx}`);
-      if(el) el.textContent = sub.toLocaleString() + '원';
-    });
-    const totalEl = document.getElementById('contractTotalSum');
-    if(totalEl) totalEl.textContent = sum.toLocaleString() + '원';
-  }
-};
-window.ContractApp = ContractApp;
-
-// 최초 렌더링 실행
 render();
 </script>
 </body>
 </html>
+ 여기에 그냥 넣어줘
