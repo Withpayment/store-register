@@ -3,76 +3,81 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>가맹점 서류 접수 및 계약서 자동화 (2026 정책 반영)</title>
+<title>가맹점 서류 접수</title>
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
 <style>
 @font-face{
-  font-family:'Pretendard';
-  src:url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/woff2/Pretendard-Regular.woff2') format('woff2');
-  font-weight:400; font-display:swap;
+  font-family:'Pretendard';
+  src:url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/woff2/Pretendard-Regular.woff2') format('woff2');
+  font-weight:400; font-display:swap;
 }
 @font-face{
-  font-family:'Pretendard';
-  src:url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/woff2/Pretendard-Bold.woff2') format('woff2');
-  font-weight:700; font-display:swap;
+  font-family:'Pretendard';
+  src:url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/woff2/Pretendard-Bold.woff2') format('woff2');
+  font-weight:700; font-display:swap;
 }
 @font-face{
-  font-family:'Plex Mono';
-  src:url('https://cdn.jsdelivr.net/npm/@fontsource/ibm-plex-mono@5.0.13/files/ibm-plex-mono-latin-500-normal.woff2') format('woff2');
-  font-weight:500; font-display:swap;
+  font-family:'Plex Mono';
+  src:url('https://cdn.jsdelivr.net/npm/@fontsource/ibm-plex-mono@5.0.13/files/ibm-plex-mono-latin-500-normal.woff2') format('woff2');
+  font-weight:500; font-display:swap;
 }
 
 :root{
-  --bg:#F1F3F6;
-  --paper:#FFFFFF;
-  --ink:#10233D;
-  --ink-soft:#5B6B7A;
-  --line:#E1E5EA;
-  --line-strong:#C7CFD8;
-  --teal:#12A398;
-  --teal-deep:#0B7A72;
-  --forest:#2F8F5B;
-  --forest-bg:#EAF6EF;
-  --red:#E24C4C;
-  --red-bg:#FDEDED;
-  --radius:14px;
-  --shadow:0 1px 2px rgba(16,35,61,0.04), 0 8px 24px rgba(16,35,61,0.06);
+  --bg:#F1F3F6;
+  --paper:#FFFFFF;
+  --ink:#10233D;
+  --ink-soft:#5B6B7A;
+  --line:#E1E5EA;
+  --line-strong:#C7CFD8;
+  --teal:#12A398;
+  --teal-deep:#0B7A72;
+  --forest:#2F8F5B;
+  --forest-bg:#EAF6EF;
+  --red:#E24C4C;
+  --red-bg:#FDEDED;
+  --radius:14px;
+  --shadow:0 1px 2px rgba(16,35,61,0.04), 0 8px 24px rgba(16,35,61,0.06);
 }
 *{box-sizing:border-box;}
 html,body{margin:0;padding:0;}
 body{
-  background:var(--bg);
-  color:var(--ink);
-  font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif;
-  min-height:100vh;
-  -webkit-font-smoothing:antialiased;
+  background:var(--bg);
+  color:var(--ink);
+  font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif;
+  min-height:100vh;
+  -webkit-font-smoothing:antialiased;
 }
 .mono{font-family:'Plex Mono','Pretendard',monospace;}
 
 #app{max-width:960px;margin:0 auto;padding:28px 20px 80px;}
 
 .topbar{
-  display:flex;align-items:center;justify-content:space-between;
-  margin-bottom:28px;
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:28px;
 }
 .brand{display:flex;align-items:center;gap:10px;}
 .brand-mark{
-  width:34px;height:34px;border-radius:9px;
-  background:linear-gradient(135deg,var(--teal),var(--teal-deep));
-  display:flex;align-items:center;justify-content:center;
-  color:white;font-weight:700;font-size:15px;
-  box-shadow:var(--shadow);
+  width:34px;height:34px;border-radius:9px;
+  background:linear-gradient(135deg,var(--teal),var(--teal-deep));
+  display:flex;align-items:center;justify-content:center;
+  color:white;font-weight:700;font-size:15px;
+  box-shadow:var(--shadow);
 }
 .brand-text{font-weight:700;font-size:16px;letter-spacing:-0.01em;}
 .brand-sub{font-size:12px;color:var(--ink-soft);margin-top:1px;}
 
 .secret-zone {
-  width: 70px; height: 40px; background: transparent; cursor: default; user-select: none;
+  width: 70px; 
+  height: 40px; 
+  background: transparent; 
+  cursor: default; 
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .card{
-  background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);
-  padding:28px;box-shadow:var(--shadow); margin-bottom: 20px;
+  background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);
+  padding:28px;box-shadow:var(--shadow);
 }
 .section-title{font-size:18px;font-weight:700;margin:0 0 6px;letter-spacing:-0.01em;}
 .section-sub{font-size:13.5px;color:var(--ink-soft);margin:0 0 24px;line-height:1.5;}
@@ -82,13 +87,14 @@ body{
 .field .req{color:var(--red);margin-left:2px;}
 .field .optional{color:var(--ink-soft);font-weight:400;font-size:11.5px;margin-left:4px;}
 .field input[type=text],.field input[type=tel],.field input[type=email],.field input[type=password],.field select{
-  width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14.5px;
-  font-family:'Pretendard';background:#FCFCFD;transition:.12s;
+  width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14.5px;
+  font-family:'Pretendard';background:#FCFCFD;transition:.12s;
 }
 .field input:focus,.field select:focus{outline:none;border-color:var(--teal);background:white;}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
 @media(max-width:520px){.grid2{grid-template-columns:1fr;}}
 
+/* 라디오 버튼 스타일 */
 .radio-group{display:flex;gap:20px;margin-top:8px;}
 .radio-label{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:500;cursor:pointer;}
 .radio-label input{accent-color:var(--teal);width:18px;height:18px;cursor:pointer;}
@@ -98,14 +104,15 @@ body{
 .doc-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
 @media(max-width:600px){.doc-grid{grid-template-columns:1fr;}}
 .dropzone{
-  border:1.5px dashed var(--line-strong);border-radius:12px;padding:14px;cursor:pointer;
-  transition:.14s;position:relative;overflow:hidden;background:#FBFBFC;
+  border:1.5px dashed var(--line-strong);border-radius:12px;padding:14px;cursor:pointer;
+  transition:.14s;position:relative;overflow:hidden;background:#FBFBFC;
 }
 .dropzone:hover{border-color:var(--teal);background:#F1FBFA;}
 .dropzone.filled{border-style:solid;border-color:var(--forest);background:var(--forest-bg);}
 .dz-head{display:flex;align-items:center;justify-content:space-between;gap:8px;}
 .dz-title{font-size:13px;font-weight:600;}
 .dz-title .req{color:var(--red);}
+.dz-title .optional{color:var(--ink-soft);font-weight:400;font-size:11px;}
 .dz-status{font-size:11px;color:var(--ink-soft);}
 .dz-status.ok{color:var(--forest);font-weight:600;}
 .dz-preview{margin-top:9px;display:flex;align-items:center;gap:9px;}
@@ -115,9 +122,9 @@ body{
 .dz-remove{font-size:11px;color:var(--red);background:none;border:none;cursor:pointer;padding:0;margin-left:auto;flex:0 0 auto;}
 
 .btn{
-  display:inline-flex;align-items:center;justify-content:center;gap:6px;
-  font-family:'Pretendard';font-size:15px;font-weight:600;padding:14px 20px;border-radius:11px;
-  border:none;cursor:pointer;transition:.14s;width:100%;
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  font-family:'Pretendard';font-size:15px;font-weight:600;padding:14px 20px;border-radius:11px;
+  border:none;cursor:pointer;transition:.14s;width:100%;
 }
 .btn-primary{background:var(--ink);color:white;}
 .btn-primary:hover{background:#0A1A2E;}
@@ -125,772 +132,514 @@ body{
 .btn-row{margin-top:24px;display:flex;gap:10px;}
 
 .toast{
-  position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
-  background:var(--ink);color:white;padding:12px 20px;border-radius:100px;font-size:13.5px;font-weight:500;
-  box-shadow:var(--shadow);z-index:50;opacity:0;pointer-events:none;transition:.2s;
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+  background:var(--ink);color:white;padding:12px 20px;border-radius:100px;font-size:13.5px;font-weight:500;
+  box-shadow:var(--shadow);z-index:50;opacity:0;pointer-events:none;transition:.2s;
 }
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
 .success-wrap{max-width:520px;margin:40px auto;text-align:center;}
 .success-badge{
-  width:72px;height:72px;border-radius:50%;background:var(--forest-bg);color:var(--forest);
-  display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 20px;
+  width:72px;height:72px;border-radius:50%;background:var(--forest-bg);color:var(--forest);
+  display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 20px;
 }
+.success-wrap h2{font-size:22px;margin:0 0 8px;}
+.success-wrap p{font-size:14px;color:var(--ink-soft);line-height:1.6;margin:0 0 22px;}
 .receipt-num{
-  display:inline-block;font-family:'Plex Mono';font-size:14px;background:var(--bg);border:1px solid var(--line);
-  border-radius:9px;padding:9px 16px;font-weight:600;letter-spacing:.02em;margin-bottom:24px;
+  display:inline-block;font-family:'Plex Mono';font-size:14px;background:var(--bg);border:1px solid var(--line);
+  border-radius:9px;padding:9px 16px;font-weight:600;letter-spacing:.02em;margin-bottom:24px;
 }
 
 .admin-login{max-width:360px;margin:60px auto;}
 .admin-search{width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:13.5px;margin-bottom:16px;font-family:'Pretendard';}
-
-/* 인쇄용 서류 스타일 */
-.document-sheet {
-  background: white; border: 1px solid var(--line); padding: 40px; border-radius: 12px; margin-bottom: 30px; color: #000;
-}
-.document-sheet h3 { text-align: center; font-size: 22px; margin-bottom: 20px; font-weight: 700; letter-spacing: -0.02em; }
-.doc-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 13px; }
-.doc-table th, .doc-table td { border: 1px solid #333; padding: 8px 10px; text-align: left; }
-.doc-table th { background: #F2F4F7; text-align: center; width: 20%; }
-
-.contract-terms { font-size: 12.5px; line-height: 1.6; margin-bottom: 20px; }
-.contract-terms .article-title { font-weight: 700; margin-top: 10px; }
-
-@media print {
-  body { background: white; margin: 0; padding: 0; }
-  #app, .toast, .no-print { display: none !important; }
-  #contractGeneratorWrapper { display: block !important; margin: 0 !important; padding: 0 !important; max-width: 100% !important; }
-  .document-sheet { border: none !important; padding: 0 !important; box-shadow: none !important; page-break-after: always; }
-}
 </style>
 </head>
 <body>
-
 <div id="app"></div>
-
-<!-- 관리자 모드 전용 계약서 & CMS 출력 래퍼 -->
-<div id="contractGeneratorWrapper" style="display:none; max-width:960px; margin: 0 auto 80px; padding: 0 20px;">
-  <div class="card no-print" style="background:#EBF8FF; border:1px solid #BEE3F8; display:flex; justify-content:space-between; align-items:center;">
-    <div>
-      <div style="font-weight:700; font-size:16px; color:#2B6CB0;" id="activeMerchantTitle">선택된 가맹점: 없음</div>
-      <div style="font-size:13px; color:#4A5568; margin-top:4px;">장비 구성에 따른 임대료 및 위약금 조건(2026 영업정책 기준)을 확인하고 수정할 수 있습니다.</div>
-    </div>
-    <button onclick="ContractApp.goBackToList()" class="no-print" style="background:var(--ink); color:white; border:none; padding:10px 16px; border-radius:8px; font-weight:600; cursor:pointer; font-size:13px;">← 접수 목록으로</button>
-  </div>
-
-  <!-- 1. 임대서비스 계약서 양식 -->
-  <div class="document-sheet">
-    <h3>임 대 서 비 스 계 약 서</h3>
-    <div style="display:flex; justify-content:space-between; margin-bottom:15px; font-size:13.5px;">
-      <div><b>설치일:</b> <input type="date" id="c_installDate" style="border:none; border-bottom:1px solid #000; font-family:'Pretendard'; padding:2px;" onchange="ContractApp.updateDates()"></div>
-      <div><b>만료일:</b> <span id="c_expireDateText">2029년 07월 28일</span> (설치일로부터 3년)</div>
-    </div>
-
-    <table class="doc-table">
-      <tr>
-        <th>"갑" (공급자)</th>
-        <td colspan="3">
-          상호: (주)위드페이먼트 | 대표자: 고영배 (인) | 연락처: 1599-5413
-        </td>
-      </tr>
-      <tr>
-        <th>"을" (임차인)</th>
-        <td colspan="3">
-          상호: <span id="p_storeName" style="font-weight:700;">-</span> | 사업자등록번호: <span id="p_bizNum">673-28-02038</span><br>
-          대표자: <span id="p_ownerName">-</span> (인) | 연락처: <span id="p_phone">-</span><br>
-          주소: <span id="p_address">-</span>
-        </td>
-      </tr>
-    </table>
-
-    <div style="font-size:13px; margin-bottom:15px; line-height:1.5;">
-      임대인 (주)위드페이먼트(이하 “갑”이라 한다)과 상기 임차인 <span id="p_storeName2">-</span>(이하 “을”이라 한다)간에 신용카드조회기, POS 및 관련 장비의 임대차에 관하여 다음과 같이 계약을 체결한다.
-    </div>
-
-    <div class="contract-terms">
-      <div class="article-title">제 1조 (계약의 표시)</div>
-      “갑”은 상기의 표시된 물품을 기재된 내용에 따라 임대하고, “을”은 이를 임차한다.<br>
-
-      <div class="article-title">제 2조 (용도제한)</div>
-      “을”은 임차한 물품을 “갑”이 제공하는 조회서비스 이외의 목적으로 사용할 수 없다.<br>
-
-      <div class="article-title">제 3조 (물품의 소유권)</div>
-      본 계약 물품의 소유권은 “갑”에게 있고, 물품의 사용권은 “을”에게 있다.<br>
-
-      <div class="article-title">제 4조 (계약기간)</div>
-      임대 의무기간은 “갑”이 “을”에게 설치한 날로부터 3년으로 한다. 다만 계약 만료일 기준 1개월 전에 서면으로 계약변경 또는 해지통보가 없을 경우 계약은 매 1년 자동 연장한다.<br>
-
-      <div class="article-title">제 5조 (계약조건 및 월 임대료)</div>
-      “을”은 계약기간 동안 “갑”에게 월 임대료 <input type="text" id="c_monthlyFeeInput" value="16,500" style="width:75px; text-align:right; border:none; border-bottom:1px solid #000; font-weight:700; font-family:'Pretendard';" oninput="ContractApp.syncFeeText()">원 (부가가치세 포함)을 매월 지정일에 지불해야 한다.<br>
-
-      <div class="article-title">제 6조 (유지보관 책임 및 A/S)</div>
-      “을”은 선량한 관리자로써 임차장비를 유지하여야 하며, 고장 발생 시 A/S 정책에 따라 처리한다. (방문수수료 없음, 고장시 대체장비 제공)<br>
-
-      <div class="article-title">제 7조 (임차권의 양도 및 전대의 금지)</div>
-      “을”은 임차한 단말기를 제 3자에게 양도하거나 전대 등의 처분을 할 수 없다.<br>
-
-      <div class="article-title">제 8조 (계약의 해지 및 위약금)</div>
-      “을”의 귀책사유 또는 계약기간 내 해지(타 밴 변경 등) 시, 아래 [표 1]의 장비별 소비자가격 배상 및 약정 위약금을 배상하여야 한다.
-    </div>
-
-    <div style="font-weight:700; margin:15px 0 8px; font-size:13.5px; text-align:center;">( 표 1 ) 임차물품 구성 및 위약금 산정 기준</div>
-    <table class="doc-table" id="equipmentTable">
-      <thead>
-        <tr>
-          <th style="width:30%;">품목 (2026 정책 기준)</th>
-          <th style="width:12%; text-align:center;">수량</th>
-          <th style="width:20%; text-align:right;">소비자가격(단가)</th>
-          <th style="width:20%; text-align:right;">금액</th>
-          <th style="width:18%;">비고</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>메인포스 (기본형)</td>
-          <td style="text-align:center;"><input type="number" min="0" value="1" id="eq_qty_0" oninput="ContractApp.calc()" style="width:45px; text-align:center;"> set</td>
-          <td style="text-align:right;"><input type="text" value="1,250,000" id="eq_price_0" oninput="ContractApp.calc()" style="width:85px; text-align:right;"></td>
-          <td style="text-align:right; font-weight:600;" id="eq_tot_0">1,250,000</td>
-          <td>포스 패키지 구성</td>
-        </tr>
-        <tr>
-          <td>토스 프론트</td>
-          <td style="text-align:center;"><input type="number" min="0" value="1" id="eq_qty_1" oninput="ContractApp.calc()" style="width:45px; text-align:center;"> ea</td>
-          <td style="text-align:right;"><input type="text" value="310,000" id="eq_price_1" oninput="ContractApp.calc()" style="width:85px; text-align:right;"></td>
-          <td style="text-align:right; font-weight:600;" id="eq_tot_1">310,000</td>
-          <td></td>
-        </tr>
-        <tr>
-          <td>단말기 (유선/백업)</td>
-          <td style="text-align:center;"><input type="number" min="0" value="1" id="eq_qty_2" oninput="ContractApp.calc()" style="width:45px; text-align:center;"> ea</td>
-          <td style="text-align:right;"><input type="text" value="100,000" id="eq_price_2" oninput="ContractApp.calc()" style="width:85px; text-align:right;"></td>
-          <td style="text-align:right; font-weight:600;" id="eq_tot_2">100,000</td>
-          <td>백업카드결제용</td>
-        </tr>
-        <tr>
-          <td>주방프린터 추가</td>
-          <td style="text-align:center;"><input type="number" min="0" value="0" id="eq_qty_3" oninput="ContractApp.calc()" style="width:45px; text-align:center;"> ea</td>
-          <td style="text-align:right;"><input type="text" value="70,000" id="eq_price_3" oninput="ContractApp.calc()" style="width:85px; text-align:right;"></td>
-          <td style="text-align:right; font-weight:600;" id="eq_tot_3">0</td>
-          <td>추가 옵션</td>
-        </tr>
-        <tr>
-          <td>오더포스(리퍼) 추가</td>
-          <td style="text-align:center;"><input type="number" min="0" value="0" id="eq_qty_4" oninput="ContractApp.calc()" style="width:45px; text-align:center;"> set</td>
-          <td style="text-align:right;"><input type="text" value="500,000" id="eq_price_4" oninput="ContractApp.calc()" style="width:85px; text-align:right;"></td>
-          <td style="text-align:right; font-weight:600;" id="eq_tot_4">0</td>
-          <td>추가 옵션</td>
-        </tr>
-        <tr>
-          <td>금전함</td>
-          <td style="text-align:center;"><input type="number" min="0" value="1" id="eq_qty_5" oninput="ContractApp.calc()" style="width:45px; text-align:center;"> ea</td>
-          <td style="text-align:right;"><input type="text" value="45,000" id="eq_price_5" oninput="ContractApp.calc()" style="width:85px; text-align:right;"></td>
-          <td style="text-align:right; font-weight:600;" id="eq_tot_5">45,000</td>
-          <td>포스 기본 포함</td>
-        </tr>
-      </tbody>
-      <tfoot>
-        <tr style="background:#F8FAFC; font-weight:700;">
-          <td colspan="3" style="text-align:right;">장비 소비자가격 합계</td>
-          <td style="text-align:right; color:var(--teal-deep);" id="eq_grand_total">1,705,000</td>
-          <td></td>
-        </tr>
-      </tfoot>
-    </table>
-    <div style="font-size:12px; font-weight:600; color:var(--red); margin-bottom:20px;">
-      ※ 중도 해지 시 약정 위약금 산식: 잔여 계약 개월 수 × <input type="text" id="c_penaltyUnitInput" value="30,000" style="width:65px; text-align:center; border:none; border-bottom:1px solid #E24C4C; font-weight:700; color:#E24C4C; font-family:'Pretendard';">원 (단말기 단독형의 경우 10,000원 적용 가능)
-    </div>
-
-    <div class="contract-terms">
-      <div class="article-title">제 9조 (계약의 해석)</div>
-      본 계약에서 정하지 아니한 사항은 일반 상관례 및 회사의 2026년 영업정책에 따르며, 분쟁 발생 시 관할법원은 “갑”의 소재지 관할법원으로 한다.
-    </div>
-  </div>
-
-  <!-- 2. CMS 출금이체 신청(동의서) 양식 -->
-  <div class="document-sheet">
-    <h3>CMS 출금이체 신청(동의)서</h3>
-    <table class="doc-table">
-      <tr>
-        <th style="width:25%;">수납기관정보</th>
-        <td>
-          상호명 : 주식회사 위드페이먼트 | 사업자등록번호 : 409-86-50093<br>
-          대표자 : 고영배 | 연락처 : 1599-5413
-        </td>
-      </tr>
-      <tr>
-        <th>출금이체 신청</th>
-        <td>
-          신청인 : <span id="cms_storeName" style="font-weight:700;">-</span> | 사업자번호 : <span id="cms_bizNum">673-28-02038</span><br>
-          휴대폰 : <span id="cms_phone">-</span><br>
-          주소 : <span id="cms_address">-</span><br>
-          출금금액 : <b id="cms_feeDisplay">16,500원 (VAT포함)</b> | 출금종류 : CMS | 출금일 : 매월 지정일
-        </td>
-      </tr>
-      <tr>
-        <th>결제은행계좌</th>
-        <td>
-          중소기업은행 / 계좌번호 : 479-094497-04-016<br>
-          예금주명 : <span id="cms_depositor">-</span> (신청인과의 관계: 본인)<br>
-          예금주의 주민(사업자)등록번호 : <input type="text" placeholder="예: 890303-*******" style="border:none; border-bottom:1px solid #999; font-family:'Pretendard'; width:180px; padding:2px;"> (법인인 경우 사업자등록번호 기입)
-        </td>
-      </tr>
-    </table>
-
-    <div style="font-size:11.5px; border:1px solid var(--line); padding:12px; background:#FAFAFB; border-radius:8px; margin-bottom:15px; line-height:1.5;">
-      <b>[개인정보 및 고유식별정보 수집 및 이용 동의]</b><br>
-      - 수집 및 이용목적 : CMS 출금이체를 통한 요금 수납<br>
-      - 수집항목 (개인정보) : 성명, 전화번호, 휴대전화번호, 금융기관명, 계좌번호 / (고유식별정보) : 주민등록번호<br>
-      - 보유 및 이용기간 : 수집, 이용 동의일부터 CMS 출금이체 종료일(해지일)까지<br>
-      <div style="margin-top:6px; display:flex; gap:20px;">
-        <div>(개인정보) 동의함 □ &nbsp; 동의안함 □</div>
-        <div>(고유식별정보) 동의함 □ &nbsp; 동의안함 □</div>
-      </div>
-    </div>
-
-    <div style="font-size:11.5px; border:1px solid var(--line); padding:12px; background:#FAFAFB; border-radius:8px; margin-bottom:20px; line-height:1.5;">
-      <b>[개인정보 제3자 제공 동의]</b><br>
-      - 개인정보를 제공받는 자 : 사단법인 금융결제원, 엔콤소프트(주)<br>
-      - 개인정보 이용 목적 : CMS 출금이체 서비스 제공 및 출금동의 확인<br>
-      - 제공 항목 : 성명, 금융기관명, 계좌번호, 주민등록번호, 연락처<br>
-      <div style="margin-top:6px;">동의함 □ &nbsp; 동의안함 □</div>
-    </div>
-
-    <div style="text-align:center; font-size:13px; line-height:1.6; margin-top:20px;">
-      상기 금융거래정보의 제공 및 개인정보의 수집/이용, 제3자 제공에 동의하며 CMS 출금이체 신청합니다.<br><br>
-      <b>2026년 <span id="cms_month">07</span>월 <span id="cms_day">28</span>일</b><br><br>
-      신청인 : <span id="cms_ownerName2">-</span> (인 또는 서명) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 예금주 : <span id="cms_depositor2">-</span> (인 또는 서명)<br><br>
-    </div>
-  </div>
-
-  <!-- 인쇄 및 PDF 저장 버튼 영역 -->
-  <div class="card no-print" style="text-align:center; background:#F8FAFC;">
-    <button onclick="window.print()" class="btn btn-primary" style="max-width:300px; margin:0 auto; background:var(--teal);">🖨️ 계약서 및 CMS 동의서 PDF 저장 / 인쇄</button>
-  </div>
-</div>
-
 <div class="toast" id="toast"></div>
 
 <script>
 const API_URL = "https://script.google.com/macros/s/AKfycbzS-v_pkDFfge_-ngUFXirsUEpNT3cva8oYBgOMRxeiyNq0MczGCNHBI1hLFnrtcTKM/exec";
 
 const BUSINESS_TYPES = [
-  { id: 'general', name: '일반 도소매/서비스업 (일반 사업자)' },
-  { id: 'food', name: '음식점 / 카페 / 유흥주점 (식품위생업)' },
-  { id: 'beauty', name: '미용실 / 피부샵 / 네일샵 (공중위생업)' },
-  { id: 'academy', name: '학원 / 교습소' }
+  { id: 'general', name: '일반 도소매/서비스업 (일반 사업자)' },
+  { id: 'food', name: '음식점 / 카페 / 유흥주점 (식품위생업)' },
+  { id: 'beauty', name: '미용실 / 피부샵 / 네일샵 (공중위생업)' },
+  { id: 'academy', name: '학원 / 교습소' }
 ];
 
 const COMMON_DOCS = [
-  { key:'bankbook', label:'통장사본', accept:'image/*,.pdf', hint:'입금 계좌 통장 첫 페이지', required:true },
-  { key:'bizLicense', label:'사업자등록증', accept:'image/*,.pdf', hint:'사업자등록증 사본', required:true },
-  { key:'interiorPhoto', label:'매장 내부 사진', accept:'image/*', hint:'매장 내부 전경', required:true },
-  { key:'insideOutsidePhoto', label:'내부에서 외부가 보이는 사진', accept:'image/*', hint:'출입구 방향으로 촬영', required:true }
+  { key:'bankbook', label:'통장사본', accept:'image/*,.pdf', hint:'입금 계좌 통장 첫 페이지', required:true },
+  { key:'bizLicense', label:'사업자등록증', accept:'image/*,.pdf', hint:'사업자등록증 사본', required:true },
+  { key:'interiorPhoto', label:'매장 내부 사진', accept:'image/*', hint:'매장 내부 전경', required:true },
+  { key:'insideOutsidePhoto', label:'내부에서 외부가 보이는 사진', accept:'image/*', hint:'출입구 방향으로 촬영', required:true }
 ];
 
 const EXTRA_DOCS = {
-  food: { key:'permitLicense', label:'영업신고증', accept:'image/*,.pdf', hint:'식품영업신고증 사본', required:true },
-  beauty: { key:'permitLicense', label:'공중위생 영업신고증', accept:'image/*,.pdf', hint:'영업신고증 사본', required:true },
-  academy: { key:'permitLicense', label:'학원(교습소) 설립운영 등록증', accept:'image/*,.pdf', hint:'등록증 사본', required:true }
+  food: { key:'permitLicense', label:'영업신고증', accept:'image/*,.pdf', hint:'식품영업신고증 사본', required:true },
+  beauty: { key:'permitLicense', label:'공중위생 영업신고증', accept:'image/*,.pdf', hint:'영업신고증 사본', required:true },
+  academy: { key:'permitLicense', label:'학원(교습소) 설립운영 등록증', accept:'image/*,.pdf', hint:'등록증 사본', required:true }
 };
 
 function getRequiredDocs(businessType, bizType, hasSign){
-  let docs = [...COMMON_DOCS];
-  if(bizType === 'corporate') {
-    docs.unshift({ key:'corpReg', label:'법인등기부등본', accept:'image/*,.pdf', hint:'최근 등기부등본', required:true });
-    docs.unshift({ key:'corpSeal', label:'법인인감증명서', accept:'image/*,.pdf', hint:'최근 3개월 이내 발급분', required:true });
-    docs.push({ key:'shareholder', label:'주주명부', accept:'image/*,.pdf', hint:'최신 주주명부 사본', required:true });
-  } else {
-    docs.unshift({ key:'idCard', label:'대표자 신분증', accept:'image/*', hint:'주민등록증 또는 운전면허증', required:true });
-  }
-  if(EXTRA_DOCS[businessType]){ docs.splice(4, 0, EXTRA_DOCS[businessType]); }
-  if(hasSign === 'yes') {
-    docs.push({ key:'exteriorPhoto', label:'외부 사진 (간판 포함)', accept:'image/*', hint:'간판이 잘 보이도록 촬영', required:true });
-  } else {
-    docs.push({ key:'addressPlate', label:'도로명주소판 사진', accept:'image/*', hint:'건물에 부착된 도로명주소판 근접 촬영', required:true });
-    docs.push({ key:'addressBuildingPhoto', label:'도로명주소 포함 건물 사진', accept:'image/*', hint:'건물과 함께 촬영', required:true });
-  }
-  return docs;
+  let docs = [...COMMON_DOCS];
+  
+  // 개인/법인에 따른 대표자 관련 서류 분기
+  if(bizType === 'corporate') {
+    docs.unshift({ key:'corpReg', label:'법인등기부등본', accept:'image/*,.pdf', hint:'말일 포함 최근 등기부등본', required:true });
+    docs.unshift({ key:'corpSeal', label:'법인인감증명서', accept:'image/*,.pdf', hint:'최근 3개월 이내 발급분', required:true });
+    docs.push({ key:'shareholder', label:'주주명부', accept:'image/*,.pdf', hint:'최신 주주명부 사본', required:true });
+  } else {
+    docs.unshift({ key:'idCard', label:'대표자 신분증', accept:'image/*', hint:'주민등록증 또는 운전면허증 사진', required:true });
+  }
+  
+  // 업종별 허가증 삽입
+  if(EXTRA_DOCS[businessType]){
+    docs.splice(4, 0, EXTRA_DOCS[businessType]);
+  }
+
+  // 간판 유무에 따라 서류 다르게 구성
+  if(hasSign === 'yes') {
+    docs.push({ key:'exteriorPhoto', label:'외부 사진 (간판 포함)', accept:'image/*', hint:'간판이 잘 보이도록 촬영', required:true });
+  } else {
+    docs.push({ key:'addressPlate', label:'도로명주소판 사진', accept:'image/*', hint:'건물에 부착된 도로명주소판 근접 촬영', required:true });
+    docs.push({ key:'addressBuildingPhoto', label:'도로명주소 포함 건물 사진', accept:'image/*', hint:'도로명주소와 건물이 함께 나오게 촬영', required:true });
+  }
+
+  return docs;
 }
 
 let state = {
-  view: location.hash === '#admin' ? 'adminLogin' : 'form',
-  fields: { storeName:'', businessType:'general', bizType:'personal', storePhone:'', ownerPhone:'', email:'', hasSign:'yes' },
-  files: {},
-  receiptId: null,
-  adminMerchants: [],
-  adminSearch: '',
-  selectedMerchant: null
+  view: location.hash === '#admin' ? 'adminLogin' : 'form',
+  fields: { storeName:'', businessType:'general', bizType:'personal', storePhone:'', ownerPhone:'', email:'', hasSign:'yes' },
+  files: {},
+  receiptId: null,
+  adminUnlocked: false,
+  adminMerchants: [],
+  adminSearch: ''
 };
 
 function syncFields(){
-  state.fields.storeName = document.getElementById('f_storeName')?.value || state.fields.storeName;
-  state.fields.businessType = document.getElementById('f_businessType')?.value || state.fields.businessType;
-  state.fields.storePhone = document.getElementById('f_storePhone')?.value || state.fields.storePhone;
-  state.fields.ownerPhone = document.getElementById('f_ownerPhone')?.value || state.fields.ownerPhone;
-  state.fields.email = document.getElementById('f_email')?.value || state.fields.email;
-  
-  const bizRadio = document.querySelector('input[name="f_bizType"]:checked');
-  if(bizRadio) state.fields.bizType = bizRadio.value;
-  const signRadio = document.querySelector('input[name="f_hasSign"]:checked');
-  if(signRadio) state.fields.hasSign = signRadio.value;
+  state.fields.storeName = document.getElementById('f_storeName')?.value || state.fields.storeName;
+  state.fields.businessType = document.getElementById('f_businessType')?.value || state.fields.businessType;
+  state.fields.storePhone = document.getElementById('f_storePhone')?.value || state.fields.storePhone;
+  state.fields.ownerPhone = document.getElementById('f_ownerPhone')?.value || state.fields.ownerPhone;
+  state.fields.email = document.getElementById('f_email')?.value || state.fields.email;
+  
+  const bizRadio = document.querySelector('input[name="f_bizType"]:checked');
+  if(bizRadio) state.fields.bizType = bizRadio.value;
+
+  const signRadio = document.querySelector('input[name="f_hasSign"]:checked');
+  if(signRadio) state.fields.hasSign = signRadio.value;
 }
 
 function toast(msg){
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  clearTimeout(window.__toastTimer);
-  window.__toastTimer = setTimeout(()=>t.classList.remove('show'), 2200);
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(window.__toastTimer);
+  window.__toastTimer = setTimeout(()=>t.classList.remove('show'), 2200);
 }
 
 function render(){
-  const app = document.getElementById('app');
-  const contractWrap = document.getElementById('contractGeneratorWrapper');
-
-  if(state.view === 'form') {
-    app.innerHTML = topbar() + renderForm();
-    if(contractWrap) contractWrap.style.display = 'none';
-  } else if(state.view === 'success') {
-    app.innerHTML = topbar() + renderSuccess();
-    if(contractWrap) contractWrap.style.display = 'none';
-  } else if(state.view === 'adminLogin') {
-    app.innerHTML = renderAdminLogin();
-    if(contractWrap) contractWrap.style.display = 'none';
-  } else if(state.view === 'admin') {
-    app.innerHTML = renderAdmin();
-    if(contractWrap) contractWrap.style.display = 'none';
-  } else if(state.view === 'contract') {
-    app.innerHTML = '';
-    if(contractWrap) {
-      contractWrap.style.display = 'block';
-      ContractApp.init(state.selectedMerchant);
-    }
-  }
+  const app = document.getElementById('app');
+  if(state.view === 'form') app.innerHTML = topbar() + renderForm();
+  else if(state.view === 'success') app.innerHTML = topbar() + renderSuccess();
+  else if(state.view === 'adminLogin') app.innerHTML = renderAdminLogin();
+  else if(state.view === 'admin') app.innerHTML = renderAdmin();
 }
 
 function topbar(){
-  return `
-  <div class="topbar">
-    <div class="brand">
-      <div class="brand-mark">P</div>
-      <div>
-        <div class="brand-text">가맹점 서류 접수</div>
-        <div class="brand-sub">정보 입력 및 서류 제출</div>
-      </div>
-    </div>
-    <div class="secret-zone" onclick="App.handleSecretClick()"></div>
-  </div>`;
+  return `
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-mark">P</div>
+      <div>
+        <div class="brand-text">가맹점 서류 접수</div>
+        <div class="brand-sub">정보 입력 및 서류 제출</div>
+      </div>
+    </div>
+    <div class="secret-zone" onclick="App.handleSecretClick()"></div>
+  </div>`;
 }
 
 function renderForm(){
-  const f = state.fields;
-  const currentDocs = getRequiredDocs(f.businessType, f.bizType, f.hasSign);
-  const requiredDocsCount = currentDocs.filter(d => d.required).length;
-  const filledRequiredCount = currentDocs.filter(d => d.required && state.files[d.key]).length;
+  const f = state.fields;
+  const currentDocs = getRequiredDocs(f.businessType, f.bizType, f.hasSign);
+  const requiredDocsCount = currentDocs.filter(d => d.required).length;
+  const filledRequiredCount = currentDocs.filter(d => d.required && state.files[d.key]).length;
 
-  return `
-  <div class="card">
-    <div class="section-title">가맹점 정보 및 서류 제출</div>
-    <div class="section-sub">사업자 형태 및 업종에 맞춰 필수 서류가 동적으로 변경됩니다.</div>
+  return `
+  <div class="card">
+    <div class="section-title">가맹점 정보 및 서류 제출</div>
+    <div class="section-sub">사업자 형태, 업종 및 간판 유무에 따라 필요한 서류 항목이 자동으로 변경됩니다.</div>
 
-    <div class="field">
-      <label>사업자 구분 <span class="req">*</span></label>
-      <div class="radio-group">
-        <label class="radio-label"><input type="radio" name="f_bizType" value="personal" ${f.bizType==='personal'?'checked':''} onchange="App.changeFormState()"> 개인사업자</label>
-        <label class="radio-label"><input type="radio" name="f_bizType" value="corporate" ${f.bizType==='corporate'?'checked':''} onchange="App.changeFormState()"> 법인사업자</label>
-      </div>
-    </div>
+    <div class="field">
+      <label>사업자 구분 <span class="req">*</span></label>
+      <div class="radio-group">
+        <label class="radio-label"><input type="radio" name="f_bizType" value="personal" ${f.bizType==='personal'?'checked':''} onchange="App.changeFormState()"> 개인사업자</label>
+        <label class="radio-label"><input type="radio" name="f_bizType" value="corporate" ${f.bizType==='corporate'?'checked':''} onchange="App.changeFormState()"> 법인사업자</label>
+      </div>
+    </div>
 
-    <div class="field" style="margin-top:18px;">
-      <label>상호명(매장명) <span class="req">*</span></label>
-      <input type="text" id="f_storeName" placeholder="예: 카페 온기" value="${f.storeName}">
-    </div>
+    <div class="field" style="margin-top:18px;">
+      <label>상호명(매장명) <span class="req">*</span></label>
+      <input type="text" id="f_storeName" placeholder="예: 카페 온기" value="${f.storeName}">
+    </div>
 
-    <div class="field">
-      <label>업종 선택 <span class="req">*</span></label>
-      <select id="f_businessType" onchange="App.changeFormState()">
-        ${BUSINESS_TYPES.map(b => `<option value="${b.id}" ${f.businessType===b.id?'selected':''}>${b.name}</option>`).join('')}
-      </select>
-    </div>
+    <div class="field">
+      <label>업종 선택 <span class="req">*</span></label>
+      <select id="f_businessType" onchange="App.changeFormState()">
+        ${BUSINESS_TYPES.map(b => `<option value="${b.id}" ${f.businessType===b.id?'selected':''}>${b.name}</option>`).join('')}
+      </select>
+    </div>
 
-    <div class="field">
-      <label>간판 유무 선택 <span class="req">*</span></label>
-      <div class="radio-group">
-        <label class="radio-label"><input type="radio" name="f_hasSign" value="yes" ${f.hasSign==='yes'?'checked':''} onchange="App.changeFormState()"> 간판 있음</label>
-        <label class="radio-label"><input type="radio" name="f_hasSign" value="no" ${f.hasSign==='no'?'checked':''} onchange="App.changeFormState()"> 간판 없음</label>
-      </div>
-    </div>
+    <div class="field">
+      <label>간판 유무 선택 <span class="req">*</span></label>
+      <div class="radio-group">
+        <label class="radio-label"><input type="radio" name="f_hasSign" value="yes" ${f.hasSign==='yes'?'checked':''} onchange="App.changeFormState()"> 간판 있음</label>
+        <label class="radio-label"><input type="radio" name="f_hasSign" value="no" ${f.hasSign==='no'?'checked':''} onchange="App.changeFormState()"> 간판 없음</label>
+      </div>
+    </div>
 
-    <div class="grid2" style="margin-top:18px;">
-      <div class="field">
-        <label>매장전화번호 <span class="req">*</span></label>
-        <input type="tel" id="f_storePhone" placeholder="02-1234-5678" value="${f.storePhone}">
-      </div>
-      <div class="field">
-        <label>대표명의 폰번호 <span class="req">*</span></label>
-        <input type="tel" id="f_ownerPhone" placeholder="010-1234-5678" value="${f.ownerPhone}">
-      </div>
-    </div>
-    <div class="field">
-      <label>메일주소 <span class="req">*</span></label>
-      <input type="email" id="f_email" placeholder="example@email.com" value="${f.email}">
-    </div>
+    <div class="grid2" style="margin-top:18px;">
+      <div class="field">
+        <label>매장전화번호 <span class="req">*</span></label>
+        <input type="tel" id="f_storePhone" placeholder="02-1234-5678" value="${f.storePhone}">
+      </div>
+      <div class="field">
+        <label>대표명의 폰번호 <span class="req">*</span></label>
+        <input type="tel" id="f_ownerPhone" placeholder="010-1234-5678" value="${f.ownerPhone}">
+      </div>
+    </div>
+    <div class="field">
+      <label>메일주소 <span class="req">*</span></label>
+      <input type="email" id="f_email" placeholder="example@email.com" value="${f.email}">
+    </div>
 
-    <div class="opt-group-label" style="margin-top:26px;">필수 서류 (${filledRequiredCount}/${requiredDocsCount}) <span class="req">*</span></div>
-    <div class="doc-grid">
-      ${currentDocs.map(d => renderDropzone(d)).join('')}
-    </div>
+    <div class="opt-group-label" style="margin-top:26px;">필수 서류 (${filledRequiredCount}/${requiredDocsCount}) <span class="req">*</span></div>
+    <div class="doc-grid">
+      ${currentDocs.map(d => renderDropzone(d)).join('')}
+    </div>
 
-    <div class="btn-row">
-      <button class="btn btn-primary" onclick="App.submit()">접수 제출하기</button>
-    </div>
-  </div>`;
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="App.submit()">접수 제출하기</button>
+    </div>
+  </div>`;
 }
 
 function renderDropzone(d){
-  const f = state.files[d.key];
-  const labelBadge = d.required ? `<span class="req">*</span>` : `<span class="optional">(선택)</span>`;
-  return `
-  <div class="dropzone ${f?'filled':''}" onclick="document.getElementById('file_${d.key}').click()">
-    <input type="file" id="file_${d.key}" accept="${d.accept}" style="display:none" onchange="App.handleFile('${d.key}', this.files[0])">
-    <div class="dz-head">
-      <div class="dz-title">${d.label} ${labelBadge}</div>
-      <div class="dz-status ${f?'ok':''}">${f?'첨부완료':'미첨부'}</div>
-    </div>
-    ${f ? `
-      <div class="dz-preview">
-        ${f.isImage ? `<img class="dz-thumb" src="${f.dataUrl}">` : `<div class="dz-thumb" style="display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--ink-soft);">FILE</div>`}
-        <div class="dz-filename">${f.name}</div>
-        <button class="dz-remove" onclick="event.stopPropagation();App.removeFile('${d.key}')">삭제</button>
-      </div>
-    ` : `<div class="dz-placeholder">${d.hint}</div>`}
-  </div>`;
+  const f = state.files[d.key];
+  const labelBadge = d.required ? `<span class="req">*</span>` : `<span class="optional">(선택)</span>`;
+  return `
+  <div class="dropzone ${f?'filled':''}" onclick="document.getElementById('file_${d.key}').click()">
+    <input type="file" id="file_${d.key}" accept="${d.accept}" style="display:none" onchange="App.handleFile('${d.key}', this.files[0])">
+    <div class="dz-head">
+      <div class="dz-title">${d.label} ${labelBadge}</div>
+      <div class="dz-status ${f?'ok':''}">${f?'첨부완료':'미첨부'}</div>
+    </div>
+    ${f ? `
+      <div class="dz-preview">
+        ${f.isImage ? `<img class="dz-thumb" src="${f.dataUrl}">` : `<div class="dz-thumb" style="display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--ink-soft);">FILE</div>`}
+        <div class="dz-filename">${f.name}</div>
+        <button class="dz-remove" onclick="event.stopPropagation();App.removeFile('${d.key}')">삭제</button>
+      </div>
+    ` : `<div class="dz-placeholder">${d.hint}</div>`}
+  </div>`;
 }
 
 function renderSuccess(){
-  return `
-  <div class="success-wrap">
-    <div class="success-badge">✓</div>
-    <h2>접수가 완료되었습니다</h2>
-    <p>${state.fields.storeName} 가맹점 정보와 서류가 안전하게 접수되었습니다.<br>확인 후 빠르게 연락드리겠습니다.</p>
-    <div class="receipt-num">접수번호 ${state.receiptId}</div>
-    <div>
-      <button class="btn btn-primary" onclick="App.resetAll()" style="width:auto;padding:12px 24px;">새로운 접수하기</button>
-    </div>
-  </div>`;
+  return `
+  <div class="success-wrap">
+    <div class="success-badge">✓</div>
+    <h2>접수가 완료되었습니다</h2>
+    <p>${state.fields.storeName} 가맹점 정보와 서류가 안전하게 접수되었습니다.<br>확인 후 빠르게 연락드리겠습니다.</p>
+    <div class="receipt-num">접수번호 ${state.receiptId}</div>
+    <div>
+      <button class="btn btn-primary" onclick="App.resetAll()" style="width:auto;padding:12px 24px;">새로운 접수하기</button>
+    </div>
+  </div>`;
 }
 
 function renderAdminLogin(){
-  return `
-  <div class="admin-login card">
-    <div class="section-title">관리자 확인</div>
-    <div class="section-sub">가맹점 목록 및 계약서 발행 툴에 접근하려면 코드를 입력하세요.</div>
-    <div class="field">
-      <input type="password" id="admin_pass" placeholder="접근 코드" style="width:100%;padding:12px;border:1.5px solid var(--line);border-radius:10px;font-size:14.5px;">
-    </div>
-    <button class="btn btn-primary" onclick="App.tryAdminLogin()">확인</button>
-    <div style="text-align:center;margin-top:14px;">
-      <span style="font-size:12.5px;color:var(--ink-soft);cursor:pointer;" onclick="App.goForm()">← 접수 화면으로 돌아가기</span>
-    </div>
-  </div>`;
+  return `
+  <div class="admin-login card">
+    <div class="section-title">관리자 확인</div>
+    <div class="section-sub">접수된 가맹점 목록을 확인하려면 접근 코드를 입력하세요.</div>
+    <div class="field">
+      <input type="password" id="admin_pass" placeholder="접근 코드" style="width:100%;padding:12px;border:1.5px solid var(--line);border-radius:10px;font-size:14.5px;">
+    </div>
+    <button class="btn btn-primary" onclick="App.tryAdminLogin()">확인</button>
+    <div style="text-align:center;margin-top:14px;">
+      <span style="font-size:12.5px;color:var(--ink-soft);cursor:pointer;" onclick="App.goForm()">← 접수 화면으로 돌아가기</span>
+    </div>
+  </div>`;
 }
 
 function renderAdmin(){
-  const list = (state.adminMerchants || []).filter(m => {
-    if(!state.adminSearch) return true;
-    const q = state.adminSearch.toLowerCase();
-    return (m.storeName||'').toLowerCase().includes(q) || (m.storePhone||'').includes(q);
-  });
+  const list = (state.adminMerchants || []).filter(m => {
+    if(!state.adminSearch) return true;
+    const q = state.adminSearch.toLowerCase();
+    return (m.storeName||'').toLowerCase().includes(q) || (m.storePhone||'').includes(q);
+  });
 
-  return `
-  <div class="topbar">
-    <div class="brand">
-      <div class="brand-mark">P</div>
-      <div>
-        <div class="brand-text">가맹점 접수 및 계약서 관리</div>
-        <div class="brand-sub">가맹점을 선택하여 계약서 및 CMS 출금동의서를 작성하세요.</div>
-      </div>
-    </div>
-    <div style="display:flex; gap:8px;">
-      <div style="background:var(--teal); color:white; padding:7px 12px; border-radius:100px; cursor:pointer; font-size:12.5px;" onclick="App.loadGoogleData()">새로고침</div>
-      <div style="border:1px solid var(--line); padding:7px 12px; border-radius:100px; background:var(--paper); cursor:pointer; font-size:12.5px;" onclick="App.goForm()">접수 화면</div>
-    </div>
-  </div>
+  return `
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-mark">P</div>
+      <div>
+        <div class="brand-text">가맹점 접수 현황 (보안 관리)</div>
+        <div class="brand-sub">서류 처리 완료 시 체크하면 데이터가 자동 삭제됩니다.</div>
+      </div>
+    </div>
+    <div style="display:flex; gap:8px;">
+      <div class="admin-link" onclick="App.loadGoogleData()" style="background:var(--teal); color:white; border:none; padding:7px 12px; border-radius:100px; cursor:pointer; font-size:12.5px;">새로고침</div>
+      <div class="admin-link" onclick="App.goForm()" style="border:1px solid var(--line); padding:7px 12px; border-radius:100px; background:var(--paper); cursor:pointer; font-size:12.5px;">접수 화면 보기</div>
+    </div>
+  </div>
 
-  <input class="admin-search" placeholder="상호명 또는 전화번호 검색" value="${state.adminSearch}" oninput="App.setAdminSearch(this.value)">
+  <input class="admin-search" placeholder="상호명 또는 전화번호로 검색" value="${state.adminSearch}" oninput="App.setAdminSearch(this.value)">
 
-  <div class="card" style="padding: 0; overflow: hidden;">
-    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13.5px;">
-      <thead>
-        <tr style="background: #F8FAFC; border-bottom: 1.5px solid var(--line); color: var(--ink-soft);">
-          <th style="padding: 14px 16px;">상호명</th>
-          <th style="padding: 14px 16px;">구분</th>
-          <th style="padding: 14px 16px;">전화번호</th>
-          <th style="padding: 14px 16px;">접수일시</th>
-          <th style="padding: 14px 16px;">서류 폴더</th>
-          <th style="padding: 14px 16px; text-align:center;">계약서 작성</th>
-          <th style="padding: 14px 16px; text-align:center;">처리완료/삭제</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${list.length === 0 ? `
-          <tr><td colspan="7" style="text-align:center; padding: 40px; color: var(--ink-soft);">접수된 내역이 없습니다.</td></tr>
-        ` : list.map(m => {
-          let formattedDate = m.createdAt;
-          try { formattedDate = new Date(m.createdAt).toLocaleString('ko-KR'); } catch(e){}
-          let folderHtml = m.files && m.files.startsWith('http') ? `<a href="${m.files}" target="_blank" style="color:var(--teal); font-weight:600; text-decoration:underline;">폴더열기</a>` : '없음';
+  <div class="card" style="padding: 0; overflow: hidden;">
+    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13.5px;">
+      <thead>
+        <tr style="background: #F8FAFC; border-bottom: 1.5px solid var(--line); color: var(--ink-soft);">
+          <th style="padding: 14px 16px;">상호명</th>
+          <th style="padding: 14px 16px;">구분</th>
+          <th style="padding: 14px 16px;">매장 전화</th>
+          <th style="padding: 14px 16px;">대표 폰번호</th>
+          <th style="padding: 14px 16px;">이메일</th>
+          <th style="padding: 14px 16px;">접수일시</th>
+          <th style="padding: 14px 16px;">서류 폴더</th>
+          <th style="padding: 14px 16px; text-align:center;">처리 완료 / 삭제</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${list.length === 0 ? `
+          <tr><td colspan="8" style="text-align:center; padding: 40px; color: var(--ink-soft);">접수된 내역이 없습니다.</td></tr>
+        ` : list.map(m => {
+          let formattedDate = m.createdAt;
+          try { formattedDate = new Date(m.createdAt).toLocaleString('ko-KR'); } catch(e){}
+          
+          let folderBtnHtml = '폴더 없음';
+          if (m.files && m.files.startsWith('http')) {
+            folderBtnHtml = `<a href="${m.files}" target="_blank" style="background: var(--teal); color: white; padding: 5px 10px; border-radius: 6px; font-weight: 600; text-decoration: none; font-size: 11.5px; display: inline-block;">🔍 폴더 열기</a>`;
+          }
 
-          return `
-            <tr style="border-bottom: 1px solid var(--line);">
-              <td style="padding: 14px 16px; font-weight: 700;">${m.storeName || ''}</td>
-              <td style="padding: 14px 16px;">${m.bizType || '개인'}</td>
-              <td style="padding: 14px 16px;">${m.storePhone || m.ownerPhone || ''}</td>
-              <td style="padding: 14px 16px; font-size:12.5px; color:var(--ink-soft);">${formattedDate}</td>
-              <td style="padding: 14px 16px;">${folderHtml}</td>
-              <td style="padding: 14px 16px; text-align:center;">
-                <button onclick="App.openContract('${m.id}')" style="background:var(--teal); color:white; border:none; padding:6px 12px; border-radius:6px; font-weight:600; cursor:pointer; font-size:12px;">계약서 작성</button>
-              </td>
-              <td style="padding: 14px 16px; text-align:center;">
-                <button onclick="App.completeAndDelete('${m.id}', '${m.storeName}')" style="background:var(--red); color:white; border:none; padding:6px 12px; border-radius:6px; font-weight:600; cursor:pointer; font-size:11.5px;">삭제</button>
-              </td>
-            </tr>
-          `;
-        }).join('')}
-      </tbody>
-    </table>
-  </div>`;
+          let bizTypeText = m.bizType === 'corporate' ? '법인' : '개인';
+
+          return `
+            <tr style="border-bottom: 1px solid var(--line); transition: .1s;">
+              <td style="padding: 14px 16px; font-weight: 700;">${m.storeName || ''}</td>
+              <td style="padding: 14px 16px;"><span style="background:${m.bizType==='corporate'?'#E8F4FD':'#EAF6EF'}; color:${m.bizType==='corporate'?'#0066CC':'#2F8F5B'}; padding:3px 8px; border-radius:4px; font-size:11.5px; font-weight:600;">${bizTypeText}</span></td>
+              <td style="padding: 14px 16px;">${m.storePhone || ''}</td>
+              <td style="padding: 14px 16px;">${m.ownerPhone || ''}</td>
+              <td style="padding: 14px 16px; color: var(--ink-soft);">${m.email || ''}</td>
+              <td style="padding: 14px 16px; font-size: 12.5px; color: var(--ink-soft);">${formattedDate}</td>
+              <td style="padding: 14px 16px;">${folderBtnHtml}</td>
+              <td style="padding: 14px 16px; text-align:center;">
+                <button onclick="App.completeAndDelete('${m.id}', '${m.storeName}')" style="background: var(--red); color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 11.5px;">처리완료/삭제</button>
+              </td>
+            </tr>
+          `;
+        }).join('')}
+      </tbody>
+    </table>
+  </div>`;
 }
 
 function compressImage(file, maxDim=1600, quality=0.85){
-  return new Promise((resolve, reject)=>{
-    const reader = new FileReader();
-    reader.onload = e => {
-      const img = new Image();
-      img.onload = () => {
-        let { width, height } = img;
-        if(width > maxDim || height > maxDim){
-          if(width > height){ height = Math.round(height * maxDim/width); width = maxDim; }
-          else { width = Math.round(width * maxDim/height); height = maxDim; }
-        }
-        const canvas = document.createElement('canvas');
-        canvas.width = width; canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, width, height);
-        resolve(canvas.toDataURL('image/jpeg', quality));
-      };
-      img.onerror = reject;
-      img.src = e.target.result;
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
+  return new Promise((resolve, reject)=>{
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        let { width, height } = img;
+        if(width > maxDim || height > maxDim){
+          if(width > height){ height = Math.round(height * maxDim/width); width = maxDim; }
+          else { width = Math.round(width * maxDim/height); height = maxDim; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width; canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 }
 
 function readAsDataURL(file){
-  return new Promise((resolve, reject)=>{
-    const reader = new FileReader();
-    reader.onload = e => resolve(e.target.result);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
+  return new Promise((resolve, reject)=>{
+    const reader = new FileReader();
+    reader.onload = e => resolve(e.target.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 }
 
 const App = {
-  secretClickTimer: null,
-  secretClicks: 0,
-  
-  handleSecretClick(){
-    this.secretClicks++;
-    if(this.secretClicks >= 2){
-      this.goAdmin();
-      this.secretClicks = 0;
-      clearTimeout(this.secretClickTimer);
-    } else {
-      this.secretClickTimer = setTimeout(() => { this.secretClicks = 0; }, 500);
-    }
-  },
+  secretClickTimer: null,
+  secretClicks: 0,
+  
+  handleSecretClick(){
+    this.secretClicks++;
+    if(this.secretClicks >= 2){
+      this.goAdmin();
+      this.secretClicks = 0;
+      clearTimeout(this.secretClickTimer);
+    } else {
+      this.secretClickTimer = setTimeout(() => { this.secretClicks = 0; }, 500);
+    }
+  },
 
-  changeFormState(){ syncFields(); render(); },
+  changeFormState(){
+    syncFields();
+    render();
+  },
 
-  async handleFile(key, file){
-    if(!file) return;
-    syncFields();
-    if(file.size > 15*1024*1024){ toast('파일 용량이 15MB를 초과합니다'); return; }
-    toast('파일 처리 중...');
-    try{
-      const isImage = file.type.startsWith('image/');
-      let dataUrl = isImage ? await compressImage(file) : await readAsDataURL(file);
-      state.files[key] = { name:file.name, dataUrl, isImage };
-      render();
-      toast('서류 첨부 완료');
-    }catch(e){ toast('파일 처리 오류'); }
-  },
-  
-  removeFile(key){ syncFields(); delete state.files[key]; render(); },
+  async handleFile(key, file){
+    if(!file) return;
+    syncFields();
+    const currentDocs = getRequiredDocs(state.fields.businessType, state.fields.bizType, state.fields.hasSign);
+    const docDef = currentDocs.find(d=>d.key===key);
+    if(file.size > 15*1024*1024){ toast('파일 용량이 너무 큽니다 (15MB 이하)'); return; }
+    toast('파일 처리 중...');
+    try{
+      const isImage = file.type.startsWith('image/');
+      let dataUrl;
+      if(isImage) dataUrl = await compressImage(file);
+      else dataUrl = await readAsDataURL(file);
+      state.files[key] = { name:file.name, dataUrl, isImage };
+      render();
+      toast(docDef.label + ' 첨부 완료');
+    }catch(e){
+      toast('파일 처리 중 오류가 발생했습니다');
+    }
+  },
+  
+  removeFile(key){
+    syncFields();
+    delete state.files[key];
+    render();
+  },
 
-  async loadGoogleData() {
-    toast('데이터 불러오는 중...');
-    try {
-      const response = await fetch(API_URL);
-      const result = await response.json();
-      if(result.status === 'success') {
-        state.adminMerchants = result.data || [];
-        render();
-        toast('동기화 완료');
-      } else { toast('불러오기 실패'); }
-    } catch(e) { toast('서버 통신 오류'); }
-  },
+  async loadGoogleData() {
+    toast('구글 시트에서 최신 데이터를 불러오는 중...');
+    try {
+      const response = await fetch(API_URL);
+      const result = await response.json();
+      if(result.status === 'success') {
+        state.adminMerchants = result.data || [];
+        render();
+        toast('최신 데이터 동기화 완료!');
+      } else {
+        toast('데이터 불러오기 실패');
+      }
+    } catch(e) {
+      toast('서버 통신 오류');
+    }
+  },
 
-  async completeAndDelete(id, storeName) {
-    if(!confirm(`[${storeName}] 처리를 완료하고 데이터를 삭제하시겠습니까?`)) return;
-    toast('삭제 중...');
-    try {
-      const res = await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action: 'deleteMerchant', id: id })
-      });
-      const result = await res.json();
-      if(result.status === 'success') {
-        toast('삭제 완료');
-        App.loadGoogleData();
-      } else { toast('삭제 실패'); }
-    } catch(e) { toast('통신 오류'); }
-  },
+  async completeAndDelete(id, storeName) {
+    if(!confirm(`[${storeName}] 가맹점 서류 확인 및 접수 처리를 완료하셨습니까?\n확인을 누르면 시트 내역과 드라이브의 모든 사진 파일이 개인정보 보호를 위해 영구 삭제됩니다.`)) {
+      return;
+    }
 
-  openContract(id) {
-    const merchant = state.adminMerchants.find(m => m.id === id);
-    if(!merchant) { toast('가맹점 정보를 찾을 수 없습니다.'); return; }
-    state.selectedMerchant = merchant;
-    state.view = 'contract';
-    render();
-  },
+    toast('처리 완료 및 데이터 삭제 중...');
+    try {
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'deleteMerchant', id: id })
+      });
+      const result = await response.json();
 
-  async submit(){
-    syncFields();
-    const f = state.fields;
-    if(!f.storeName || !f.storePhone || !f.ownerPhone || !f.email){
-      toast('필수 정보를 모두 입력해 주세요'); return;
-    }
-    const currentDocs = getRequiredDocs(f.businessType, f.bizType, f.hasSign);
-    const missing = currentDocs.filter(d => d.required && !state.files[d.key]);
-    if(missing.length > 0){
-      toast(missing[0].label + ' 필수 서류를 첨부해 주세요'); return;
-    }
-    const submitBtn = document.querySelector('.btn-primary');
-    if(submitBtn){ submitBtn.disabled = true; submitBtn.textContent = '제출 중...'; }
+      if(result.status === 'success') {
+        toast('처리가 완료되어 해당 정보와 파일이 안전하게 삭제되었습니다.');
+        App.loadGoogleData();
+      } else {
+        toast('삭제 처리에 실패했습니다.');
+      }
+    } catch(e) {
+      toast('서버 통신 오류가 발생했습니다.');
+    }
+  },
 
-    const id = 'F' + new Date().toISOString().replace(/[-:.TZ]/g,'').slice(0,14) + '-' + Math.floor(Math.random()*900+100);
-    try {
-      await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({
-          id, createdAt: new Date().toISOString(),
-          storeName: f.storeName, storePhone: f.storePhone, ownerPhone: f.ownerPhone,
-          email: f.email, bizType: f.bizType === 'corporate' ? '법인' : '개인',
-          filesData: state.files
-        })
-      });
-      state.receiptId = id; state.files = {};
-      state.fields = { storeName:'', businessType:'general', bizType:'personal', storePhone:'', ownerPhone:'', email:'', hasSign:'yes' };
-      state.view = 'success';
-      render();
-    } catch(e) {
-      toast('저장 실패. 다시 시도해 주세요.');
-      if(submitBtn){ submitBtn.disabled = false; submitBtn.textContent = '접수 제출하기'; }
-    }
-  },
+  async submit(){
+    syncFields();
+    const f = state.fields;
+    if(!f.storeName || !f.storePhone || !f.ownerPhone || !f.email){
+      toast('필수 정보를 모두 입력해 주세요'); return;
+    }
+    const currentDocs = getRequiredDocs(f.businessType, f.bizType, f.hasSign);
+    const missing = currentDocs.filter(d => d.required && !state.files[d.key]);
+    if(missing.length > 0){
+      toast(missing[0].label + ' 등 필수 서류를 첨부해 주세요'); return;
+    }
+    const submitBtn = document.querySelector('.btn-primary');
+    if(submitBtn){ submitBtn.disabled = true; submitBtn.textContent = '제출 중...'; }
 
-  resetAll(){
-    state = { view:'form', fields:{storeName:'',businessType:'general',bizType:'personal',storePhone:'',ownerPhone:'',email:'',hasSign:'yes'}, files:{}, receiptId:null, adminMerchants:[], adminSearch:'', selectedMerchant:null };
-    location.hash=''; render();
-  },
+    const id = 'F' + new Date().toISOString().replace(/[-:.TZ]/g,'').slice(0,14) + '-' + Math.floor(Math.random()*900+100);
+    const createdAt = new Date().toISOString();
 
-  goForm(){ location.hash=''; state.view='form'; render(); },
-  goAdmin(){ location.hash='admin'; state.view='adminLogin'; render(); },
+    try {
+      const payload = {
+        id: id,
+        createdAt: createdAt,
+        storeName: f.storeName,
+        storePhone: f.storePhone,
+        ownerPhone: f.ownerPhone,
+        email: f.email,
+        bizType: f.bizType === 'corporate' ? '법인' : '개인', // 서버로 법인/개인 전달
+        filesData: state.files
+      };
 
-  async tryAdminLogin(){
-    const val = document.getElementById('admin_pass').value;
-    if(val === 'pos1212!@'){
-      state.adminUnlocked = true;
-      await App.loadGoogleData();
-      state.view = 'admin';
-      render();
-    } else { toast('비밀번호가 올바르지 않습니다'); }
-  },
+      await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload)
+      });
 
-  setAdminSearch(v){ state.adminSearch = v; render(); }
+      state.receiptId = id;
+      state.files = {};
+      state.fields = { storeName:'', businessType:'general', bizType:'personal', storePhone:'', ownerPhone:'', email:'', hasSign:'yes' };
+      state.view = 'success';
+      render();
+    } catch(e) {
+      toast('저장 중 오류가 발생했습니다. 다시 시도해 주세요.');
+      if(submitBtn){ submitBtn.disabled = false; submitBtn.textContent = '접수 제출하기'; }
+    }
+  },
+
+  resetAll(){
+    state = { view:'form', fields:{storeName:'',businessType:'general',bizType:'personal',storePhone:'',ownerPhone:'',email:'',hasSign:'yes'}, files:{}, receiptId:null, adminUnlocked:false, adminMerchants:[], adminSearch:'' };
+    location.hash='';
+    render();
+  },
+
+  goForm(){ location.hash=''; state.view='form'; render(); },
+  goAdmin(){ location.hash='admin'; state.view='adminLogin'; render(); },
+
+  async tryAdminLogin(){
+    const val = document.getElementById('admin_pass').value;
+    if(val === 'pos1212!@'){
+      state.adminUnlocked = true;
+      App.loadGoogleData();
+      state.view = 'admin';
+      render();
+    } else {
+      toast('접근 코드가 올바르지 않습니다');
+    }
+  },
+
+  setAdminSearch(v){ state.adminSearch = v; render(); }
 };
 window.App = App;
-
-// 계약서 자동화 모듈
-const ContractApp = {
-  init(merchant) {
-    if(!merchant) return;
-    document.getElementById('activeMerchantTitle').textContent = `선택된 가맹점: ${merchant.storeName || ''}`;
-    
-    const sName = merchant.storeName || '-';
-    const oName = merchant.ownerName || '권승철';
-    const phone = merchant.ownerPhone || merchant.storePhone || '-';
-    const address = merchant.address || '전남광주통합특별시 광산구 임방울대로800번길 52, 1층';
-
-    document.getElementById('p_storeName').textContent = sName;
-    document.getElementById('p_storeName2').textContent = sName;
-    document.getElementById('p_ownerName').textContent = oName;
-    document.getElementById('p_phone').textContent = phone;
-    document.getElementById('p_address').textContent = address;
-
-    document.getElementById('cms_storeName').textContent = sName;
-    document.getElementById('cms_depositor').textContent = oName;
-    document.getElementById('cms_depositor2').textContent = oName;
-    document.getElementById('cms_ownerName2').textContent = oName;
-    document.getElementById('cms_phone').textContent = phone;
-    if(merchant.address) document.getElementById('cms_address').textContent = merchant.address;
-
-    const todayStr = new Date().toISOString().substring(0, 10);
-    document.getElementById('c_installDate').value = todayStr;
-    this.updateDates();
-    this.calc();
-    this.syncFeeText();
-  },
-
-  updateDates() {
-    const instVal = document.getElementById('c_installDate').value;
-    if(!instVal) return;
-    let d = new Date(instVal);
-    d.setFullYear(d.getFullYear() + 3);
-    let expStr = `${d.getFullYear()}년 ${String(d.getMonth()+1).padStart(2,'0')}월 ${String(d.getDate()).padStart(2,'0')}일`;
-    document.getElementById('c_expireDateText').textContent = expStr;
-    
-    document.getElementById('cms_month').textContent = instVal.substring(5,7);
-    document.getElementById('cms_day').textContent = instVal.substring(8,10);
-  },
-
-  syncFeeText() {
-    const feeVal = document.getElementById('c_monthlyFeeInput').value;
-    document.getElementById('cms_feeDisplay').textContent = `${feeVal}원 (VAT포함)`;
-  },
-
-  calc() {
-    let grandTotal = 0;
-    for(let i=0; i<6; i++) {
-      let qty = Number(document.getElementById(`eq_qty_${i}`).value) || 0;
-      let priceRaw = document.getElementById(`eq_price_${i}`).value.replace(/[^0-9]/g, '');
-      let price = Number(priceRaw) || 0;
-      let sub = qty * price;
-      grandTotal += sub;
-      document.getElementById(`eq_tot_${i}`).textContent = sub.toLocaleString();
-    }
-    document.getElementById('eq_grand_total').textContent = grandTotal.toLocaleString();
-  },
-
-  goBackToList() {
-    state.view = 'admin';
-    render();
-  }
-};
-window.ContractApp = ContractApp;
 
 render();
 </script>
