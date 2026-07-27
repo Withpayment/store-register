@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>가맹점 서류 접수 및 계약서 자동화</title>
+<title>가맹점 서류 접수 및 계약서 자동화 (2026 정책 반영)</title>
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
 <style>
 @font-face{
@@ -173,7 +173,7 @@ body{
   <div class="card no-print" style="background:#EBF8FF; border:1px solid #BEE3F8; display:flex; justify-content:space-between; align-items:center;">
     <div>
       <div style="font-weight:700; font-size:16px; color:#2B6CB0;" id="activeMerchantTitle">선택된 가맹점: 없음</div>
-      <div style="font-size:13px; color:#4A5568; margin-top:4px;">장비를 선택하면 계약서 조항 및 위약금, CMS 출금동의서에 자동 반영됩니다.</div>
+      <div style="font-size:13px; color:#4A5568; margin-top:4px;">장비 구성에 따른 임대료 및 위약금 조건(2026 영업정책 기준)을 확인하고 수정할 수 있습니다.</div>
     </div>
     <button onclick="ContractApp.goBackToList()" class="no-print" style="background:var(--ink); color:white; border:none; padding:10px 16px; border-radius:8px; font-weight:600; cursor:pointer; font-size:13px;">← 접수 목록으로</button>
   </div>
@@ -190,7 +190,6 @@ body{
       <tr>
         <th>"갑" (공급자)</th>
         <td colspan="3">
-          주소: 광주광역시 서구 유덕로 114<br>
           상호: (주)위드페이먼트 | 대표자: 고영배 (인) | 연락처: 1599-5413
         </td>
       </tr>
@@ -205,7 +204,7 @@ body{
     </table>
 
     <div style="font-size:13px; margin-bottom:15px; line-height:1.5;">
-      임대인 (주)위드페이먼트(이하 “갑”이라 한다)과 상기 임차인 <span id="p_storeName2">-</span>(이하 “을”이라 한다)간에 신용카드조회기, POS의 임대차에 관하여 다음과 같이 계약을 체결한다.
+      임대인 (주)위드페이먼트(이하 “갑”이라 한다)과 상기 임차인 <span id="p_storeName2">-</span>(이하 “을”이라 한다)간에 신용카드조회기, POS 및 관련 장비의 임대차에 관하여 다음과 같이 계약을 체결한다.
     </div>
 
     <div class="contract-terms">
@@ -221,109 +220,89 @@ body{
       <div class="article-title">제 4조 (계약기간)</div>
       임대 의무기간은 “갑”이 “을”에게 설치한 날로부터 3년으로 한다. 다만 계약 만료일 기준 1개월 전에 서면으로 계약변경 또는 해지통보가 없을 경우 계약은 매 1년 자동 연장한다.<br>
 
-      <div class="article-title">제 5조 (계약조건)</div>
-      “을”은 계약기간 동안 “갑”에게 임대료 <span id="displayMonthlyFeeText" style="font-weight:700;">16,500원/월</span>을 지불해야 한다.<br>
+      <div class="article-title">제 5조 (계약조건 및 월 임대료)</div>
+      “을”은 계약기간 동안 “갑”에게 월 임대료 <input type="text" id="c_monthlyFeeInput" value="16,500" style="width:75px; text-align:right; border:none; border-bottom:1px solid #000; font-weight:700; font-family:'Pretendard';" oninput="ContractApp.syncFeeText()">원 (부가가치세 포함)을 매월 지정일에 지불해야 한다.<br>
 
-      <div class="article-title">제 6조 (유지보관 책임)</div>
-      “을”은 선량한 관리자로써 임차장비를 유지하여야 하며, 고장 발생 시에는 반드시 “갑”에게 수리보수를 의뢰하여야 한다. 이때, “을”의 고의 또는 과실로 고장이 발생된 경우에는 “을”이 해당수리비를 부담해야 한다.<br>
+      <div class="article-title">제 6조 (유지보관 책임 및 A/S)</div>
+      “을”은 선량한 관리자로써 임차장비를 유지하여야 하며, 고장 발생 시 A/S 정책에 따라 처리한다. (방문수수료 없음, 고장시 대체장비 제공)<br>
 
       <div class="article-title">제 7조 (임차권의 양도 및 전대의 금지)</div>
-      “을”은 임차한 단말기를 제 3자에게 양도하거나 전대 등의 처분을 할 수 없으며, 타인에게 사용하게 할 수 없다.<br>
+      “을”은 임차한 단말기를 제 3자에게 양도하거나 전대 등의 처분을 할 수 없다.<br>
 
-      <div class="article-title">제 8조 (A/S 관련)</div>
-      기기의 무상보증기간은 1년을 원칙으로 한다. 다만, 무상보증기간 내에라도 번개나 벼락 등의 천재지변으로 인한 고장이나 침수, 허용치 이상의 충격으로 고장이 발생했다면, “을”이 해당수리비를 부담해야 한다.<br>
-
-      <div class="article-title">제 9조 (계약의 해지)</div>
-      “을”이 선량한 관리자의 주의를 태만히 하거나 “갑”의 조회서비스를 이용하지 않는 등 본 계약의 내용을 준수하지 아니할 경우, “갑”은 “을”에게 1개월간의 유예기간을 두고 이의 시정을 요청하며, “을”이 이에 응하지 않을 경우 본 계약을 해지할 수 있다. 이때 “을”은 “갑”에게 임대한 물품을 반드시 반환하여야 하며, 계약 해지와 관련한 배상은 제 10조에 따른다.<br>
-
-      <div class="article-title">제 10조 (임차물품의 배상)</div>
-      “을”은 스스로 계약을 해지하거나, 제 9조의 사유로 계약을 해지당할 경우 또는 기타사유 등으로 인하여 계약을 계속 이행하지 못할 경우에는 (표 1)에서 정한 위약금을 배상하여야 한다. 또한, 임차물 등의 분실 및 훼손 등의 사유로 물품의 반환이 불가능할 때에는 제품의 소비자가격을 배상하여야 한다.
+      <div class="article-title">제 8조 (계약의 해지 및 위약금)</div>
+      “을”의 귀책사유 또는 계약기간 내 해지(타 밴 변경 등) 시, 아래 [표 1]의 장비별 소비자가격 배상 및 약정 위약금을 배상하여야 한다.
     </div>
 
-    <div style="font-weight:700; margin:15px 0 8px; font-size:13.5px; text-align:center;">( 표 1 ) 임차물품의 배상기준 소비자가격 (부가세 별도)</div>
+    <div style="font-weight:700; margin:15px 0 8px; font-size:13.5px; text-align:center;">( 표 1 ) 임차물품 구성 및 위약금 산정 기준</div>
     <table class="doc-table" id="equipmentTable">
       <thead>
         <tr>
-          <th style="width:30%;">품목</th>
+          <th style="width:30%;">품목 (2026 정책 기준)</th>
           <th style="width:12%; text-align:center;">수량</th>
-          <th style="width:20%; text-align:right;">단가</th>
+          <th style="width:20%; text-align:right;">소비자가격(단가)</th>
           <th style="width:20%; text-align:right;">금액</th>
           <th style="width:18%;">비고</th>
         </tr>
       </thead>
       <tbody>
         <tr>
-          <td>메인포스</td>
+          <td>메인포스 (기본형)</td>
           <td style="text-align:center;"><input type="number" min="0" value="1" id="eq_qty_0" oninput="ContractApp.calc()" style="width:45px; text-align:center;"> set</td>
           <td style="text-align:right;"><input type="text" value="1,250,000" id="eq_price_0" oninput="ContractApp.calc()" style="width:85px; text-align:right;"></td>
           <td style="text-align:right; font-weight:600;" id="eq_tot_0">1,250,000</td>
+          <td>포스 패키지 구성</td>
+        </tr>
+        <tr>
+          <td>토스 프론트</td>
+          <td style="text-align:center;"><input type="number" min="0" value="1" id="eq_qty_1" oninput="ContractApp.calc()" style="width:45px; text-align:center;"> ea</td>
+          <td style="text-align:right;"><input type="text" value="310,000" id="eq_price_1" oninput="ContractApp.calc()" style="width:85px; text-align:right;"></td>
+          <td style="text-align:right; font-weight:600;" id="eq_tot_1">310,000</td>
           <td></td>
         </tr>
         <tr>
-          <td>주문포스</td>
-          <td style="text-align:center;"><input type="number" min="0" value="0" id="eq_qty_1" oninput="ContractApp.calc()" style="width:45px; text-align:center;"></td>
-          <td style="text-align:right;"><input type="text" value="0" id="eq_price_1" oninput="ContractApp.calc()" style="width:85px; text-align:right;"></td>
-          <td style="text-align:right; font-weight:600;" id="eq_tot_1">0</td>
-          <td></td>
+          <td>단말기 (유선/백업)</td>
+          <td style="text-align:center;"><input type="number" min="0" value="1" id="eq_qty_2" oninput="ContractApp.calc()" style="width:45px; text-align:center;"> ea</td>
+          <td style="text-align:right;"><input type="text" value="100,000" id="eq_price_2" oninput="ContractApp.calc()" style="width:85px; text-align:right;"></td>
+          <td style="text-align:right; font-weight:600;" id="eq_tot_2">100,000</td>
+          <td>백업카드결제용</td>
         </tr>
         <tr>
-          <td>스캐너</td>
-          <td style="text-align:center;"><input type="number" min="0" value="0" id="eq_qty_2" oninput="ContractApp.calc()" style="width:45px; text-align:center;"></td>
-          <td style="text-align:right;"><input type="text" value="0" id="eq_price_2" oninput="ContractApp.calc()" style="width:85px; text-align:right;"></td>
-          <td style="text-align:right; font-weight:600;" id="eq_tot_2">0</td>
-          <td></td>
-        </tr>
-        <tr>
-          <td>주방프린터</td>
-          <td style="text-align:center;"><input type="number" min="0" value="0" id="eq_qty_3" oninput="ContractApp.calc()" style="width:45px; text-align:center;"></td>
-          <td style="text-align:right;"><input type="text" value="0" id="eq_price_3" oninput="ContractApp.calc()" style="width:85px; text-align:right;"></td>
+          <td>주방프린터 추가</td>
+          <td style="text-align:center;"><input type="number" min="0" value="0" id="eq_qty_3" oninput="ContractApp.calc()" style="width:45px; text-align:center;"> ea</td>
+          <td style="text-align:right;"><input type="text" value="70,000" id="eq_price_3" oninput="ContractApp.calc()" style="width:85px; text-align:right;"></td>
           <td style="text-align:right; font-weight:600;" id="eq_tot_3">0</td>
-          <td></td>
+          <td>추가 옵션</td>
         </tr>
         <tr>
-          <td>듀얼모니터</td>
-          <td style="text-align:center;"><input type="number" min="0" value="0" id="eq_qty_4" oninput="ContractApp.calc()" style="width:45px; text-align:center;"></td>
-          <td style="text-align:right;"><input type="text" value="0" id="eq_price_4" oninput="ContractApp.calc()" style="width:85px; text-align:right;"></td>
+          <td>오더포스(리퍼) 추가</td>
+          <td style="text-align:center;"><input type="number" min="0" value="0" id="eq_qty_4" oninput="ContractApp.calc()" style="width:45px; text-align:center;"> set</td>
+          <td style="text-align:right;"><input type="text" value="500,000" id="eq_price_4" oninput="ContractApp.calc()" style="width:85px; text-align:right;"></td>
           <td style="text-align:right; font-weight:600;" id="eq_tot_4">0</td>
-          <td></td>
+          <td>추가 옵션</td>
         </tr>
         <tr>
           <td>금전함</td>
           <td style="text-align:center;"><input type="number" min="0" value="1" id="eq_qty_5" oninput="ContractApp.calc()" style="width:45px; text-align:center;"> ea</td>
-          <td style="text-align:right;"><input type="text" value="0" id="eq_price_5" oninput="ContractApp.calc()" style="width:85px; text-align:right;"></td>
-          <td style="text-align:right; font-weight:600;" id="eq_tot_5">0</td>
-          <td>포스set 포함</td>
-        </tr>
-        <tr>
-          <td>카드체크기</td>
-          <td style="text-align:center;"><input type="number" min="0" value="0" id="eq_qty_6" oninput="ContractApp.calc()" style="width:45px; text-align:center;"></td>
-          <td style="text-align:right;"><input type="text" value="0" id="eq_price_6" oninput="ContractApp.calc()" style="width:85px; text-align:right;"></td>
-          <td style="text-align:right; font-weight:600;" id="eq_tot_6">0</td>
-          <td></td>
-        </tr>
-        <tr>
-          <td>네이버커넥트</td>
-          <td style="text-align:center;"><input type="number" min="0" value="1" id="eq_qty_7" oninput="ContractApp.calc()" style="width:45px; text-align:center;"> ea</td>
-          <td style="text-align:right;"><input type="text" value="310,000" id="eq_price_7" oninput="ContractApp.calc()" style="width:85px; text-align:right;"></td>
-          <td style="text-align:right; font-weight:600;" id="eq_tot_7">310,000</td>
-          <td></td>
+          <td style="text-align:right;"><input type="text" value="45,000" id="eq_price_5" oninput="ContractApp.calc()" style="width:85px; text-align:right;"></td>
+          <td style="text-align:right; font-weight:600;" id="eq_tot_5">45,000</td>
+          <td>포스 기본 포함</td>
         </tr>
       </tbody>
       <tfoot>
         <tr style="background:#F8FAFC; font-weight:700;">
-          <td colspan="3" style="text-align:right;">합계</td>
-          <td style="text-align:right; color:var(--teal-deep);" id="eq_grand_total">1,560,000</td>
+          <td colspan="3" style="text-align:right;">장비 소비자가격 합계</td>
+          <td style="text-align:right; color:var(--teal-deep);" id="eq_grand_total">1,705,000</td>
           <td></td>
         </tr>
       </tfoot>
     </table>
     <div style="font-size:12px; font-weight:600; color:var(--red); margin-bottom:20px;">
-      ※ 해지(타 밴 변경)시 위약금 : 30,000원 × 잔여 계약 개월 수
+      ※ 중도 해지 시 약정 위약금 산식: 잔여 계약 개월 수 × <input type="text" id="c_penaltyUnitInput" value="30,000" style="width:65px; text-align:center; border:none; border-bottom:1px solid #E24C4C; font-weight:700; color:#E24C4C; font-family:'Pretendard';">원 (단말기 단독형의 경우 10,000원 적용 가능)
     </div>
 
     <div class="contract-terms">
-      <div class="article-title">제 11조 (계약의 해석)</div>
-      본 계약에서 정하지 아니한 사항은 일반 상관례에 따르며, 본 계약과 관련된 소송이 발생할 경우, 그 관할법원은 “갑”의 소재지 관할법원으로 한다.
+      <div class="article-title">제 9조 (계약의 해석)</div>
+      본 계약에서 정하지 아니한 사항은 일반 상관례 및 회사의 2026년 영업정책에 따르며, 분쟁 발생 시 관할법원은 “갑”의 소재지 관할법원으로 한다.
     </div>
   </div>
 
@@ -344,7 +323,7 @@ body{
           신청인 : <span id="cms_storeName" style="font-weight:700;">-</span> | 사업자번호 : <span id="cms_bizNum">673-28-02038</span><br>
           휴대폰 : <span id="cms_phone">-</span><br>
           주소 : <span id="cms_address">-</span><br>
-          출금금액 : <b>16,500원 (VAT포함)</b> | 출금종류 : CMS | 출금일 : 매월 지정일
+          출금금액 : <b id="cms_feeDisplay">16,500원 (VAT포함)</b> | 출금종류 : CMS | 출금일 : 매월 지정일
         </td>
       </tr>
       <tr>
@@ -352,7 +331,7 @@ body{
         <td>
           중소기업은행 / 계좌번호 : 479-094497-04-016<br>
           예금주명 : <span id="cms_depositor">-</span> (신청인과의 관계: 본인)<br>
-          예금주의 주민(사업자)등록번호 : <input type="text" placeholder="예: 890303-*******" style="border:none; border-bottom:1px solid #999; font-family:'Pretendard'; width:180px; padding:2px;"> (법인인 경우 반드시 사업자등록번호 기입)
+          예금주의 주민(사업자)등록번호 : <input type="text" placeholder="예: 890303-*******" style="border:none; border-bottom:1px solid #999; font-family:'Pretendard'; width:180px; padding:2px;"> (법인인 경우 사업자등록번호 기입)
         </td>
       </tr>
     </table>
@@ -360,10 +339,8 @@ body{
     <div style="font-size:11.5px; border:1px solid var(--line); padding:12px; background:#FAFAFB; border-radius:8px; margin-bottom:15px; line-height:1.5;">
       <b>[개인정보 및 고유식별정보 수집 및 이용 동의]</b><br>
       - 수집 및 이용목적 : CMS 출금이체를 통한 요금 수납<br>
-      - 수집항목 (개인정보) : 성명, 전화번호, 휴대전화번호, 금융기관명, 계좌번호<br>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(고유식별정보) : 주민등록번호<br>
+      - 수집항목 (개인정보) : 성명, 전화번호, 휴대전화번호, 금융기관명, 계좌번호 / (고유식별정보) : 주민등록번호<br>
       - 보유 및 이용기간 : 수집, 이용 동의일부터 CMS 출금이체 종료일(해지일)까지<br>
-      - 신청자는 개인정보 및 고유식별정보 수집 및 이용을 거부할 권리가 있으며, 권리행사시 출금이체 신청이 거부될 수 있습니다.<br>
       <div style="margin-top:6px; display:flex; gap:20px;">
         <div>(개인정보) 동의함 □ &nbsp; 동의안함 □</div>
         <div>(고유식별정보) 동의함 □ &nbsp; 동의안함 □</div>
@@ -373,10 +350,8 @@ body{
     <div style="font-size:11.5px; border:1px solid var(--line); padding:12px; background:#FAFAFB; border-radius:8px; margin-bottom:20px; line-height:1.5;">
       <b>[개인정보 제3자 제공 동의]</b><br>
       - 개인정보를 제공받는 자 : 사단법인 금융결제원, 엔콤소프트(주)<br>
-      - 개인정보를 제공받는 자의 개인정보 이용 목적 : CMS 출금이체 서비스 제공 및 출금동의 확인<br>
-      - 제공하는 개인정보의 항목 : 성명, 금융기관명, 계좌번호, 주민등록번호, 전화번호, 휴대전화번호<br>
-      - 개인정보를 제공받는 자의 개인정보 보유 및 이용기간 : CMS 출금이체 서비스 제공 및 출금동의 확인 목적을 달성할 때 까지<br>
-      - 신청자는 개인정보에 대해 수납기관이 사단법인 금융결제원과 엔콤소프트(주)에 제공하는 것을 거부할 권리가 있으며, 거부시 출금이체 신청이 거부 될 수 있습니다.<br>
+      - 개인정보 이용 목적 : CMS 출금이체 서비스 제공 및 출금동의 확인<br>
+      - 제공 항목 : 성명, 금융기관명, 계좌번호, 주민등록번호, 연락처<br>
       <div style="margin-top:6px;">동의함 □ &nbsp; 동의안함 □</div>
     </div>
 
@@ -384,7 +359,6 @@ body{
       상기 금융거래정보의 제공 및 개인정보의 수집/이용, 제3자 제공에 동의하며 CMS 출금이체 신청합니다.<br><br>
       <b>2026년 <span id="cms_month">07</span>월 <span id="cms_day">28</span>일</b><br><br>
       신청인 : <span id="cms_ownerName2">-</span> (인 또는 서명) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 예금주 : <span id="cms_depositor2">-</span> (인 또는 서명)<br><br>
-      <span style="font-size:11px; color:var(--ink-soft);">* 인감 또는 서명은 해당 예금계좌(통장) 사용인감 또는 서명을 날인하여야 합니다.</span>
     </div>
   </div>
 
@@ -856,7 +830,6 @@ const ContractApp = {
     if(!merchant) return;
     document.getElementById('activeMerchantTitle').textContent = `선택된 가맹점: ${merchant.storeName || ''}`;
     
-    // 가맹점 정보 반영
     const sName = merchant.storeName || '-';
     const oName = merchant.ownerName || '권승철';
     const phone = merchant.ownerPhone || merchant.storePhone || '-';
@@ -879,6 +852,7 @@ const ContractApp = {
     document.getElementById('c_installDate').value = todayStr;
     this.updateDates();
     this.calc();
+    this.syncFeeText();
   },
 
   updateDates() {
@@ -893,9 +867,14 @@ const ContractApp = {
     document.getElementById('cms_day').textContent = instVal.substring(8,10);
   },
 
+  syncFeeText() {
+    const feeVal = document.getElementById('c_monthlyFeeInput').value;
+    document.getElementById('cms_feeDisplay').textContent = `${feeVal}원 (VAT포함)`;
+  },
+
   calc() {
     let grandTotal = 0;
-    for(let i=0; i<8; i++) {
+    for(let i=0; i<6; i++) {
       let qty = Number(document.getElementById(`eq_qty_${i}`).value) || 0;
       let priceRaw = document.getElementById(`eq_price_${i}`).value.replace(/[^0-9]/g, '');
       let price = Number(priceRaw) || 0;
