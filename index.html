@@ -169,7 +169,6 @@ const BUSINESS_TYPES = [
 ];
 
 const COMMON_DOCS = [
-  { key:'idCard', label:'신분증', accept:'image/*', hint:'주민등록증 또는 운전면허증 사진', required:true },
   { key:'bankbook', label:'통장사본', accept:'image/*,.pdf', hint:'입금 계좌 통장 첫 페이지', required:true },
   { key:'bizLicense', label:'사업자등록증', accept:'image/*,.pdf', hint:'사업자등록증 사본', required:true },
   { key:'interiorPhoto', label:'매장 내부 사진', accept:'image/*', hint:'매장 내부 전경', required:true },
@@ -182,12 +181,21 @@ const EXTRA_DOCS = {
   academy: { key:'permitLicense', label:'학원(교습소) 설립운영 등록증', accept:'image/*,.pdf', hint:'등록증 사본', required:true }
 };
 
-function getRequiredDocs(businessType, hasSign){
+function getRequiredDocs(businessType, bizType, hasSign){
   let docs = [...COMMON_DOCS];
   
-  // 업종별 허가증 삽입 (보통 4번째 위치)
+  // 개인/법인에 따른 대표자 관련 서류 분기
+  if(bizType === 'corporate') {
+    docs.unshift({ key:'corpReg', label:'법인등기부등본', accept:'image/*,.pdf', hint:'말일 포함 최근 등기부등본', required:true });
+    docs.unshift({ key:'corpSeal', label:'법인인감증명서', accept:'image/*,.pdf', hint:'최근 3개월 이내 발급분', required:true });
+    docs.push({ key:'shareholder', label:'주주명부', accept:'image/*,.pdf', hint:'최신 주주명부 사본', required:true });
+  } else {
+    docs.unshift({ key:'idCard', label:'대표자 신분증', accept:'image/*', hint:'주민등록증 또는 운전면허증 사진', required:true });
+  }
+  
+  // 업종별 허가증 삽입
   if(EXTRA_DOCS[businessType]){
-    docs.splice(3, 0, EXTRA_DOCS[businessType]);
+    docs.splice(4, 0, EXTRA_DOCS[businessType]);
   }
 
   // 간판 유무에 따라 서류 다르게 구성
@@ -203,7 +211,7 @@ function getRequiredDocs(businessType, hasSign){
 
 let state = {
   view: location.hash === '#admin' ? 'adminLogin' : 'form',
-  fields: { storeName:'', businessType:'general', storePhone:'', ownerPhone:'', email:'', hasSign:'yes' },
+  fields: { storeName:'', businessType:'general', bizType:'personal', storePhone:'', ownerPhone:'', email:'', hasSign:'yes' },
   files: {},
   receiptId: null,
   adminUnlocked: false,
@@ -218,6 +226,9 @@ function syncFields(){
   state.fields.ownerPhone = document.getElementById('f_ownerPhone')?.value || state.fields.ownerPhone;
   state.fields.email = document.getElementById('f_email')?.value || state.fields.email;
   
+  const bizRadio = document.querySelector('input[name="f_bizType"]:checked');
+  if(bizRadio) state.fields.bizType = bizRadio.value;
+
   const signRadio = document.querySelector('input[name="f_hasSign"]:checked');
   if(signRadio) state.fields.hasSign = signRadio.value;
 }
@@ -254,16 +265,24 @@ function topbar(){
 
 function renderForm(){
   const f = state.fields;
-  const currentDocs = getRequiredDocs(f.businessType, f.hasSign);
+  const currentDocs = getRequiredDocs(f.businessType, f.bizType, f.hasSign);
   const requiredDocsCount = currentDocs.filter(d => d.required).length;
   const filledRequiredCount = currentDocs.filter(d => d.required && state.files[d.key]).length;
 
   return `
   <div class="card">
     <div class="section-title">가맹점 정보 및 서류 제출</div>
-    <div class="section-sub">업종 및 간판 유무에 따라 필요한 서류 항목이 자동으로 변경됩니다.</div>
+    <div class="section-sub">사업자 형태, 업종 및 간판 유무에 따라 필요한 서류 항목이 자동으로 변경됩니다.</div>
 
     <div class="field">
+      <label>사업자 구분 <span class="req">*</span></label>
+      <div class="radio-group">
+        <label class="radio-label"><input type="radio" name="f_bizType" value="personal" ${f.bizType==='personal'?'checked':''} onchange="App.changeFormState()"> 개인사업자</label>
+        <label class="radio-label"><input type="radio" name="f_bizType" value="corporate" ${f.bizType==='corporate'?'checked':''} onchange="App.changeFormState()"> 법인사업자</label>
+      </div>
+    </div>
+
+    <div class="field" style="margin-top:18px;">
       <label>상호명(매장명) <span class="req">*</span></label>
       <input type="text" id="f_storeName" placeholder="예: 카페 온기" value="${f.storeName}">
     </div>
@@ -386,6 +405,7 @@ function renderAdmin(){
       <thead>
         <tr style="background: #F8FAFC; border-bottom: 1.5px solid var(--line); color: var(--ink-soft);">
           <th style="padding: 14px 16px;">상호명</th>
+          <th style="padding: 14px 16px;">구분</th>
           <th style="padding: 14px 16px;">매장 전화</th>
           <th style="padding: 14px 16px;">대표 폰번호</th>
           <th style="padding: 14px 16px;">이메일</th>
@@ -396,7 +416,7 @@ function renderAdmin(){
       </thead>
       <tbody>
         ${list.length === 0 ? `
-          <tr><td colspan="7" style="text-align:center; padding: 40px; color: var(--ink-soft);">접수된 내역이 없습니다.</td></tr>
+          <tr><td colspan="8" style="text-align:center; padding: 40px; color: var(--ink-soft);">접수된 내역이 없습니다.</td></tr>
         ` : list.map(m => {
           let formattedDate = m.createdAt;
           try { formattedDate = new Date(m.createdAt).toLocaleString('ko-KR'); } catch(e){}
@@ -406,9 +426,12 @@ function renderAdmin(){
             folderBtnHtml = `<a href="${m.files}" target="_blank" style="background: var(--teal); color: white; padding: 5px 10px; border-radius: 6px; font-weight: 600; text-decoration: none; font-size: 11.5px; display: inline-block;">🔍 폴더 열기</a>`;
           }
 
+          let bizTypeText = m.bizType === 'corporate' ? '법인' : '개인';
+
           return `
             <tr style="border-bottom: 1px solid var(--line); transition: .1s;">
               <td style="padding: 14px 16px; font-weight: 700;">${m.storeName || ''}</td>
+              <td style="padding: 14px 16px;"><span style="background:${m.bizType==='corporate'?'#E8F4FD':'#EAF6EF'}; color:${m.bizType==='corporate'?'#0066CC':'#2F8F5B'}; padding:3px 8px; border-radius:4px; font-size:11.5px; font-weight:600;">${bizTypeText}</span></td>
               <td style="padding: 14px 16px;">${m.storePhone || ''}</td>
               <td style="padding: 14px 16px;">${m.ownerPhone || ''}</td>
               <td style="padding: 14px 16px; color: var(--ink-soft);">${m.email || ''}</td>
@@ -482,7 +505,7 @@ const App = {
   async handleFile(key, file){
     if(!file) return;
     syncFields();
-    const currentDocs = getRequiredDocs(state.fields.businessType, state.fields.hasSign);
+    const currentDocs = getRequiredDocs(state.fields.businessType, state.fields.bizType, state.fields.hasSign);
     const docDef = currentDocs.find(d=>d.key===key);
     if(file.size > 15*1024*1024){ toast('파일 용량이 너무 큽니다 (15MB 이하)'); return; }
     toast('파일 처리 중...');
@@ -553,7 +576,7 @@ const App = {
     if(!f.storeName || !f.storePhone || !f.ownerPhone || !f.email){
       toast('필수 정보를 모두 입력해 주세요'); return;
     }
-    const currentDocs = getRequiredDocs(f.businessType, f.hasSign);
+    const currentDocs = getRequiredDocs(f.businessType, f.bizType, f.hasSign);
     const missing = currentDocs.filter(d => d.required && !state.files[d.key]);
     if(missing.length > 0){
       toast(missing[0].label + ' 등 필수 서류를 첨부해 주세요'); return;
@@ -572,6 +595,7 @@ const App = {
         storePhone: f.storePhone,
         ownerPhone: f.ownerPhone,
         email: f.email,
+        bizType: f.bizType === 'corporate' ? '법인' : '개인', // 서버로 법인/개인 전달
         filesData: state.files
       };
 
@@ -583,7 +607,7 @@ const App = {
 
       state.receiptId = id;
       state.files = {};
-      state.fields = { storeName:'', businessType:'general', storePhone:'', ownerPhone:'', email:'', hasSign:'yes' };
+      state.fields = { storeName:'', businessType:'general', bizType:'personal', storePhone:'', ownerPhone:'', email:'', hasSign:'yes' };
       state.view = 'success';
       render();
     } catch(e) {
@@ -593,7 +617,7 @@ const App = {
   },
 
   resetAll(){
-    state = { view:'form', fields:{storeName:'',businessType:'general',storePhone:'',ownerPhone:'',email:'',hasSign:'yes'}, files:{}, receiptId:null, adminUnlocked:false, adminMerchants:[], adminSearch:'' };
+    state = { view:'form', fields:{storeName:'',businessType:'general',bizType:'personal',storePhone:'',ownerPhone:'',email:'',hasSign:'yes'}, files:{}, receiptId:null, adminUnlocked:false, adminMerchants:[], adminSearch:'' };
     location.hash='';
     render();
   },
