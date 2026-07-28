@@ -303,7 +303,7 @@ let state = {
   adminSearch: '',
   contractMerchant: null,
   selection: defaultSelection(),
-  contractPeriodYears: 3, // 기본 3년
+  contractPeriodYears: 3,
   installDate: new Date().toISOString().slice(0,10)
 };
 
@@ -721,7 +721,6 @@ function renderContract(){
   const indemnityTotal = indemnityRows.reduce((sum,r)=> sum + (r.amount||0), 0);
   const hasUnpricedItem = indemnityRows.some(r=>r.amount===null);
 
-  // 날짜 계산
   const installDateObj = new Date(state.installDate || Date.now());
   const installStr = installDateObj.toLocaleDateString('ko-KR', {year:'numeric', month:'2-digit', day:'2-digit'}).replace(/\. /g, '-').replace(/\./g, '');
   
@@ -730,7 +729,6 @@ function renderContract(){
   expiryDateObj.setDate(expiryDateObj.getDate() - 1);
   const expiryStr = expiryDateObj.toLocaleDateString('ko-KR', {year:'numeric', month:'2-digit', day:'2-digit'}).replace(/\. /g, '-').replace(/\./g, '');
 
-  // 단말기 및 POS 요약
   let terminalName = '-';
   let posName = '-';
   let primaryModelOption = '-';
@@ -753,7 +751,6 @@ function renderContract(){
     <div class="contract-doc">
       <div class="contract-top-title">임대서비스계약서</div>
 
-      <!-- 상단 정보 테이블 (사진 참조) -->
       <table class="ref-table">
         <tr>
           <th style="width:10%">설치일</th>
