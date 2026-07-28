@@ -159,7 +159,7 @@ body{
 <div class="toast" id="toast"></div>
 
 <script>
-const API_URL = "https://script.google.com/macros/s/AKfycbzS-v_pkDFfge_-ngUFXirsUEpNT3cva8oYBgOMRxeiyNq0MczGCNHBI1hLFnrtcTKM/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbz73CnI_livDv2z7f2if7qAvoL9ehM6OUCr-PvbpxmBzj_06YZpZmMnw3eiZpcQhEVw/exec";
 
 const BUSINESS_TYPES = [
   { id: 'general', name: '일반 도소매/서비스업 (일반 사업자)' },
@@ -215,6 +215,7 @@ let state = {
   files: {},
   receiptId: null,
   adminUnlocked: false,
+  adminToken: null,       // 로그인 성공 시 서버가 발급한 세션 토큰 (메모리에만 보관)
   adminMerchants: [],
   adminSearch: ''
 };
@@ -367,9 +368,9 @@ function renderAdminLogin(){
     <div class="section-title">관리자 확인</div>
     <div class="section-sub">접수된 가맹점 목록을 확인하려면 접근 코드를 입력하세요.</div>
     <div class="field">
-      <input type="password" id="admin_pass" placeholder="접근 코드" style="width:100%;padding:12px;border:1.5px solid var(--line);border-radius:10px;font-size:14.5px;">
+      <input type="password" id="admin_pass" placeholder="접근 코드" style="width:100%;padding:12px;border:1.5px solid var(--line);border-radius:10px;font-size:14.5px;" onkeydown="if(event.key==='Enter') App.tryAdminLogin()">
     </div>
-    <button class="btn btn-primary" onclick="App.tryAdminLogin()">확인</button>
+    <button class="btn btn-primary" id="admin_login_btn" onclick="App.tryAdminLogin()">확인</button>
     <div style="text-align:center;margin-top:14px;">
       <span style="font-size:12.5px;color:var(--ink-soft);cursor:pointer;" onclick="App.goForm()">← 접수 화면으로 돌아가기</span>
     </div>
@@ -394,6 +395,7 @@ function renderAdmin(){
     </div>
     <div style="display:flex; gap:8px;">
       <div class="admin-link" onclick="App.loadGoogleData()" style="background:var(--teal); color:white; border:none; padding:7px 12px; border-radius:100px; cursor:pointer; font-size:12.5px;">새로고침</div>
+      <div class="admin-link" onclick="App.logoutAdmin()" style="border:1px solid var(--line); padding:7px 12px; border-radius:100px; background:var(--paper); cursor:pointer; font-size:12.5px;">로그아웃</div>
       <div class="admin-link" onclick="App.goForm()" style="border:1px solid var(--line); padding:7px 12px; border-radius:100px; background:var(--paper); cursor:pointer; font-size:12.5px;">접수 화면 보기</div>
     </div>
   </div>
@@ -426,19 +428,19 @@ function renderAdmin(){
             folderBtnHtml = `<a href="${m.files}" target="_blank" style="background: var(--teal); color: white; padding: 5px 10px; border-radius: 6px; font-weight: 600; text-decoration: none; font-size: 11.5px; display: inline-block;">🔍 폴더 열기</a>`;
           }
 
-          let bizTypeText = m.bizType === 'corporate' ? '법인' : '개인';
+          let bizTypeText = m.bizType === 'corporate' || m.bizType === '법인' ? '법인' : '개인';
 
           return `
             <tr style="border-bottom: 1px solid var(--line); transition: .1s;">
-              <td style="padding: 14px 16px; font-weight: 700;">${m.storeName || ''}</td>
-              <td style="padding: 14px 16px;"><span style="background:${m.bizType==='corporate'?'#E8F4FD':'#EAF6EF'}; color:${m.bizType==='corporate'?'#0066CC':'#2F8F5B'}; padding:3px 8px; border-radius:4px; font-size:11.5px; font-weight:600;">${bizTypeText}</span></td>
-              <td style="padding: 14px 16px;">${m.storePhone || ''}</td>
-              <td style="padding: 14px 16px;">${m.ownerPhone || ''}</td>
-              <td style="padding: 14px 16px; color: var(--ink-soft);">${m.email || ''}</td>
+              <td style="padding: 14px 16px; font-weight: 700;">${escapeHtml(m.storeName || '')}</td>
+              <td style="padding: 14px 16px;"><span style="background:${bizTypeText==='법인'?'#E8F4FD':'#EAF6EF'}; color:${bizTypeText==='법인'?'#0066CC':'#2F8F5B'}; padding:3px 8px; border-radius:4px; font-size:11.5px; font-weight:600;">${bizTypeText}</span></td>
+              <td style="padding: 14px 16px;">${escapeHtml(m.storePhone || '')}</td>
+              <td style="padding: 14px 16px;">${escapeHtml(m.ownerPhone || '')}</td>
+              <td style="padding: 14px 16px; color: var(--ink-soft);">${escapeHtml(m.email || '')}</td>
               <td style="padding: 14px 16px; font-size: 12.5px; color: var(--ink-soft);">${formattedDate}</td>
               <td style="padding: 14px 16px;">${folderBtnHtml}</td>
               <td style="padding: 14px 16px; text-align:center;">
-                <button onclick="App.completeAndDelete('${m.id}', '${m.storeName}')" style="background: var(--red); color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 11.5px;">처리완료/삭제</button>
+                <button onclick="App.completeAndDelete('${escapeAttr(m.id)}', '${escapeAttr(m.storeName)}')" style="background: var(--red); color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 11.5px;">처리완료/삭제</button>
               </td>
             </tr>
           `;
@@ -446,6 +448,19 @@ function renderAdmin(){
       </tbody>
     </table>
   </div>`;
+}
+
+function escapeHtml(str){
+  return String(str)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#39;');
+}
+// onclick 속성 안 작은따옴표 문자열에 넣을 때 쓰는 용도 (백슬래시/따옴표 이스케이프)
+function escapeAttr(str){
+  return String(str).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
 }
 
 function compressImage(file, maxDim=1600, quality=0.85){
@@ -528,15 +543,28 @@ const App = {
     render();
   },
 
+  // 인증이 만료/무효화된 경우 공통 처리: 로그인 화면으로 돌려보냄
+  handleUnauthorized(){
+    state.adminToken = null;
+    state.view = 'adminLogin';
+    render();
+    toast('세션이 만료되었습니다. 다시 로그인해 주세요.');
+  },
+
   async loadGoogleData() {
+    if(!state.adminToken){ this.handleUnauthorized(); return; }
     toast('구글 시트에서 최신 데이터를 불러오는 중...');
     try {
-      const response = await fetch(API_URL);
+      const url = API_URL + '?token=' + encodeURIComponent(state.adminToken);
+      const response = await fetch(url);
       const result = await response.json();
+
       if(result.status === 'success') {
         state.adminMerchants = result.data || [];
         render();
         toast('최신 데이터 동기화 완료!');
+      } else if(result.status === 'unauthorized') {
+        this.handleUnauthorized();
       } else {
         toast('데이터 불러오기 실패');
       }
@@ -546,6 +574,7 @@ const App = {
   },
 
   async completeAndDelete(id, storeName) {
+    if(!state.adminToken){ this.handleUnauthorized(); return; }
     if(!confirm(`[${storeName}] 가맹점 서류 확인 및 접수 처리를 완료하셨습니까?\n확인을 누르면 시트 내역과 드라이브의 모든 사진 파일이 개인정보 보호를 위해 영구 삭제됩니다.`)) {
       return;
     }
@@ -555,13 +584,15 @@ const App = {
       const response = await fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action: 'deleteMerchant', id: id })
+        body: JSON.stringify({ action: 'deleteMerchant', id: id, token: state.adminToken })
       });
       const result = await response.json();
 
       if(result.status === 'success') {
         toast('처리가 완료되어 해당 정보와 파일이 안전하게 삭제되었습니다.');
         App.loadGoogleData();
+      } else if(result.status === 'unauthorized') {
+        this.handleUnauthorized();
       } else {
         toast('삭제 처리에 실패했습니다.');
       }
@@ -617,7 +648,7 @@ const App = {
   },
 
   resetAll(){
-    state = { view:'form', fields:{storeName:'',businessType:'general',bizType:'personal',storePhone:'',ownerPhone:'',email:'',hasSign:'yes'}, files:{}, receiptId:null, adminUnlocked:false, adminMerchants:[], adminSearch:'' };
+    state = { view:'form', fields:{storeName:'',businessType:'general',bizType:'personal',storePhone:'',ownerPhone:'',email:'',hasSign:'yes'}, files:{}, receiptId:null, adminUnlocked:false, adminToken:null, adminMerchants:[], adminSearch:'' };
     location.hash='';
     render();
   },
@@ -625,15 +656,45 @@ const App = {
   goForm(){ location.hash=''; state.view='form'; render(); },
   goAdmin(){ location.hash='admin'; state.view='adminLogin'; render(); },
 
+  logoutAdmin(){
+    state.adminToken = null;
+    state.adminUnlocked = false;
+    state.adminMerchants = [];
+    state.view = 'adminLogin';
+    location.hash = 'admin';
+    render();
+  },
+
   async tryAdminLogin(){
-    const val = document.getElementById('admin_pass').value;
-    if(val === 'pos1212!@'){
-      state.adminUnlocked = true;
-      App.loadGoogleData();
-      state.view = 'admin';
-      render();
-    } else {
-      toast('접근 코드가 올바르지 않습니다');
+    const passInput = document.getElementById('admin_pass');
+    const val = passInput.value;
+    const btn = document.getElementById('admin_login_btn');
+    if(btn){ btn.disabled = true; btn.textContent = '확인 중...'; }
+
+    try {
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'login', password: val })
+      });
+      const result = await response.json();
+
+      if(result.status === 'success' && result.token){
+        state.adminToken = result.token;
+        state.adminUnlocked = true;
+        state.view = 'admin';
+        render();
+        App.loadGoogleData();
+      } else if(result.status === 'locked'){
+        toast('시도 횟수를 초과했습니다. 잠시 후 다시 시도해 주세요.');
+      } else {
+        toast('접근 코드가 올바르지 않습니다');
+      }
+    } catch(e) {
+      toast('서버 통신 오류가 발생했습니다.');
+    } finally {
+      if(btn){ btn.disabled = false; btn.textContent = '확인'; }
+      if(passInput) passInput.value = '';
     }
   },
 
