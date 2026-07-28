@@ -308,7 +308,7 @@ function defaultSelection(){
 
 let state = {
   view: location.hash === '#admin' ? 'adminLogin' : 'form',
-  fields: { storeName:'', businessType:'general', bizType:'personal', storePhone:'', ownerPhone:'', email:'', hasSign:'yes' },
+  fields: { storeName:'', ownerName:'', bizNo:'', businessType:'general', bizType:'personal', storePhone:'', ownerPhone:'', email:'', hasSign:'yes' },
   files: {},
   receiptId: null,
   adminUnlocked: false,
@@ -326,6 +326,8 @@ let state = {
 
 function syncFields(){
   state.fields.storeName = document.getElementById('f_storeName')?.value || state.fields.storeName;
+  state.fields.ownerName = document.getElementById('f_ownerName')?.value || state.fields.ownerName;
+  state.fields.bizNo = document.getElementById('f_bizNo')?.value || state.fields.bizNo;
   state.fields.businessType = document.getElementById('f_businessType')?.value || state.fields.businessType;
   state.fields.storePhone = document.getElementById('f_storePhone')?.value || state.fields.storePhone;
   state.fields.ownerPhone = document.getElementById('f_ownerPhone')?.value || state.fields.ownerPhone;
@@ -389,9 +391,20 @@ function renderForm(){
       </div>
     </div>
 
-    <div class="field" style="margin-top:18px;">
-      <label>상호명(매장명) <span class="req">*</span></label>
-      <input type="text" id="f_storeName" placeholder="예: 카페 온기" value="${f.storeName}">
+    <div class="grid2" style="margin-top:18px;">
+      <div class="field">
+        <label>상호명(매장명) <span class="req">*</span></label>
+        <input type="text" id="f_storeName" placeholder="예: 카페 온기" value="${f.storeName}">
+      </div>
+      <div class="field">
+        <label>대표자명 <span class="req">*</span></label>
+        <input type="text" id="f_ownerName" placeholder="예: 홍길동" value="${f.ownerName}">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>사업자등록번호</label>
+      <input type="text" id="f_bizNo" placeholder="예: 123-45-67890" value="${f.bizNo}">
     </div>
 
     <div class="field">
@@ -487,7 +500,7 @@ function renderAdmin(){
   const list = (state.adminMerchants || []).filter(m => {
     if(!state.adminSearch) return true;
     const q = state.adminSearch.toLowerCase();
-    return (m.storeName||'').toLowerCase().includes(q) || (m.storePhone||'').includes(q);
+    return (m.storeName||'').toLowerCase().includes(q) || (m.ownerName||'').toLowerCase().includes(q) || (m.storePhone||'').includes(q);
   });
 
   return `
@@ -506,17 +519,18 @@ function renderAdmin(){
     </div>
   </div>
 
-  <input class="admin-search" placeholder="상호명 또는 전화번호로 검색" value="${state.adminSearch}" oninput="App.setAdminSearch(this.value)">
+  <input class="admin-search" placeholder="상호명, 대표자명 또는 전화번호로 검색" value="${state.adminSearch}" oninput="App.setAdminSearch(this.value)">
 
   <div class="card" style="padding: 0; overflow: hidden;">
     <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13.5px;">
       <thead>
         <tr style="background: #F8FAFC; border-bottom: 1.5px solid var(--line); color: var(--ink-soft);">
           <th style="padding: 14px 16px;">상호명</th>
+          <th style="padding: 14px 16px;">대표자명</th>
+          <th style="padding: 14px 16px;">사업자번호</th>
           <th style="padding: 14px 16px;">구분</th>
           <th style="padding: 14px 16px;">매장 전화</th>
           <th style="padding: 14px 16px;">대표 폰번호</th>
-          <th style="padding: 14px 16px;">이메일</th>
           <th style="padding: 14px 16px;">접수일시</th>
           <th style="padding: 14px 16px;">서류 폴더</th>
           <th style="padding: 14px 16px; text-align:center;">처리 완료 / 삭제</th>
@@ -524,7 +538,7 @@ function renderAdmin(){
       </thead>
       <tbody>
         ${list.length === 0 ? `
-          <tr><td colspan="8" style="text-align:center; padding: 40px; color: var(--ink-soft);">접수된 내역이 없습니다.</td></tr>
+          <tr><td colspan="9" style="text-align:center; padding: 40px; color: var(--ink-soft);">접수된 내역이 없습니다.</td></tr>
         ` : list.map(m => {
           let formattedDate = m.createdAt;
           try { formattedDate = new Date(m.createdAt).toLocaleString('ko-KR'); } catch(e){}
@@ -539,10 +553,11 @@ function renderAdmin(){
           return `
             <tr style="border-bottom: 1px solid var(--line); transition: .1s;">
               <td style="padding: 14px 16px; font-weight: 700;">${escapeHtml(m.storeName || '')}</td>
+              <td style="padding: 14px 16px;">${escapeHtml(m.ownerName || '-')}</td>
+              <td style="padding: 14px 16px; font-size: 12.5px; color: var(--ink-soft);">${escapeHtml(m.bizNo || '-')}</td>
               <td style="padding: 14px 16px;"><span style="background:${bizTypeText==='법인'?'#E8F4FD':'#EAF6EF'}; color:${bizTypeText==='법인'?'#0066CC':'#2F8F5B'}; padding:3px 8px; border-radius:4px; font-size:11.5px; font-weight:600;">${bizTypeText}</span></td>
               <td style="padding: 14px 16px;">${escapeHtml(m.storePhone || '')}</td>
               <td style="padding: 14px 16px;">${escapeHtml(m.ownerPhone || '')}</td>
-              <td style="padding: 14px 16px; color: var(--ink-soft);">${escapeHtml(m.email || '')}</td>
               <td style="padding: 14px 16px; font-size: 12.5px; color: var(--ink-soft);">${formattedDate}</td>
               <td style="padding: 14px 16px;">${folderBtnHtml}</td>
               <td style="padding: 14px 16px; text-align:center;">
@@ -684,7 +699,7 @@ function renderEquipmentSelect(){
   return `
   <div class="card">
     <div class="section-title">장비 임대 선택 및 CMS 자동이체 연동 ${m ? '- ' + escapeHtml(m.storeName) : ''}</div>
-    <div class="section-sub">계약기간, 장비 및 CMS 출금계좌 정보를 설정하세요. 통장사본 정보가 자동 매핑됩니다.</div>
+    <div class="section-sub">계약기간, 장비 및 CMS 출금계좌 정보를 설정하세요. 접수 데이터 및 통장사본 정보가 자동 매핑됩니다.</div>
 
     <div class="grid2" style="margin-bottom:18px;">
       <div class="field">
@@ -1075,7 +1090,7 @@ const App = {
   async submit(){
     syncFields();
     const f = state.fields;
-    if(!f.storeName || !f.storePhone || !f.ownerPhone || !f.email){
+    if(!f.storeName || !f.ownerName || !f.storePhone || !f.ownerPhone || !f.email){
       toast('필수 정보를 모두 입력해 주세요'); return;
     }
     const currentDocs = getRequiredDocs(f.businessType, f.bizType, f.hasSign);
@@ -1094,6 +1109,8 @@ const App = {
         id: id,
         createdAt: createdAt,
         storeName: f.storeName,
+        ownerName: f.ownerName,
+        bizNo: f.bizNo,
         storePhone: f.storePhone,
         ownerPhone: f.ownerPhone,
         email: f.email,
@@ -1109,7 +1126,7 @@ const App = {
 
       state.receiptId = id;
       state.files = {};
-      state.fields = { storeName:'', businessType:'general', bizType:'personal', storePhone:'', ownerPhone:'', email:'', hasSign:'yes' };
+      state.fields = { storeName:'', ownerName:'', bizNo:'', businessType:'general', bizType:'personal', storePhone:'', ownerPhone:'', email:'', hasSign:'yes' };
       state.view = 'success';
       render();
     } catch(e) {
@@ -1119,7 +1136,7 @@ const App = {
   },
 
   resetAll(){
-    state = { view:'form', fields:{storeName:'',businessType:'general',bizType:'personal',storePhone:'',ownerPhone:'',email:'',hasSign:'yes'}, files:{}, receiptId:null, adminUnlocked:false, adminToken:null, adminMerchants:[], adminSearch:'' };
+    state = { view:'form', fields:{storeName:'',ownerName:'',bizNo:'',businessType:'general',bizType:'personal',storePhone:'',ownerPhone:'',email:'',hasSign:'yes'}, files:{}, receiptId:null, adminUnlocked:false, adminToken:null, adminMerchants:[], adminSearch:'' };
     location.hash='';
     render();
   },
@@ -1178,7 +1195,7 @@ const App = {
     state.selection = defaultSelection();
     state.contractPeriodYears = 3;
     state.installDate = new Date().toISOString().slice(0,10);
-    state.contractBizNo = '';
+    state.contractBizNo = m.bizNo || '';
     state.contractBirth6 = '';
     state.contractAddress = '';
     state.cmsBankName = '국민은행';
