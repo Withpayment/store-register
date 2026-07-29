@@ -192,16 +192,53 @@ body{
 .editable-penalty{background:#FFFDF0;border:1px dashed var(--teal);padding:2px 6px;border-radius:4px;display:inline-block;outline:none;}
 .editable-penalty:focus{background:#FFF;border-style:solid;}
 
+/* CMS 동의서 전용 스타일 */
 .cms-page{
   background:white;border:1px solid var(--line);border-radius:var(--radius);
-  padding:32px;box-shadow:var(--shadow);font-size:12px;line-height:1.6;
+  padding:30px;box-shadow:var(--shadow);font-size:12px;line-height:1.5;color:#333;
 }
-.cms-title{font-size:16px;font-weight:700;text-align:center;margin-bottom:16px;}
-.cms-table{width:100%;border-collapse:collapse;font-size:12px;margin:16px 0;}
-.cms-table th,.cms-table td{border:1px solid #111;padding:10px 12px;}
-.cms-table th{background:#F2F2F2;text-align:center;font-weight:600;}
-.cms-table td.al{text-align:left;}
-.cms-desc{font-size:11.5px;color:#333;line-height:1.5;margin-bottom:16px;text-align:justify;}
+.cms-page h1 {
+  text-align: center; font-size: 20px; text-decoration: underline; margin-bottom: 20px; letter-spacing: 2px; font-weight: 700;
+}
+.cms-page h2 {
+  font-size: 14px; margin-top: 18px; margin-bottom: 8px; font-weight: 700;
+}
+.cms-page table {
+  width: 100%; border-collapse: collapse; margin-bottom: 12px; font-size: 12px;
+}
+.cms-page th, .cms-page td {
+  border: 1px solid #000; padding: 6px 8px; vertical-align: middle;
+}
+.cms-page th {
+  background-color: #f2f2f2; text-align: center; font-weight: bold; width: 18%;
+}
+.cms-page td {
+  text-align: left;
+}
+.cms-page .center-text { text-align: center; }
+.cms-page .consent-box {
+  border: 1px solid #000; padding: 10px 12px; font-size: 11px; margin-bottom: 12px; background-color: #fafafa;
+}
+.cms-page .consent-title {
+  font-weight: bold; font-size: 12px; margin-top: 8px; margin-bottom: 4px;
+}
+.cms-page .consent-title:first-child { margin-top: 0; }
+.cms-page .consent-content { margin-left: 8px; margin-bottom: 6px; color: #444; }
+.cms-page .consent-check {
+  text-align: right; font-weight: bold; margin-top: 4px; margin-bottom: 6px; font-size: 11.5px;
+}
+.cms-page .highlight {
+  background-color: #ffeb3b; padding: 2px 5px; border-radius: 3px;
+}
+.cms-page .submit-notice {
+  text-align: center; font-size: 12.5px; font-weight: bold; margin: 16px 0 12px 0;
+}
+.cms-page .date {
+  text-align: center; font-size: 15px; font-weight: bold; margin-bottom: 16px;
+}
+.cms-page .signature-table { width: 85%; margin: 0 auto 10px auto; }
+.cms-page .signature-table th { width: 25%; }
+.cms-page .footer-note { font-size: 10.5px; color: #666; margin-top: 8px; }
 
 .no-print{margin-top:20px;display:flex;gap:10px;}
 
@@ -789,16 +826,22 @@ function renderContract(){
     }
   }
 
-  const bizNoVal = state.contractBizNo || '';
-  const birth6Val = state.contractBirth6 || '';
-  const addressVal = state.contractAddress || '';
+  const bizNoVal = state.contractBizNo || m.bizNo || m.bizNumber || '';
+  const birth6Val = state.contractBirth6 || m.birthDate || '';
+  const addressVal = state.contractAddress || m.address || m.storeAddress || '';
   const depositorVal = state.cmsDepositor || m.ownerName || '';
   const bankNameVal = state.cmsBankName || '';
   const accountNoVal = state.cmsAccountNo || '';
 
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = String(now.getMonth() + 1).padStart(2, '0');
+  const currentDate = String(now.getDate()).padStart(2, '0');
+
   return `
   <div style="max-width:820px;margin:10px auto;">
     
+    <!-- 1페이지 : 임대서비스계약서 -->
     <div class="contract-page">
       <div class="contract-top-title">임대서비스계약서</div>
 
@@ -902,62 +945,129 @@ function renderContract(){
       <div class="clause" style="margin-top:8px;"><b>제11조 (계약의 해석)</b> 본 계약에서 정하지 아니한 사항은 일반 상관례에 따르며, 관할법원은 "갑"의 소재지 관할법원으로 한다.</div>
     </div>
 
+    <!-- 2페이지 : CMS 출금이체 신청(동의)서 -->
     <div class="cms-page">
-      <div class="cms-title">[ CMS 자동이체 (계좌자동납부) 정기지급 동의서 ]</div>
-      <div class="cms-desc">
-        본인은 <b>(주)위드페이먼트</b>의 가맹점 임대료 및 서비스 요금 청구와 관련하여, 하기 지정 계좌에서 매월 정기 약정일에 자동출금하는 것에 동의합니다.
-      </div>
-      <table class="cms-table">
+      <h1>CMS 출금이체 신청(동의)서</h1>
+
+      <h2>□ 수납기관정보</h2>
+      <div style="font-size: 13px; font-weight: bold; margin-bottom: 5px;">상호명 : ${escapeHtml(m.storeName||'')}</div>
+      <table>
         <tr>
-          <th style="width:20%">이용(수납)기관</th>
-          <td style="width:30%">(주)위드페이먼트</td>
-          <th style="width:20%">기관 사업자번호</th>
-          <td style="width:30%">409-86-50093</td>
-        </tr>
-        <tr>
-          <th>신청인(가맹점) 상호</th>
-          <td><b>${escapeHtml(m.storeName||'')}</b></td>
+          <th>수납기관명</th>
+          <td>주식회사 위드페이먼트</td>
           <th>사업자등록번호</th>
-          <td>${escapeHtml(bizNoVal)}</td>
+          <td>409-86-50093</td>
         </tr>
         <tr>
-          <th>대표자</th>
-          <td>${escapeHtml(m.ownerName||'')}</td>
-          <th>휴대폰</th>
+          <th>대 표 자</th>
+          <td>고영배</td>
+          <th>연 락 처</th>
+          <td>1599-5413</td>
+        </tr>
+      </table>
+
+      <h2>□ 출금이체 신청 (신청고객기재)</h2>
+      <table>
+        <tr>
+          <th>신 청 인</th>
+          <td width="32%">${escapeHtml(m.storeName||'')}</td>
+          <th>사업자번호</th>
+          <td width="32%">${escapeHtml(bizNoVal)}</td>
+        </tr>
+        <tr>
+          <th>연 락 처</th>
+          <td>${escapeHtml(m.storePhone||'')}</td>
+          <th>휴 대 폰</th>
           <td>${escapeHtml(m.ownerPhone||'')}</td>
         </tr>
         <tr>
-          <th>주소</th>
-          <td colspan="3" class="al">${escapeHtml(addressVal)}</td>
+          <th>주 소</th>
+          <td colspan="3">${escapeHtml(addressVal)}</td>
         </tr>
         <tr>
-          <th>출금 은행명</th>
-          <td><b>${escapeHtml(bankNameVal)}</b></td>
-          <th>출금 계좌번호</th>
-          <td><b>${escapeHtml(accountNoVal)}</b></td>
-        </tr>
-        <tr>
-          <th>예금주명</th>
-          <td><b>${escapeHtml(depositorVal)}</b> (서명 또는 인)</td>
-          <th>예금주 생년월일/사업자번호</th>
-          <td>${escapeHtml(birth6Val)} / ${escapeHtml(bizNoVal)}</td>
-        </tr>
-        <tr>
-          <th>신청인과의 관계</th>
-          <td><span class="editable-penalty" contenteditable="true">본인</span></td>
-          <th>출금(청구) 금액</th>
+          <th>출금금액</th>
           <td><b>${fmt(monthlyTotalVat)}원</b> (VAT포함)</td>
+          <th>출금종류</th>
+          <td>CMS</td>
         </tr>
         <tr>
-          <th>출금 종류</th>
-          <td>CMS</td>
+          <th>출 금 일</th>
+          <td></td>
           <th>E-mail</th>
           <td>${escapeHtml(m.email||'')}</td>
         </tr>
+        <tr>
+          <th>결제은행계좌</th>
+          <td colspan="3"><strong>${escapeHtml(bankNameVal)} / 계좌번호 : ${escapeHtml(accountNoVal)}</strong></td>
+        </tr>
+        <tr>
+          <th>예금주명</th>
+          <td>${escapeHtml(depositorVal)}</td>
+          <th>신청인과의 관계</th>
+          <td><span class="editable-penalty" contenteditable="true">본인</span></td>
+        </tr>
+        <tr>
+          <th>예금주의<br>주민(사업자)등록번호</th>
+          <td colspan="3">
+            <strong>${escapeHtml(birth6Val ? birth6Val + ' - ───────' : bizNoVal)}</strong> 
+            <span style="font-size: 11px; color: #555;">(법인의 경우 반드시 사업자등록번호 기입)</span>
+          </td>
+        </tr>
       </table>
-      <div style="margin-top:40px; text-align:center; font-size:13px; color:var(--ink-soft); line-height:1.8;">
-        위와 같이 CMS 자동이체 출금을 정식으로 동의하며 신청합니다.<br>
-        <b>2026년 ${new Date().getMonth()+1}월 ${new Date().getDate()}일</b>
+
+      <div class="consent-box">
+        <div class="consent-title">[개인정보 및 고유식별정보 수집 및 이용 동의]</div>
+        <div class="consent-content">
+          - 수집 및 이용목적 : CMS 출금이체를 통한 요금 수납<br>
+          - 수집항목 (개인정보) : 성명, 전화번호, 휴대전화번호, 금융기관명, 계좌번호<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(고유식별정보) : 주민등록번호<br>
+          - 보유 및 이용기간 : 수집·이용 동의일로부터 CMS 출금이체 종료일(해지일)까지<br>
+          - 신청자는 개인정보 및 고유식별정보 수집 및 이용을 거부할 권리가 있으며 권리행사시 출금이체 신청이 거부될 수 있습니다.
+        </div>
+        <div class="consent-check">
+          (개인정보) &nbsp;&nbsp;&nbsp;<span class="highlight">[ &nbsp; ] 동의함</span> &nbsp;&nbsp;&nbsp;&nbsp; [ &nbsp; ] 동의안함
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          (고유식별정보) &nbsp;&nbsp;&nbsp;<span class="highlight">[ &nbsp; ] 동의함</span> &nbsp;&nbsp;&nbsp;&nbsp; [ &nbsp; ] 동의안함
+        </div>
+
+        <hr style="border: 0; border-top: 1px dashed #ccc; margin: 8px 0;">
+
+        <div class="consent-title">[개인정보 제3자 제공 동의]</div>
+        <div class="consent-content">
+          - 개인정보를 제공받는 자 : 사단법인 금융결제원, 엔콤소프트(주)<br>
+          - 개인정보를 제공받는 자의 개인정보 이용 목적 : CMS 출금이체 서비스 제공 및 출금동의 확인<br>
+          - 제공하는 개인정보의 항목 : 성명, 금융기관명, 계좌번호, 주민등록번호, 전화번호, 휴대전화번호<br>
+          - 개인정보를 제공받는 자의 개인정보 보유 및 이용기간 : CMS 출금이체 서비스 제공 및 출금동의 확인 목적을 달성할 때까지<br>
+          - 신청자는 개인정보에 대해 수납기관이 사단법인 금융결제원과 엔콤소프트(주)에 제공하는 것을 거부할 권리가 있으며 거부시 출금이체 신청이 거부 될 수 있습니다.
+        </div>
+        <div class="consent-check">
+          <span class="highlight">[ &nbsp; ] 동의함</span> &nbsp;&nbsp;&nbsp;&nbsp; [ &nbsp; ] 동의안함
+        </div>
+      </div>
+
+      <div class="submit-notice">
+        상기 금융거래정보의 제공 및 개인정보의 수집/이용, 제3자 제공에 동의하며 CMS 출금이체 신청합니다.
+      </div>
+
+      <div class="date">
+        ${currentYear}년 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ${currentMonth}월 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ${currentDate}일
+      </div>
+
+      <table class="signature-table">
+        <tr>
+          <th>신 청 인</th>
+          <td class="center-text">${escapeHtml(m.storeName||'')}</td>
+          <td class="center-text"><span class="highlight">인 또는 서명 &nbsp;&nbsp;(인)</span></td>
+        </tr>
+        <tr>
+          <th>예 금 주</th>
+          <td class="center-text">${escapeHtml(depositorVal)}</td>
+          <td class="center-text"><span class="highlight">인 또는 서명 &nbsp;&nbsp;(인)</span></td>
+        </tr>
+      </table>
+
+      <div class="footer-note">
+        * 인감 또는 서명은 해당 예금계좌(통장) 사용인감 또는 서명을 날인하여야 합니다.
       </div>
     </div>
 
