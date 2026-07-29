@@ -449,12 +449,6 @@ function renderForm(){
     } catch(e){}
   }
 
-  /* 
-    [순서 개편]
-    1. 기본 정보 (상호명, 대표자명, 사업자등록번호)
-    2. 서류 조건 선택 항목 (사업자 구분, 업종 선택, 간판 유무) -> 사진 첨부 바로 위 위치로 이동
-    3. 사진 및 서류 첨부 영역
-  */
   return `
   <div class="card">
     <div class="section-title">가맹점 정보 및 서류 제출</div>
@@ -496,7 +490,7 @@ function renderForm(){
 
     <hr style="border:0; border-top:1px dashed var(--line); margin:24px 0;">
 
-    <!-- 2. 서류 조건 선택 항목 (사진 첨부 직전으로 이동) -->
+    <!-- 2. 서류 조건 선택 항목 -->
     <div class="field">
       <label>사업자 구분 <span class="req">*</span></label>
       <div class="radio-group">
@@ -1183,7 +1177,6 @@ const App = {
     render();
   },
 
-  /* ---------------- [임시저장 관련 신규 기능 추가] ---------------- */
   saveTempData(){
     syncFields();
     const saveData = {
@@ -1219,7 +1212,6 @@ const App = {
     toast('임시저장 데이터가 삭제되었습니다.');
     render();
   },
-  /* ------------------------------------------------------------- */
 
   applyExtractedData(extracted) {
     if (!extracted) return;
@@ -1252,7 +1244,7 @@ const App = {
   async handleFile(key, file){
     if(!file) return;
     syncFields();
-    const currentDocs = getRequiredDocs(state.fields.businessType, state.fields.bizType, state.hasSign);
+    const currentDocs = getRequiredDocs(state.fields.businessType, state.fields.bizType, state.fields.hasSign);
     const docDef = currentDocs.find(d=>d.key===key);
     if(file.size > 15*1024*1024){ toast('파일 용량이 너무 큽니다 (15MB 이하)'); return; }
     toast('파일 처리 중...');
@@ -1263,7 +1255,7 @@ const App = {
       else dataUrl = await readAsDataURL(file);
       state.files[key] = { name:file.name, dataUrl, isImage };
       render();
-      toast(docDef.label + ' 첨부 완료');
+      toast((docDef ? docDef.label : '파일') + ' 첨부 완료');
     }catch(e){
       toast('파일 처리 중 오류가 발생했습니다');
     }
@@ -1375,7 +1367,6 @@ const App = {
         this.applyExtractedData(res.extracted);
       }
 
-      // 제출 완료 시 저장되었던 임시데이터 자동 삭제
       this.clearTempData();
 
       state.receiptId = id;
