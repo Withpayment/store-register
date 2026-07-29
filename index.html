@@ -207,12 +207,18 @@ body{
 
 @media print{
   @page { size: A4 portrait; margin: 10mm; }
-  body{background:white;}
-  .no-print,.topbar{display:none !important;}
-  #app{max-width:none;padding:0;}
-  .contract-page{border:none;box-shadow:none;padding:0;margin:0;page-break-after:always; break-after:page;}
-  .cms-page{border:none;box-shadow:none;padding:0;margin:0;page-break-after:always; break-after:page;}
-  .editable-penalty{border:none;background:transparent;padding:0;}
+  body{background:white; color:#000;}
+  .no-print,.topbar,.toast{display:none !important;}
+  #app{max-width:none;padding:0;margin:0;}
+  .contract-page{
+    border:none !important;box-shadow:none !important;padding:0 !important;margin:0 !important;
+    page-break-after:always !important; break-after:page !important;
+  }
+  .cms-page{
+    border:none !important;box-shadow:none !important;padding:0 !important;margin:0 !important;
+    page-break-after:always !important; break-after:page !important;
+  }
+  .editable-penalty{border:none !important;background:transparent !important;padding:0 !important;}
 }
 </style>
 </head>
@@ -757,6 +763,7 @@ function renderContract(){
   const m = state.contractMerchant || {};
   const sel = state.selection;
   const monthlyTotal = calcRentalMonthly(sel);
+  const monthlyTotalVat = Math.round(monthlyTotal * 1.1); // 임대료는 VAT(부가세) 포함 금액으로 표시
   const indemnityRows = buildIndemnityRows(sel);
   const indemnityTotal = indemnityRows.reduce((sum,r)=> sum + (r.amount||0), 0);
   const hasUnpricedItem = indemnityRows.some(r=>r.amount===null);
@@ -806,40 +813,34 @@ function renderContract(){
         </tr>
         <tr>
           <th>임대료</th>
-          <td><b>${fmt(monthlyTotal)}원/월</b></td>
+          <td><b>${fmt(monthlyTotalVat)}원/월</b> <span style="font-weight:400; font-size:9.5px; color:#5B6B7A;">(VAT포함)</span></td>
           <th>모델/옵션</th>
           <td>${primaryModelOption}</td>
           <th>POS</th>
           <td>${posName}</td>
         </tr>
         <tr>
-          <th rowspan="2">"갑"</th>
+          <th>"갑"</th>
           <td colspan="5" class="al" style="font-weight:700;">
             (주)위드페이먼트 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 대표 : 고 영 배 (인)
             <div style="font-weight:400; color:#5B6B7A; margin-top:2px;">광주광역시 서구 유덕로 114</div>
           </td>
         </tr>
         <tr>
+          <th rowspan="4">"을"</th>
           <td colspan="5" style="padding:0;">
             <table style="width:100%; border-collapse:collapse; border:none; font-size:11px;">
-              <tr>
+              <tr style="border-bottom:1px solid #111;">
                 <td style="width:10%; border:none; border-right:1px solid #111; background:#F2F2F2; font-weight:600;">상 호</td>
                 <td style="width:23%; border:none; border-right:1px solid #111;" class="al"><b>${escapeHtml(m.storeName||'')}</b></td>
                 <td style="width:14%; border:none; border-right:1px solid #111; background:#F2F2F2; font-weight:600;">사업자등록번호</td>
                 <td style="width:23%; border:none;" class="al">${escapeHtml(bizNoVal)}</td>
               </tr>
-            </table>
-          </td>
-        </tr>
-        <tr>
-          <th rowspan="3">"을"</th>
-          <td colspan="5" style="padding:0;">
-            <table style="width:100%; border-collapse:collapse; border:none; font-size:11px;">
               <tr style="border-bottom:1px solid #111;">
-                <td style="width:10%; border:none; border-right:1px solid #111; background:#F2F2F2; font-weight:600;">대표자</td>
-                <td style="width:23%; border:none; border-right:1px solid #111;" class="al">${escapeHtml(m.ownerName||'')} (인)</td>
-                <td style="width:14%; border:none; border-right:1px solid #111; background:#F2F2F2; font-weight:600;">생년월일(6자리)</td>
-                <td style="width:23%; border:none;" class="al">${escapeHtml(birth6Val)}</td>
+                <td style="border:none; border-right:1px solid #111; background:#F2F2F2; font-weight:600;">대표자</td>
+                <td style="border:none; border-right:1px solid #111;" class="al">${escapeHtml(m.ownerName||'')} (인)</td>
+                <td style="border:none; border-right:1px solid #111; background:#F2F2F2; font-weight:600;">생년월일(6자리)</td>
+                <td style="border:none;" class="al">${escapeHtml(birth6Val)}</td>
               </tr>
               <tr style="border-bottom:1px solid #111;">
                 <td style="border:none; border-right:1px solid #111; background:#F2F2F2; font-weight:600;">전 화</td>
@@ -866,7 +867,7 @@ function renderContract(){
           <div class="clause"><b>제2조 (용도제한)</b> "을"은 임대한 물품을 "갑"이 제공하는 조회서비스 이외의 용도로 사용할 수 없다.</div>
           <div class="clause"><b>제3조 (물품의 소유권)</b> 본 계약 물품의 소유권은 "갑"에게 있고, 물품의 사용권은 "을"에게 있다.</div>
           <div class="clause"><b>제4조 (계약기간)</b> 본 임대 의무기간은 "갑"과 "을"이 설치한 날로부터 <b>${state.contractPeriodYears}년</b>으로 한다. 다만 계약 만료일 기준 1개월 전에 서면으로 계약변경 또는 해지통보가 없을 경우 계약은 매 1년 자동 연장된다.</div>
-          <div class="clause"><b>제5조 (계약금)</b> "을"은 계약기간 동안 "갑"에게 매월 <b>${fmt(monthlyTotal)}원/월</b>을 지불하여야 한다.</div>
+          <div class="clause"><b>제5조 (계약금)</b> "을"은 계약기간 동안 "갑"에게 매월 <b>${fmt(monthlyTotalVat)}원/월(VAT포함)</b>을 지불하여야 한다.</div>
           <div class="clause"><b>제6조 (유지보수 책임)</b> "을"은 선량한 관리자로서 임차장비를 유지하여야 하며, 고장 발생 시에는 반드시 "갑"에게 수리보수를 의뢰하여야 한다.</div>
           <div class="clause"><b>제7조 (임차권의 양도 및 전대 금지)</b> "을"은 임차한 단말기를 제3자에게 양도하거나 전대등의 처분을 할 수 없다.</div>
           <div class="clause"><b>제8조 (A/S 관련)</b> 기기의 무상보증기간은 1년을 원칙으로 한다. 천재지변 및 사용자 과실 파손 시 수리비가 청구될 수 있다.</div>
@@ -893,7 +894,7 @@ function renderContract(){
           </table>
           ${hasUnpricedItem ? `<div class="contract-note">※ 오더포스(리퍼) 배상단가: "협의"</div>` : ''}
           <div class="contract-note" style="margin-top:6px;">
-            * 해지시 위약금 : <span class="editable-penalty" contenteditable="true">10,000원 × 잔여 계약 개월 수</span> (클릭 수정 가능)
+            * 해지시 위약금 : <span class="editable-penalty" contenteditable="true">10,000원 × 잔여 계약 개월 수</span>
           </div>
         </div>
       </div>
@@ -904,14 +905,30 @@ function renderContract(){
     <div class="cms-page">
       <div class="cms-title">[ CMS 자동이체 (계좌자동납부) 정기지급 동의서 ]</div>
       <div class="cms-desc">
-        본인은 <b>(주)위드페이먼트</b>의 가맹점 임대료 및 서비스 요금 청구와 관련하여, 하기 지정 계좌에서 매월 정기 약정일에 자동출금하는 것에 동의합니다. (접수된 통장사본 계좌정보 자동참조)
+        본인은 <b>(주)위드페이먼트</b>의 가맹점 임대료 및 서비스 요금 청구와 관련하여, 하기 지정 계좌에서 매월 정기 약정일에 자동출금하는 것에 동의합니다.
       </div>
       <table class="cms-table">
         <tr>
-          <th style="width:20%">이용기관</th>
+          <th style="width:20%">이용(수납)기관</th>
           <td style="width:30%">(주)위드페이먼트</td>
-          <th style="width:20%">납부자(가맹점)</th>
-          <td style="width:30%">${escapeHtml(m.storeName||'')} (${escapeHtml(m.ownerName||'' )})</td>
+          <th style="width:20%">기관 사업자번호</th>
+          <td style="width:30%">409-86-50093</td>
+        </tr>
+        <tr>
+          <th>신청인(가맹점) 상호</th>
+          <td><b>${escapeHtml(m.storeName||'')}</b></td>
+          <th>사업자등록번호</th>
+          <td>${escapeHtml(bizNoVal)}</td>
+        </tr>
+        <tr>
+          <th>대표자</th>
+          <td>${escapeHtml(m.ownerName||'')}</td>
+          <th>휴대폰</th>
+          <td>${escapeHtml(m.ownerPhone||'')}</td>
+        </tr>
+        <tr>
+          <th>주소</th>
+          <td colspan="3" class="al">${escapeHtml(addressVal)}</td>
         </tr>
         <tr>
           <th>출금 은행명</th>
@@ -922,8 +939,20 @@ function renderContract(){
         <tr>
           <th>예금주명</th>
           <td><b>${escapeHtml(depositorVal)}</b> (서명 또는 인)</td>
-          <th>생년월일/사업자</th>
+          <th>예금주 생년월일/사업자번호</th>
           <td>${escapeHtml(birth6Val)} / ${escapeHtml(bizNoVal)}</td>
+        </tr>
+        <tr>
+          <th>신청인과의 관계</th>
+          <td><span class="editable-penalty" contenteditable="true">본인</span></td>
+          <th>출금(청구) 금액</th>
+          <td><b>${fmt(monthlyTotalVat)}원</b> (VAT포함)</td>
+        </tr>
+        <tr>
+          <th>출금 종류</th>
+          <td>CMS</td>
+          <th>E-mail</th>
+          <td>${escapeHtml(m.email||'')}</td>
         </tr>
       </table>
       <div style="margin-top:40px; text-align:center; font-size:13px; color:var(--ink-soft); line-height:1.8;">
