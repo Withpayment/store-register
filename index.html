@@ -319,8 +319,11 @@ let state = {
   selection: defaultSelection(),
   contractPeriodYears: 3,
   installDate: new Date().toISOString().slice(0,10),
-  cmsBankName: '국민은행',
-  cmsAccountNo: '123456-04-123456',
+  contractBizNo: '',
+  contractBirth6: '',
+  contractAddress: '',
+  cmsBankName: '',
+  cmsAccountNo: '',
   cmsDepositor: ''
 };
 
@@ -575,7 +578,7 @@ function renderAdmin(){
 }
 
 function escapeHtml(str){
-  return String(str)
+  return String(str||'')
     .replace(/&/g,'&amp;')
     .replace(/</g,'&lt;')
     .replace(/>/g,'&gt;')
@@ -583,7 +586,7 @@ function escapeHtml(str){
     .replace(/'/g,'&#39;');
 }
 function escapeAttr(str){
-  return String(str).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+  return String(str||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
 }
 
 function fmt(n){ return Number(n||0).toLocaleString('ko-KR'); }
@@ -721,11 +724,11 @@ function renderEquipmentSelect(){
     <div class="field" style="margin-bottom:18px;">
       <label>추가 기재 정보 (사업자등록번호 / 생년월일 6자리 / 주소)</label>
       <div class="grid2">
-        <input type="text" id="setup_bizNo" placeholder="사업자등록번호 (예: 123-45-67890)" value="${state.contractBizNo || ''}" oninput="App.setExtraField('contractBizNo', this.value)">
-        <input type="text" id="setup_birth6" placeholder="대표 생년월일 앞 6자리 (예: 850101)" value="${state.contractBirth6 || ''}" oninput="App.setExtraField('contractBirth6', this.value)">
+        <input type="text" id="setup_bizNo" placeholder="사업자등록번호 (예: 123-45-67890)" value="${escapeHtml(state.contractBizNo)}" oninput="App.setExtraField('contractBizNo', this.value)">
+        <input type="text" id="setup_birth6" placeholder="대표 생년월일 앞 6자리 (예: 850101)" value="${escapeHtml(state.contractBirth6)}" oninput="App.setExtraField('contractBirth6', this.value)">
       </div>
       <div style="margin-top:10px;">
-        <input type="text" id="setup_address" placeholder="사업장 상세 주소" value="${state.contractAddress || ''}" oninput="App.setExtraField('contractAddress', this.value)">
+        <input type="text" id="setup_address" placeholder="사업장 상세 주소" value="${escapeHtml(state.contractAddress)}" oninput="App.setExtraField('contractAddress', this.value)">
       </div>
     </div>
 
@@ -733,16 +736,16 @@ function renderEquipmentSelect(){
     <div class="grid2" style="margin-bottom:18px;">
       <div class="field">
         <label>출금 은행명</label>
-        <input type="text" id="setup_cmsBank" placeholder="예: 국민은행" value="${state.cmsBankName}" oninput="App.setExtraField('cmsBankName', this.value)">
+        <input type="text" id="setup_cmsBank" placeholder="예: 국민은행" value="${escapeHtml(state.cmsBankName)}" oninput="App.setExtraField('cmsBankName', this.value)">
       </div>
       <div class="field">
         <label>출금 계좌번호</label>
-        <input type="text" id="setup_cmsAccount" placeholder="예: 123456-04-123456" value="${state.cmsAccountNo}" oninput="App.setExtraField('cmsAccountNo', this.value)">
+        <input type="text" id="setup_cmsAccount" placeholder="예: 123456-04-123456" value="${escapeHtml(state.cmsAccountNo)}" oninput="App.setExtraField('cmsAccountNo', this.value)">
       </div>
     </div>
     <div class="field" style="margin-bottom:18px;">
       <label>예금주명 (기본: 대표자명 또는 상호명)</label>
-      <input type="text" id="setup_cmsDepositor" placeholder="예: 홍길동 (또는 주식회사 위드)" value="${state.cmsDepositor || m?.ownerName || ''}" oninput="App.setExtraField('cmsDepositor', this.value)">
+      <input type="text" id="setup_cmsDepositor" placeholder="예: 홍길동 (또는 주식회사 위드)" value="${escapeHtml(state.cmsDepositor)}" oninput="App.setExtraField('cmsDepositor', this.value)">
     </div>
 
     <div class="opt-group-label" style="margin-top:18px;">임대 장비 선택</div>
@@ -1004,9 +1007,6 @@ const App = {
     render();
   },
 
-  // -------------------------------------------------------------
-  // [신규] Apps Script 백엔드의 OCR 추출 결과를 매핑하는 함수
-  // -------------------------------------------------------------
   applyExtractedData(extracted) {
     if (!extracted) return;
 
@@ -1032,7 +1032,7 @@ const App = {
     }
 
     render();
-    toast('서류 자동 분석(OCR) 정보가 입력란에 반영되었습니다.');
+    toast('서류 자동 분석(OCR) 정보가 적용되었습니다.');
   },
 
   async handleFile(key, file){
@@ -1157,7 +1157,6 @@ const App = {
       
       const res = await response.json();
 
-      // 응답 내 추출된 데이터(extracted)가 있는 경우 화면 상태에 매핑
       if (res && res.extracted) {
         this.applyExtractedData(res.extracted);
       }
@@ -1174,7 +1173,7 @@ const App = {
   },
 
   resetAll(){
-    state = { view:'form', fields:{storeName:'',ownerName:'',bizNo:'',businessType:'general',bizType:'personal',storePhone:'',ownerPhone:'',email:'',hasSign:'yes'}, files:{}, receiptId:null, adminUnlocked:false, adminToken:null, adminMerchants:[], adminSearch:'' };
+    state = { view:'form', fields:{storeName:'',ownerName:'',bizNo:'',businessType:'general',bizType:'personal',storePhone:'',ownerPhone:'',email:'',hasSign:'yes'}, files:{}, receiptId:null, adminUnlocked:false, adminToken:null, adminMerchants:[], adminSearch:'', contractMerchant:null, selection:defaultSelection(), contractPeriodYears:3, installDate:new Date().toISOString().slice(0,10), contractBizNo:'', contractBirth6:'', contractAddress:'', cmsBankName:'', cmsAccountNo:'', cmsDepositor:'' };
     location.hash='';
     render();
   },
@@ -1229,16 +1228,20 @@ const App = {
   goEquipmentSelect(merchantId){
     const m = (state.adminMerchants || []).find(x => x.id === merchantId);
     if(!m){ toast('가맹점 정보를 찾을 수 없습니다'); return; }
+    
     state.contractMerchant = m;
     state.selection = defaultSelection();
     state.contractPeriodYears = 3;
     state.installDate = new Date().toISOString().slice(0,10);
-    state.contractBizNo = m.bizNo || state.contractBizNo || '';
-    state.contractBirth6 = state.contractBirth6 || '';
-    state.contractAddress = state.contractAddress || '';
-    state.cmsBankName = state.cmsBankName || '국민은행';
-    state.cmsAccountNo = state.cmsAccountNo || '';
-    state.cmsDepositor = state.cmsDepositor || m.ownerName || '';
+
+    // 구글 시트 / 백엔드 수신 객체 m에서 최우선 할당 (다양한 데이터 키 형태 호환)
+    state.contractBizNo = m.bizNo || m.bizNumber || state.contractBizNo || '';
+    state.contractBirth6 = m.birthDate || m.birth6 || m.birth || state.contractBirth6 || '';
+    state.contractAddress = m.address || m.storeAddress || state.contractAddress || '';
+    state.cmsBankName = m.bankName || m.bank || state.cmsBankName || '';
+    state.cmsAccountNo = m.accountNo || m.accountNumber || m.account || state.cmsAccountNo || '';
+    state.cmsDepositor = m.depositor || m.ownerName || m.storeName || state.cmsDepositor || '';
+
     state.view = 'equipmentSelect';
     render();
   },
