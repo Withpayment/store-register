@@ -221,7 +221,7 @@ body{
 <div class="toast" id="toast"></div>
 
 <script>
-const API_URL = "https://script.google.com/macros/s/AKfycbywCEs4K7Fbo6s3qZbTyrcZ2Pl-zVGE_zy68a5bZa_OsjQszn9GriFGLEaj3zndjB78/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbyCwMGuGQ9O6q_GgjzLTm6at-Jbl8FglBq0yhomj4P_gg3bZLrmq6mdrArn7oJgrtk/exec";
 
 const BUSINESS_TYPES = [
   { id: 'general', name: '일반 도소매/서비스업 (일반 사업자)' },
@@ -1212,21 +1212,46 @@ const App = {
 
   setAdminSearch(v){ state.adminSearch = v; render(); },
 
-  goEquipmentSelect(merchantId){
+  async goEquipmentSelect(merchantId){
     const m = (state.adminMerchants || []).find(x => x.id === merchantId);
     if(!m){ toast('가맹점 정보를 찾을 수 없습니다'); return; }
-    
+    if(!state.adminToken){ this.handleUnauthorized(); return; }
+
+    toast('이 가맹점의 서류를 다시 확인하는 중...');
+
+    let freshExtracted = null;
+    try {
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'reOcrMerchant', id: merchantId, token: state.adminToken })
+      });
+      const result = await response.json();
+      if(result.status === 'success'){
+        freshExtracted = result.extracted;
+        toast('서류 정보 자동반영 완료!');
+      } else if(result.status === 'unauthorized'){
+        this.handleUnauthorized();
+        return;
+      } else {
+        toast((result.message || '서류 재확인 실패') + ' (기존 저장된 정보로 진행합니다)');
+      }
+    } catch(e) {
+      toast('서버 통신 오류 (기존 저장된 정보로 진행합니다)');
+    }
+
     state.contractMerchant = m;
     state.selection = defaultSelection();
     state.contractPeriodYears = 3;
     state.installDate = new Date().toISOString().slice(0,10);
 
-    state.contractBizNo = m.bizNo || m.bizNumber || state.contractBizNo || '';
-    state.contractBirth6 = m.birthDate || m.birth6 || m.birth || state.contractBirth6 || '';
-    state.contractAddress = m.address || m.storeAddress || state.contractAddress || '';
-    state.cmsBankName = m.bankName || m.bank || state.cmsBankName || '';
-    state.cmsAccountNo = m.accountNo || m.accountNumber || m.account || state.cmsAccountNo || '';
-    state.cmsDepositor = m.depositor || m.ownerName || m.storeName || state.cmsDepositor || '';
+    const src = freshExtracted || {};
+    state.contractBizNo = src.bizNumber || m.bizNo || m.bizNumber || state.contractBizNo || '';
+    state.contractBirth6 = src.birthDate || m.birthDate || state.contractBirth6 || '';
+    state.contractAddress = src.address || m.address || m.storeAddress || state.contractAddress || '';
+    state.cmsBankName = src.bankName || m.bankName || m.bank || state.cmsBankName || '';
+    state.cmsAccountNo = src.accountNumber || m.accountNo || m.accountNumber || m.account || state.cmsAccountNo || '';
+    state.cmsDepositor = src.ownerName || m.depositor || m.ownerName || m.storeName || state.cmsDepositor || '';
 
     state.view = 'equipmentSelect';
     render();
