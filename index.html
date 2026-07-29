@@ -128,7 +128,25 @@ body{
 .btn-primary{background:var(--ink);color:white;}
 .btn-primary:hover{background:#0A1A2E;}
 .btn-primary:disabled{background:var(--line-strong);color:#9AA5B1;cursor:not-allowed;}
+.btn-secondary{background:var(--paper);color:var(--ink);border:1.5px solid var(--line);}
+.btn-secondary:hover{background:#F8FAFC;}
 .btn-row{margin-top:24px;display:flex;gap:10px;}
+
+.temp-save-box {
+  background: #F8FAFC;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.temp-save-info { font-size: 13px; color: var(--ink-soft); }
+.temp-save-btns { display: flex; gap: 8px; }
+.btn-sm { padding: 8px 14px; font-size: 13px; border-radius: 8px; width: auto; }
 
 .toast{
   position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
@@ -265,6 +283,7 @@ body{
 
 <script>
 const API_URL = "https://script.google.com/macros/s/AKfycbyCwMGuGQ9O6q_GgjzLTm6at-Jbl8FglBq0yhomj4P_gg3bZLrmq6mdrArn7oJgrtk/exec";
+const TEMP_SAVE_KEY = "merchant_form_temp_data";
 
 const BUSINESS_TYPES = [
   { id: 'general', name: '일반 도소매/서비스업 (일반 사업자)' },
@@ -414,20 +433,37 @@ function renderForm(){
   const requiredDocsCount = currentDocs.filter(d => d.required).length;
   const filledRequiredCount = currentDocs.filter(d => d.required && state.files[d.key]).length;
 
+  const savedTemp = localStorage.getItem(TEMP_SAVE_KEY);
+  let tempInfoHtml = '';
+  if(savedTemp) {
+    try {
+      const parsed = JSON.parse(savedTemp);
+      tempInfoHtml = `
+      <div class="temp-save-box">
+        <div class="temp-save-info">💾 <b>이전에 작성 중인 내용이 있습니다.</b> (${parsed.savedAt || '저장됨'})</div>
+        <div class="temp-save-btns">
+          <button class="btn btn-secondary btn-sm" onclick="App.loadTempData()">불러오기</button>
+          <button class="btn btn-secondary btn-sm" style="color:var(--red);" onclick="App.clearTempData()">삭제</button>
+        </div>
+      </div>`;
+    } catch(e){}
+  }
+
+  /* 
+    [순서 개편]
+    1. 기본 정보 (상호명, 대표자명, 사업자등록번호)
+    2. 서류 조건 선택 항목 (사업자 구분, 업종 선택, 간판 유무) -> 사진 첨부 바로 위 위치로 이동
+    3. 사진 및 서류 첨부 영역
+  */
   return `
   <div class="card">
     <div class="section-title">가맹점 정보 및 서류 제출</div>
     <div class="section-sub">사업자 형태, 업종 및 간판 유무에 따라 필요한 서류 항목이 자동으로 변경됩니다.</div>
 
-    <div class="field">
-      <label>사업자 구분 <span class="req">*</span></label>
-      <div class="radio-group">
-        <label class="radio-label"><input type="radio" name="f_bizType" value="personal" ${f.bizType==='personal'?'checked':''} onchange="App.changeFormState()"> 개인사업자</label>
-        <label class="radio-label"><input type="radio" name="f_bizType" value="corporate" ${f.bizType==='corporate'?'checked':''} onchange="App.changeFormState()"> 법인사업자</label>
-      </div>
-    </div>
+    ${tempInfoHtml}
 
-    <div class="grid2" style="margin-top:18px;">
+    <!-- 1. 기본 정보 입력 -->
+    <div class="grid2">
       <div class="field">
         <label>상호명(매장명) <span class="req">*</span></label>
         <input type="text" id="f_storeName" placeholder="예: 카페 온기" value="${f.storeName}">
@@ -441,6 +477,32 @@ function renderForm(){
     <div class="field">
       <label>사업자등록번호</label>
       <input type="text" id="f_bizNo" placeholder="예: 123-45-67890" value="${f.bizNo}">
+    </div>
+
+    <div class="grid2">
+      <div class="field">
+        <label>매장전화번호 <span class="req">*</span></label>
+        <input type="tel" id="f_storePhone" placeholder="02-1234-5678" value="${f.storePhone}">
+      </div>
+      <div class="field">
+        <label>대표명의 폰번호 <span class="req">*</span></label>
+        <input type="tel" id="f_ownerPhone" placeholder="010-1234-5678" value="${f.ownerPhone}">
+      </div>
+    </div>
+    <div class="field">
+      <label>메일주소 <span class="req">*</span></label>
+      <input type="email" id="f_email" placeholder="example@email.com" value="${f.email}">
+    </div>
+
+    <hr style="border:0; border-top:1px dashed var(--line); margin:24px 0;">
+
+    <!-- 2. 서류 조건 선택 항목 (사진 첨부 직전으로 이동) -->
+    <div class="field">
+      <label>사업자 구분 <span class="req">*</span></label>
+      <div class="radio-group">
+        <label class="radio-label"><input type="radio" name="f_bizType" value="personal" ${f.bizType==='personal'?'checked':''} onchange="App.changeFormState()"> 개인사업자</label>
+        <label class="radio-label"><input type="radio" name="f_bizType" value="corporate" ${f.bizType==='corporate'?'checked':''} onchange="App.changeFormState()"> 법인사업자</label>
+      </div>
     </div>
 
     <div class="field">
@@ -458,28 +520,16 @@ function renderForm(){
       </div>
     </div>
 
-    <div class="grid2" style="margin-top:18px;">
-      <div class="field">
-        <label>매장전화번호 <span class="req">*</span></label>
-        <input type="tel" id="f_storePhone" placeholder="02-1234-5678" value="${f.storePhone}">
-      </div>
-      <div class="field">
-        <label>대표명의 폰번호 <span class="req">*</span></label>
-        <input type="tel" id="f_ownerPhone" placeholder="010-1234-5678" value="${f.ownerPhone}">
-      </div>
-    </div>
-    <div class="field">
-      <label>메일주소 <span class="req">*</span></label>
-      <input type="email" id="f_email" placeholder="example@email.com" value="${f.email}">
-    </div>
-
+    <!-- 3. 필수 사진 및 서류 첨부 -->
     <div class="opt-group-label" style="margin-top:26px;">필수 서류 (${filledRequiredCount}/${requiredDocsCount}) <span class="req">*</span></div>
     <div class="doc-grid">
       ${currentDocs.map(d => renderDropzone(d)).join('')}
     </div>
 
+    <!-- 하단 버튼 영역 -->
     <div class="btn-row">
-      <button class="btn btn-primary" onclick="App.submit()">접수 제출하기</button>
+      <button class="btn btn-secondary" style="width:35%;" onclick="App.saveTempData()">임시저장</button>
+      <button class="btn btn-primary" style="width:65%;" onclick="App.submit()">접수 제출하기</button>
     </div>
   </div>`;
 }
@@ -790,7 +840,7 @@ function renderEquipmentSelect(){
     </div>
 
     <div class="btn-row">
-      <button class="btn btn-primary" style="background:var(--paper); color:var(--ink); border:1.5px solid var(--line);" onclick="App.backToAdminFromEquip()">취소</button>
+      <button class="btn btn-secondary" onclick="App.backToAdminFromEquip()">취소</button>
       <button class="btn btn-primary" onclick="App.goContract()">계약서 및 CMS 동의서 생성</button>
     </div>
   </div>`;
@@ -1072,9 +1122,9 @@ function renderContract(){
     </div>
 
     <div class="no-print">
-      <button class="btn btn-primary" style="background:var(--paper); color:var(--ink); border:1.5px solid var(--line);" onclick="App.backToEquip()">← 장비 및 기간 설정 수정</button>
+      <button class="btn btn-secondary" style="width:auto;" onclick="App.backToEquip()">← 장비 및 기간 설정 수정</button>
       <button class="btn btn-primary" onclick="window.print()">인쇄 / PDF 저장 (계약서 1장, 동의서 1장 총 2장 분리)</button>
-      <button class="btn btn-primary" style="background:var(--paper); color:var(--ink); border:1.5px solid var(--line);" onclick="App.finishContract()">완료 (목록으로)</button>
+      <button class="btn btn-secondary" style="width:auto;" onclick="App.finishContract()">완료 (목록으로)</button>
     </div>
   </div>`;
 }
@@ -1133,6 +1183,44 @@ const App = {
     render();
   },
 
+  /* ---------------- [임시저장 관련 신규 기능 추가] ---------------- */
+  saveTempData(){
+    syncFields();
+    const saveData = {
+      fields: state.fields,
+      savedAt: new Date().toLocaleString('ko-KR')
+    };
+    try {
+      localStorage.setItem(TEMP_SAVE_KEY, JSON.stringify(saveData));
+      toast('작성 중인 정보가 임시저장되었습니다.');
+      render();
+    } catch(e) {
+      toast('임시저장 실패 (브라우저 용량 초과)');
+    }
+  },
+
+  loadTempData(){
+    const saved = localStorage.getItem(TEMP_SAVE_KEY);
+    if(!saved){ toast('저장된 내용이 없습니다.'); return; }
+    try {
+      const parsed = JSON.parse(saved);
+      if(parsed.fields) {
+        state.fields = { ...state.fields, ...parsed.fields };
+        toast('저장된 정보를 불러왔습니다.');
+        render();
+      }
+    } catch(e) {
+      toast('데이터를 불러오는데 실패했습니다.');
+    }
+  },
+
+  clearTempData(){
+    localStorage.removeItem(TEMP_SAVE_KEY);
+    toast('임시저장 데이터가 삭제되었습니다.');
+    render();
+  },
+  /* ------------------------------------------------------------- */
+
   applyExtractedData(extracted) {
     if (!extracted) return;
 
@@ -1164,7 +1252,7 @@ const App = {
   async handleFile(key, file){
     if(!file) return;
     syncFields();
-    const currentDocs = getRequiredDocs(state.fields.businessType, state.fields.bizType, state.fields.hasSign);
+    const currentDocs = getRequiredDocs(state.fields.businessType, state.fields.bizType, state.hasSign);
     const docDef = currentDocs.find(d=>d.key===key);
     if(file.size > 15*1024*1024){ toast('파일 용량이 너무 큽니다 (15MB 이하)'); return; }
     toast('파일 처리 중...');
@@ -1286,6 +1374,9 @@ const App = {
       if (res && res.extracted) {
         this.applyExtractedData(res.extracted);
       }
+
+      // 제출 완료 시 저장되었던 임시데이터 자동 삭제
+      this.clearTempData();
 
       state.receiptId = id;
       state.files = {};
