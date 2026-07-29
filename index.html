@@ -790,12 +790,12 @@ function renderContract(){
     }
   }
 
-  const bizNoVal = state.contractBizNo || '123-45-67890';
-  const birth6Val = state.contractBirth6 || '990520';
-  const addressVal = state.contractAddress || '광주광역시 북구 첨단중앙로 123';
-  const depositorVal = state.cmsDepositor || m.ownerName || '임바울';
-  const bankNameVal = state.cmsBankName || '국민은행';
-  const accountNoVal = state.cmsAccountNo || '123456-04-123456';
+  const bizNoVal = state.contractBizNo || '';
+  const birth6Val = state.contractBirth6 || '';
+  const addressVal = state.contractAddress || '';
+  const depositorVal = state.cmsDepositor || m.ownerName || '';
+  const bankNameVal = state.cmsBankName || '';
+  const accountNoVal = state.cmsAccountNo || '';
 
   return `
   <div style="max-width:820px;margin:10px auto;">
@@ -833,7 +833,7 @@ function renderContract(){
             <table style="width:100%; border-collapse:collapse; border:none; font-size:11px;">
               <tr>
                 <td style="width:10%; border:none; border-right:1px solid #111; background:#F2F2F2; font-weight:600;">상 호</td>
-                <td style="width:23%; border:none; border-right:1px solid #111;" class="al"><b>${escapeHtml(m.storeName||'배포치킨')}</b></td>
+                <td style="width:23%; border:none; border-right:1px solid #111;" class="al"><b>${escapeHtml(m.storeName||'')}</b></td>
                 <td style="width:14%; border:none; border-right:1px solid #111; background:#F2F2F2; font-weight:600;">사업자등록번호</td>
                 <td style="width:23%; border:none;" class="al">${escapeHtml(bizNoVal)}</td>
               </tr>
@@ -846,15 +846,15 @@ function renderContract(){
             <table style="width:100%; border-collapse:collapse; border:none; font-size:11px;">
               <tr style="border-bottom:1px solid #111;">
                 <td style="width:10%; border:none; border-right:1px solid #111; background:#F2F2F2; font-weight:600;">대표자</td>
-                <td style="width:23%; border:none; border-right:1px solid #111;" class="al">${escapeHtml(m.ownerName||'임바울')} (인)</td>
+                <td style="width:23%; border:none; border-right:1px solid #111;" class="al">${escapeHtml(m.ownerName||'')} (인)</td>
                 <td style="width:14%; border:none; border-right:1px solid #111; background:#F2F2F2; font-weight:600;">생년월일(6자리)</td>
                 <td style="width:23%; border:none;" class="al">${escapeHtml(birth6Val)}</td>
               </tr>
               <tr style="border-bottom:1px solid #111;">
                 <td style="border:none; border-right:1px solid #111; background:#F2F2F2; font-weight:600;">전 화</td>
-                <td style="border:none; border-right:1px solid #111;" class="al">${escapeHtml(m.storePhone||'063-910-1210')}</td>
+                <td style="border:none; border-right:1px solid #111;" class="al">${escapeHtml(m.storePhone||'')}</td>
                 <td style="border:none; border-right:1px solid #111; background:#F2F2F2; font-weight:600;">핸드폰</td>
-                <td style="border:none;" class="al">${escapeHtml(m.ownerPhone||'010-6607-6663')}</td>
+                <td style="border:none;" class="al">${escapeHtml(m.ownerPhone||'')}</td>
               </tr>
               <tr>
                 <td style="border:none; border-right:1px solid #111; background:#F2F2F2; font-weight:600;">주 소</td>
@@ -866,7 +866,7 @@ function renderContract(){
       </table>
 
       <div class="contract-intro">
-        임대인 <b>(주)위드페이먼트</b>(이하 "갑"이라 한다)와 상기 임차인 <b>${escapeHtml(m.storeName||'배포치킨')}</b>(이하 "을"이라 한다)간에 신용카드조회기, POS의 임대차에 관하여 다음과 같이 계약을 체결한다.
+        임대인 <b>(주)위드페이먼트</b>(이하 "갑"이라 한다)와 상기 임차인 <b>${escapeHtml(m.storeName||'')}</b>(이하 "을"이라 한다)간에 신용카드조회기, POS의 임대차에 관하여 다음과 같이 계약을 체결한다.
       </div>
 
       <div class="clause-grid">
@@ -921,7 +921,7 @@ function renderContract(){
           <th style="width:20%">이용기관</th>
           <td style="width:30%">(주)위드페이먼트</td>
           <th style="width:20%">납부자(가맹점)</th>
-          <td style="width:30%">${escapeHtml(m.storeName||'배포치킨')} (${escapeHtml(m.ownerName||'임바울' )})</td>
+          <td style="width:30%">${escapeHtml(m.storeName||'')} (${escapeHtml(m.ownerName||'' )})</td>
         </tr>
         <tr>
           <th>출금 은행명</th>
@@ -1002,6 +1002,37 @@ const App = {
   changeFormState(){
     syncFields();
     render();
+  },
+
+  // -------------------------------------------------------------
+  // [신규] Apps Script 백엔드의 OCR 추출 결과를 매핑하는 함수
+  // -------------------------------------------------------------
+  applyExtractedData(extracted) {
+    if (!extracted) return;
+
+    if (extracted.bizNumber) {
+      state.contractBizNo = extracted.bizNumber;
+      if (!state.fields.bizNo) state.fields.bizNo = extracted.bizNumber;
+    }
+    if (extracted.ownerName) {
+      if (!state.fields.ownerName) state.fields.ownerName = extracted.ownerName;
+      if (!state.cmsDepositor) state.cmsDepositor = extracted.ownerName;
+    }
+    if (extracted.birthDate) {
+      state.contractBirth6 = extracted.birthDate;
+    }
+    if (extracted.address) {
+      state.contractAddress = extracted.address;
+    }
+    if (extracted.bankName) {
+      state.cmsBankName = extracted.bankName;
+    }
+    if (extracted.accountNumber) {
+      state.cmsAccountNo = extracted.accountNumber;
+    }
+
+    render();
+    toast('서류 자동 분석(OCR) 정보가 입력란에 반영되었습니다.');
   },
 
   async handleFile(key, file){
@@ -1118,11 +1149,18 @@ const App = {
         filesData: state.files
       };
 
-      await fetch(API_URL, {
+      const response = await fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify(payload)
       });
+      
+      const res = await response.json();
+
+      // 응답 내 추출된 데이터(extracted)가 있는 경우 화면 상태에 매핑
+      if (res && res.extracted) {
+        this.applyExtractedData(res.extracted);
+      }
 
       state.receiptId = id;
       state.files = {};
@@ -1195,12 +1233,12 @@ const App = {
     state.selection = defaultSelection();
     state.contractPeriodYears = 3;
     state.installDate = new Date().toISOString().slice(0,10);
-    state.contractBizNo = m.bizNo || '';
-    state.contractBirth6 = '';
-    state.contractAddress = '';
-    state.cmsBankName = '국민은행';
-    state.cmsAccountNo = '123456-04-123456';
-    state.cmsDepositor = m.ownerName || '';
+    state.contractBizNo = m.bizNo || state.contractBizNo || '';
+    state.contractBirth6 = state.contractBirth6 || '';
+    state.contractAddress = state.contractAddress || '';
+    state.cmsBankName = state.cmsBankName || '국민은행';
+    state.cmsAccountNo = state.cmsAccountNo || '';
+    state.cmsDepositor = state.cmsDepositor || m.ownerName || '';
     state.view = 'equipmentSelect';
     render();
   },
