@@ -800,7 +800,7 @@ function renderContract(){
   const m = state.contractMerchant || {};
   const sel = state.selection;
   const monthlyTotal = calcRentalMonthly(sel);
-  const monthlyTotalVat = Math.round(monthlyTotal * 1.1); // 임대료는 VAT(부가세) 포함 금액으로 표시
+  const monthlyTotalVat = Math.round(monthlyTotal * 1.1);
   const indemnityRows = buildIndemnityRows(sel);
   const indemnityTotal = indemnityRows.reduce((sum,r)=> sum + (r.amount||0), 0);
   const hasUnpricedItem = indemnityRows.some(r=>r.amount===null);
