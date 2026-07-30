@@ -298,7 +298,7 @@ body{
 <div class="toast" id="toast"></div>
 
 <script>
-const API_URL = "https://script.google.com/macros/s/AKfycbyCwMGuGQ9O6q_GgjzLTm6at-Jbl8FglBq0yhomj4P_gg3bZLrmq6mdrArn7oJgrtk/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbzIzF9bTvfJ-lvuxJ7YmmbBK46Wln1jVsOk-gVK1_8YMI3oZgK8hoZOChX3HXHvpCtV/exec";
 const TEMP_SAVE_KEY = "merchant_form_temp_data";
 
 // 16가지 보완서류 목록 정의
@@ -439,6 +439,16 @@ let state = {
   cmsAccountNo: '',
   cmsDepositor: ''
 };
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
 
 function syncFields(){
   if(state.isSupplementMode) return;
@@ -721,564 +731,341 @@ function renderAdmin(){
               <td style="padding: 14px 16px; font-weight: 700;">${escapeHtml(m.storeName || '')}</td>
               <td style="padding: 14px 16px;">${escapeHtml(m.ownerName || '-')}</td>
               <td style="padding: 14px 16px; font-size: 12.5px; color: var(--ink-soft);">${escapeHtml(m.bizNo || m.bizNumber || '-')}</td>
-              <td style="padding: 14px 16px;"><span style="background:${bizTypeText==='법인'?'#E8F4FD':'#EAF6EF'}; color:${bizTypeText==='법인'?'#0066CC':'#2F8F5B'}; padding:3px 8px; border-radius:4px; font-size:11.5px; font-weight:600;">${bizTypeText}</span></td>
-              <td style="padding: 14px 16px;">${escapeHtml(m.storePhone || '')}</td>
-              <td style="padding: 14px 16px;">${escapeHtml(m.ownerPhone || '')}</td>
-              <td style="padding: 14px 16px; font-size: 12.5px; color: var(--ink-soft);">${formattedDate}</td>
+              <td style="padding: 14px 16px;"><span style="background:${bizTypeText==='법인'?'#E8F4FD':'#EAF6EF'}; color:${bizTypeText==='법인'?'#1B64DA':'#2F8F5B'}; padding:3px 8px; border-radius:6px; font-size:12px; font-weight:600;">${bizTypeText}</span></td>
+              <td style="padding: 14px 16px; font-size: 12.5px;">${escapeHtml(m.storePhone || '-')}</td>
+              <td style="padding: 14px 16px; font-size: 12.5px;">${escapeHtml(m.ownerPhone || '-')}</td>
+              <td style="padding: 14px 16px; font-size: 12px; color: var(--ink-soft);">${formattedDate}</td>
               <td style="padding: 14px 16px;">${folderBtnHtml}</td>
               <td style="padding: 14px 16px; text-align:center;">
-                <div style="display:flex; gap:6px; justify-content:center; flex-wrap:wrap;">
-                  <button onclick="App.openSupplementModal('${escapeAttr(m.id)}')" style="background: #E8A317; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 11.5px;">보완요청</button>
-                  <button onclick="App.goEquipmentSelect('${escapeAttr(m.id)}')" style="background: var(--teal); color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 11.5px;">계약서 작성</button>
-                  <button onclick="App.completeAndDelete('${escapeAttr(m.id)}', '${escapeAttr(m.storeName)}')" style="background: var(--red); color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 11.5px;">처리완료/삭제</button>
+                <div style="display:flex; gap:6px; justify-content:center;">
+                  <button class="btn btn-secondary btn-sm" onclick="App.openSupplementModal('${m.id}')" style="padding:5px 8px; font-size:11.5px;">보완요청</button>
+                  <button class="btn btn-secondary btn-sm" onclick="App.reOcrMerchant('${m.id}')" style="padding:5px 8px; font-size:11.5px;">OCR재시도</button>
+                  <button class="btn btn-primary btn-sm" onclick="App.openContractForMerchant('${m.id}')" style="padding:5px 8px; font-size:11.5px;">계약서작성</button>
+                  <button class="btn btn-secondary btn-sm" style="color:var(--red); padding:5px 8px; font-size:11.5px;" onclick="App.deleteMerchant('${m.id}')">삭제</button>
                 </div>
               </td>
-            </tr>
-          `;
+            </tr>`;
         }).join('')}
       </tbody>
     </table>
   </div>`;
 }
 
-function renderSupplementModal() {
+function renderSupplementModal(){
   const m = state.activeModalMerchant;
+  if (!m) return '';
+
   return `
   <div class="modal-overlay" onclick="App.closeSupplementModal()">
     <div class="modal-box" onclick="event.stopPropagation()">
-      <div class="modal-title">보완 서류 선택 - ${escapeHtml(m ? m.storeName : '')}</div>
-      <div class="modal-sub">고객에게 다시 요구할 보완 서류를 선택하세요. 체크한 서류만 업로드할 수 있는 전용 폼 링크가 생성됩니다.</div>
-      
+      <div class="modal-title">보완 요청 서류 선택</div>
+      <div class="modal-sub"><b>${escapeHtml(m.storeName)}</b> 가맹점에 추가 제출을 요청할 서류를 선택하세요.</div>
+
       <div class="modal-list">
-        ${SUPPLEMENT_DOC_LIST.map(item => `
+        ${SUPPLEMENT_DOC_LIST.map(doc => `
           <label class="modal-item">
-            <input type="checkbox" value="${item.key}" ${state.selectedModalDocs.includes(item.key) ? 'checked' : ''} onchange="App.toggleModalDoc('${item.key}')">
-            <span>${item.label}</span>
+            <input type="checkbox" value="${doc.key}" ${state.selectedModalDocs.includes(doc.key)?'checked':''} onchange="App.toggleModalDoc('${doc.key}')">
+            <span>${doc.label}</span>
           </label>
         `).join('')}
       </div>
 
-      <div style="display:flex; gap:8px;">
-        <button class="btn btn-secondary" style="width:35%;" onclick="App.closeSupplementModal()">취소</button>
-        <button class="btn btn-primary" style="width:65%;" onclick="App.generateSupplementLink()">보완요청 링크 생성 및 복사</button>
+      <div style="display:flex; gap:10px;">
+        <button class="btn btn-secondary" onclick="App.closeSupplementModal()">취소</button>
+        <button class="btn btn-primary" onclick="App.generateSupplementLink()">링크 생성 및 복사</button>
       </div>
     </div>
-  </div>`;
-}
-
-function escapeHtml(str){
-  return String(str||'')
-    .replace(/&/g,'&amp;')
-    .replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;')
-    .replace(/"/g,'&quot;')
-    .replace(/'/g,'&#39;');
-}
-function escapeAttr(str){
-  return String(str||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-}
-
-function fmt(n){ return Number(n||0).toLocaleString('ko-KR'); }
-
-function calcRentalMonthly(sel){
-  let total = 0;
-  for(const key in RENTAL_CATALOG){
-    const item = RENTAL_CATALOG[key];
-    const s = sel.rental[key];
-    if(s && s.qty > 0) total += item.monthlyPrice * s.qty;
-  }
-  for(const key in RENTAL_ADDONS){
-    const item = RENTAL_ADDONS[key];
-    const s = sel.addons[key];
-    if(s && s.qty > 0) total += item.monthlyPrice * s.qty;
-  }
-  return total;
-}
-
-function buildIndemnityRows(sel){
-  const rows = [];
-  for(const key in RENTAL_CATALOG){
-    const item = RENTAL_CATALOG[key];
-    const s = sel.rental[key];
-    if(!s || s.qty <= 0) continue;
-    let unit, optionLabel = '';
-    if(item.hasOption){
-      unit = item.indemnityByOption[s.option];
-      optionLabel = s.option === 'naver' ? '네이버커넥트' : '토스프론트';
-    } else {
-      unit = item.indemnity;
-    }
-    rows.push({
-      name: item.label + (optionLabel ? ` (${optionLabel})` : ''),
-      qty: s.qty,
-      unit: unit,
-      amount: (unit==null ? null : unit * s.qty)
-    });
-  }
-  for(const key in RENTAL_ADDONS){
-    const item = RENTAL_ADDONS[key];
-    const s = sel.addons[key];
-    if(!s || s.qty <= 0) continue;
-    rows.push({
-      name: item.label,
-      qty: s.qty,
-      unit: item.indemnity,
-      amount: (item.indemnity==null ? null : item.indemnity * s.qty)
-    });
-  }
-  return rows;
-}
-
-function hasAnySelection(sel){
-  const rentalQty = Object.values(sel.rental).some(s=>s.qty>0);
-  const addonQty = Object.values(sel.addons).some(s=>s.qty>0);
-  return rentalQty || addonQty;
-}
-
-function renderStepper(category, key){
-  const s = state.selection[category][key];
-  return `
-  <div class="eq-stepper">
-    <button onclick="App.changeQty('${category}','${key}',-1)">−</button>
-    <div class="eq-qty">${s.qty}</div>
-    <button onclick="App.changeQty('${category}','${key}',1)">+</button>
-  </div>`;
-}
-
-function renderOptionPicker(category, key){
-  const s = state.selection[category][key];
-  return `
-  <div class="eq-options">
-    <label><input type="radio" name="opt_${category}_${key}" value="naver" ${s.option==='naver'?'checked':''} onchange="App.setOption('${category}','${key}','naver')"> 네이버커넥트</label>
-    <label><input type="radio" name="opt_${category}_${key}" value="toss" ${s.option==='toss'?'checked':''} onchange="App.setOption('${category}','${key}','toss')"> 토스프론트</label>
   </div>`;
 }
 
 function renderEquipmentSelect(){
   const m = state.contractMerchant;
-  const sel = state.selection;
-  const monthlyTotal = calcRentalMonthly(sel);
+  if(!m) return '';
 
-  const rentalItemsHtml = Object.values(RENTAL_CATALOG).map(item=>{
-    const s = sel.rental[item.key];
-    return `
-    <div class="eq-item ${s.qty>0?'active':''}">
-      <div class="eq-item-head">
-        <div>
-          <div class="eq-item-name">${item.label}</div>
-          <div class="eq-item-price">월 ${fmt(item.monthlyPrice)}원</div>
-        </div>
-        ${renderStepper('rental', item.key)}
-      </div>
-      ${item.hasOption && s.qty>0 ? renderOptionPicker('rental', item.key) : ''}
-    </div>`;
-  }).join('');
-
-  const addonsHtml = Object.values(RENTAL_ADDONS).map(item=>{
-    return `
-    <div class="eq-item ${sel.addons[item.key].qty>0?'active':''}">
-      <div class="eq-item-head">
-        <div>
-          <div class="eq-item-name">${item.label}</div>
-          <div class="eq-item-price">월 ${fmt(item.monthlyPrice)}원</div>
-        </div>
-        ${renderStepper('addons', item.key)}
-      </div>
-    </div>`;
-  }).join('');
+  let totalMonthly = 0;
+  for(let key in RENTAL_CATALOG){
+    const item = RENTAL_CATALOG[key];
+    const sel = state.selection.rental[key];
+    if(sel && sel.qty > 0) totalMonthly += item.monthlyPrice * sel.qty;
+  }
+  for(let key in RENTAL_ADDONS){
+    const item = RENTAL_ADDONS[key];
+    const sel = state.selection.addons[key];
+    if(sel && sel.qty > 0) totalMonthly += item.monthlyPrice * sel.qty;
+  }
 
   return `
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-mark">P</div>
+      <div>
+        <div class="brand-text">임대 장비 / 솔루션 선택</div>
+        <div class="brand-sub">${escapeHtml(m.storeName)} 가맹점의 임대 품목을 선택하세요.</div>
+      </div>
+    </div>
+  </div>
+
   <div class="card">
-    <div class="section-title">장비 임대 선택 및 CMS 자동이체 연동 ${m ? '- ' + escapeHtml(m.storeName) : ''}</div>
-    <div class="section-sub">계약기간, 장비 및 CMS 출금계좌 정보를 설정하세요. 접수 데이터 및 통장사본 정보가 자동 매핑됩니다.</div>
+    <div class="section-title">주요 임대 장비</div>
+    <div class="section-sub">필요한 수량과 옵션을 선택해 주세요.</div>
 
-    <div class="grid2" style="margin-bottom:18px;">
-      <div class="field">
-        <label>설치일자</label>
-        <input type="date" id="setup_installDate" value="${state.installDate}" onchange="App.setInstallDate(this.value)">
-      </div>
-      <div class="field">
-        <label>계약기간 (년) <span class="req">*</span></label>
-        <select id="setup_period" onchange="App.setPeriod(this.value)">
-          <option value="1" ${state.contractPeriodYears==1?'selected':''}>1년</option>
-          <option value="2" ${state.contractPeriodYears==2?'selected':''}>2년</option>
-          <option value="3" ${state.contractPeriodYears==3?'selected':''}>3년 (기본)</option>
-          <option value="4" ${state.contractPeriodYears==4?'selected':''}>4년</option>
-          <option value="5" ${state.contractPeriodYears==5?'selected':''}>5년</option>
-        </select>
-      </div>
-    </div>
+    ${Object.keys(RENTAL_CATALOG).map(key => {
+      const item = RENTAL_CATALOG[key];
+      const sel = state.selection.rental[key];
+      const active = sel.qty > 0;
+      return `
+      <div class="eq-item ${active?'active':''}">
+        <div class="eq-item-head">
+          <div>
+            <div class="eq-item-name">${item.label}</div>
+            <div class="eq-item-price">월 ${item.monthlyPrice.toLocaleString()}원</div>
+          </div>
+          <div class="eq-stepper">
+            <button onclick="App.changeQty('rental', '${key}', -1)">-</button>
+            <span class="eq-qty">${sel.qty}</span>
+            <button onclick="App.changeQty('rental', '${key}', 1)">+</button>
+          </div>
+        </div>
+        ${(item.hasOption && active) ? `
+        <div class="eq-options">
+          <label><input type="radio" name="opt_${key}" value="naver" ${sel.option==='naver'?'checked':''} onchange="App.changeOption('${key}', 'naver')"> 네이버페이형</label>
+          <label><input type="radio" name="opt_${key}" value="toss" ${sel.option==='toss'?'checked':''} onchange="App.changeOption('${key}', 'toss')"> 토스프론트형</label>
+        </div>` : ''}
+      </div>`;
+    }).join('')}
 
-    <div class="field" style="margin-bottom:18px;">
-      <label>추가 기재 정보 (사업자등록번호 / 생년월일 6자리 / 주소)</label>
-      <div class="grid2">
-        <input type="text" id="setup_bizNo" placeholder="사업자등록번호 (예: 123-45-67890)" value="${escapeHtml(state.contractBizNo)}" oninput="App.setExtraField('contractBizNo', this.value)">
-        <input type="text" id="setup_birth6" placeholder="대표 생년월일 앞 6자리 (예: 850101)" value="${escapeHtml(state.contractBirth6)}" oninput="App.setExtraField('contractBirth6', this.value)">
-      </div>
-      <div style="margin-top:10px;">
-        <input type="text" id="setup_address" placeholder="사업장 상세 주소" value="${escapeHtml(state.contractAddress)}" oninput="App.setExtraField('contractAddress', this.value)">
-      </div>
-    </div>
+    <div class="section-title" style="margin-top:28px;">추가 옵션 장비</div>
+    <div class="section-sub">주방프린터 및 오더포스를 추가합니다.</div>
 
-    <div class="opt-group-label" style="margin-top:18px;">CMS 자동이체 출금 계좌 정보 (통장사본 자동참조)</div>
-    <div class="grid2" style="margin-bottom:18px;">
-      <div class="field">
-        <label>출금 은행명</label>
-        <input type="text" id="setup_cmsBank" placeholder="예: 국민은행" value="${escapeHtml(state.cmsBankName)}" oninput="App.setExtraField('cmsBankName', this.value)">
-      </div>
-      <div class="field">
-        <label>출금 계좌번호</label>
-        <input type="text" id="setup_cmsAccount" placeholder="예: 123456-04-123456" value="${escapeHtml(state.cmsAccountNo)}" oninput="App.setExtraField('cmsAccountNo', this.value)">
-      </div>
-    </div>
-    <div class="field" style="margin-bottom:18px;">
-      <label>예금주명 (기본: 대표자명 또는 상호명)</label>
-      <input type="text" id="setup_cmsDepositor" placeholder="예: 홍길동 (또는 주식회사 위드)" value="${escapeHtml(state.cmsDepositor)}" oninput="App.setExtraField('cmsDepositor', this.value)">
-    </div>
-
-    <div class="opt-group-label" style="margin-top:18px;">임대 장비 선택</div>
-    ${rentalItemsHtml}
-    <div class="opt-group-label" style="margin-top:18px;">추가옵션</div>
-    ${addonsHtml}
+    ${Object.keys(RENTAL_ADDONS).map(key => {
+      const item = RENTAL_ADDONS[key];
+      const sel = state.selection.addons[key];
+      const active = sel.qty > 0;
+      return `
+      <div class="eq-item ${active?'active':''}">
+        <div class="eq-item-head">
+          <div>
+            <div class="eq-item-name">${item.label}</div>
+            <div class="eq-item-price">월 ${item.monthlyPrice.toLocaleString()}원</div>
+          </div>
+          <div class="eq-stepper">
+            <button onclick="App.changeQty('addons', '${key}', -1)">-</button>
+            <span class="eq-qty">${sel.qty}</span>
+            <button onclick="App.changeQty('addons', '${key}', 1)">+</button>
+          </div>
+        </div>
+      </div>`;
+    }).join('')}
 
     <div class="eq-summary">
-      <div class="eq-summary-row total"><span>임대료 합계 (월)</span><span>${fmt(monthlyTotal)}원 / 월</span></div>
+      <div class="eq-summary-row total">
+        <span>총 월 임대료</span>
+        <span style="color:var(--teal);">${totalMonthly.toLocaleString()} 원 / 월 (VAT 별도)</span>
+      </div>
     </div>
 
-    <div class="btn-row">
-      <button class="btn btn-secondary" onclick="App.backToAdminFromEquip()">취소</button>
-      <button class="btn btn-primary" onclick="App.goContract()">계약서 및 CMS 동의서 생성</button>
+    <div class="btn-row" style="margin-top:20px;">
+      <button class="btn btn-secondary" onclick="App.goAdmin()" style="width:30%;">뒤로가기</button>
+      <button class="btn btn-primary" onclick="App.goToContractView()" style="width:70%;">계약서 및 CMS 동의서 생성</button>
     </div>
   </div>`;
 }
 
 function renderContract(){
-  const m = state.contractMerchant || {};
-  const sel = state.selection;
-  const monthlyTotal = calcRentalMonthly(sel);
-  const monthlyTotalVat = Math.round(monthlyTotal * 1.1);
-  const indemnityRows = buildIndemnityRows(sel);
-  const indemnityTotal = indemnityRows.reduce((sum,r)=> sum + (r.amount||0), 0);
-  const hasUnpricedItem = indemnityRows.some(r=>r.amount===null);
+  const m = state.contractMerchant;
+  if(!m) return '';
 
-  const installDateObj = new Date(state.installDate || Date.now());
-  const installStr = installDateObj.toLocaleDateString('ko-KR', {year:'numeric', month:'2-digit', day:'2-digit'}).replace(/\. /g, '-').replace(/\./g, '');
+  let totalMonthly = 0;
+  let itemsList = [];
   
-  const expiryDateObj = new Date(installDateObj);
-  expiryDateObj.setFullYear(expiryDateObj.getFullYear() + Number(state.contractPeriodYears));
-  expiryDateObj.setDate(expiryDateObj.getDate() - 1);
-  const expiryStr = expiryDateObj.toLocaleDateString('ko-KR', {year:'numeric', month:'2-digit', day:'2-digit'}).replace(/\. /g, '-').replace(/\./g, '');
-
-  let terminalName = '-';
-  let posName = '-';
-  let primaryModelOption = '-';
-  for(const key in RENTAL_CATALOG){
+  for(let key in RENTAL_CATALOG){
     const item = RENTAL_CATALOG[key];
-    const s = sel.rental[key];
-    if(s && s.qty > 0){
-      if(key === 'posSet') posName = item.label + ` (${s.qty})`;
-      if(key === 'cardTerminal') terminalName = item.label + ` (${s.qty})`;
-      if(item.hasOption) primaryModelOption = s.option === 'naver' ? '네이버 커넥트' : '토스 프론트';
+    const sel = state.selection.rental[key];
+    if(sel && sel.qty > 0) {
+      let optText = item.hasOption ? (sel.option==='toss'?'(토스프론트)':'(네이버페이)') : '';
+      let ind = item.hasOption ? item.indemnityByOption[sel.option] : item.indemnity;
+      itemsList.push({ label: item.label + optText, qty: sel.qty, monthly: item.monthlyPrice, indemnity: ind });
+      totalMonthly += item.monthlyPrice * sel.qty;
+    }
+  }
+  for(let key in RENTAL_ADDONS){
+    const item = RENTAL_ADDONS[key];
+    const sel = state.selection.addons[key];
+    if(sel && sel.qty > 0) {
+      itemsList.push({ label: item.label, qty: sel.qty, monthly: item.monthlyPrice, indemnity: item.indemnity });
+      totalMonthly += item.monthlyPrice * sel.qty;
     }
   }
 
-  const bizNoVal = state.contractBizNo || m.bizNo || m.bizNumber || '';
-  const birth6Val = state.contractBirth6 || m.birthDate || '';
-  const addressVal = state.contractAddress || m.address || m.storeAddress || '';
-  const depositorVal = state.cmsDepositor || m.ownerName || '';
-  const bankNameVal = state.cmsBankName || '';
-  const accountNoVal = state.cmsAccountNo || '';
-
   const now = new Date();
-  const currentYear = now.getFullYear();
-  const currentMonth = String(now.getMonth() + 1).padStart(2, '0');
-  const currentDate = String(now.getDate()).padStart(2, '0');
+  const year = now.getFullYear();
+  const month = String(now.getMonth()+1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
 
   return `
-  <div style="max-width:820px;margin:10px auto;">
+  <div class="no-print" style="max-width:960px; margin:0 auto 16px; display:flex; justify-content:space-between; align-items:center;">
+    <button class="btn btn-secondary btn-sm" onclick="App.goEquipmentSelect()">← 장비 선택으로 돌아가기</button>
+    <button class="btn btn-primary btn-sm" onclick="window.print()">🖨️ 인쇄 / PDF 저장하기</button>
+  </div>
+
+  <div class="contract-page contract-doc">
+    <div class="contract-top-title">포스 / 단말기 임대차 설치 계약서</div>
     
-    <div class="contract-page">
-      <div class="contract-top-title">임대서비스계약서</div>
-
-      <table class="ref-table">
-        <tr>
-          <th style="width:10%">설치일</th>
-          <td style="width:23%">${installStr}</td>
-          <th style="width:10%">만료일</th>
-          <td style="width:23%">${expiryStr}</td>
-          <th style="width:12%">단말기</th>
-          <td style="width:22%">${terminalName}</td>
-        </tr>
-        <tr>
-          <th>임대료</th>
-          <td><b>${fmt(monthlyTotalVat)}원/월</b> <span style="font-weight:400; font-size:9.5px; color:#5B6B7A;">(VAT포함)</span></td>
-          <th>모델/옵션</th>
-          <td>${primaryModelOption}</td>
-          <th>POS</th>
-          <td>${posName}</td>
-        </tr>
-        <tr>
-          <th>"갑"</th>
-          <td colspan="5" class="al" style="font-weight:700;">
-            (주)위드페이먼트 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 대표 : 고 영 배 (인)
-            <div style="font-weight:400; color:#5B6B7A; margin-top:2px;">광주광역시 서구 유덕로 114</div>
-          </td>
-        </tr>
-        <tr>
-          <th rowspan="4">"을"</th>
-          <td colspan="5" style="padding:0;">
-            <table style="width:100%; border-collapse:collapse; border:none; font-size:11px;">
-              <tr style="border-bottom:1px solid #111;">
-                <td style="width:10%; border:none; border-right:1px solid #111; background:#F2F2F2; font-weight:600;">상 호</td>
-                <td style="width:23%; border:none; border-right:1px solid #111;" class="al"><b>${escapeHtml(m.storeName||'')}</b></td>
-                <td style="width:14%; border:none; border-right:1px solid #111; background:#F2F2F2; font-weight:600;">사업자등록번호</td>
-                <td style="width:23%; border:none;" class="al">${escapeHtml(bizNoVal)}</td>
-              </tr>
-              <tr style="border-bottom:1px solid #111;">
-                <td style="border:none; border-right:1px solid #111; background:#F2F2F2; font-weight:600;">대표자</td>
-                <td style="border:none; border-right:1px solid #111;" class="al">${escapeHtml(m.ownerName||'')} (인)</td>
-                <td style="border:none; border-right:1px solid #111; background:#F2F2F2; font-weight:600;">생년월일(6자리)</td>
-                <td style="border:none;" class="al">${escapeHtml(birth6Val)}</td>
-              </tr>
-              <tr style="border-bottom:1px solid #111;">
-                <td style="border:none; border-right:1px solid #111; background:#F2F2F2; font-weight:600;">전 화</td>
-                <td style="border:none; border-right:1px solid #111;" class="al">${escapeHtml(m.storePhone||'')}</td>
-                <td style="border:none; border-right:1px solid #111; background:#F2F2F2; font-weight:600;">핸드폰</td>
-                <td style="border:none;" class="al">${escapeHtml(m.ownerPhone||'')}</td>
-              </tr>
-              <tr>
-                <td style="border:none; border-right:1px solid #111; background:#F2F2F2; font-weight:600;">주 소</td>
-                <td colspan="3" style="border:none;" class="al">${escapeHtml(addressVal)}</td>
-              </tr>
-            </table>
-          </td>
-        </tr>
-      </table>
-
-      <div class="contract-intro">
-        임대인 <b>(주)위드페이먼트</b>(이하 "갑"이라 한다)와 상기 임차인 <b>${escapeHtml(m.storeName||'')}</b>(이하 "을"이라 한다)간에 신용카드조회기, POS의 임대차에 관하여 다음과 같이 계약을 체결한다.
-      </div>
-
-      <div class="clause-grid">
-        <div class="clause-col">
-          <div class="clause"><b>제1조 (계약의 표시)</b> "갑"은 상기의 표시된 물품을 기재된 내용에 따라 "을"에게 임대하고, "을"은 이를 임차한다.</div>
-          <div class="clause"><b>제2조 (용도제한)</b> "을"은 임대한 물품을 "갑"이 제공하는 조회서비스 이외의 용도로 사용할 수 없다.</div>
-          <div class="clause"><b>제3조 (물품의 소유권)</b> 본 계약 물품의 소유권은 "갑"에게 있고, 물품의 사용권은 "을"에게 있다.</div>
-          <div class="clause"><b>제4조 (계약기간)</b> 본 임대 의무기간은 "갑"과 "을"이 설치한 날로부터 <b>${state.contractPeriodYears}년</b>으로 한다. 다만 계약 만료일 기준 1개월 전에 서면으로 계약변경 또는 해지통보가 없을 경우 계약은 매 1년 자동 연장된다.</div>
-          <div class="clause"><b>제5조 (계약금)</b> "을"은 계약기간 동안 "갑"에게 매월 <b>${fmt(monthlyTotalVat)}원/월(VAT포함)</b>을 지불하여야 한다.</div>
-          <div class="clause"><b>제6조 (유지보수 책임)</b> "을"은 선량한 관리자로서 임차장비를 유지하여야 하며, 고장 발생 시에는 반드시 "갑"에게 수리보수를 의뢰하여야 한다.</div>
-          <div class="clause"><b>제7조 (임차권의 양도 및 전대 금지)</b> "을"은 임차한 단말기를 제3자에게 양도하거나 전대등의 처분을 할 수 없다.</div>
-          <div class="clause"><b>제8조 (A/S 관련)</b> 기기의 무상보증기간은 1년을 원칙으로 한다. 천재지변 및 사용자 과실 파손 시 수리비가 청구될 수 있다.</div>
-        </div>
-        <div class="clause-col">
-          <div class="clause"><b>제9조 (계약의 해지)</b> "을"이 내용을 준수하지 아니한 경우, "갑"은 1개월간 유예기간을 두고 시정을 요구하며 불응 시 계약을 해지할 수 있다.</div>
-          <div class="clause"><b>제10조 (임차물품의 배상)</b> "을"은 계약 해지 또는 물품 분실·훼손 시 (표 1)에서 정한 위약금 및 소비자가격을 배상하여야 한다.</div>
-          
-          <div style="text-align:center; font-weight:700; margin:6px 0 4px; font-size:10px;">-------------- ( 표 1 ) 임차물품의 배상기준 소비자가격 --------------</div>
-          <table class="contract-table">
-            <thead><tr><th>품목</th><th>수량</th><th>단가</th><th>금액</th></tr></thead>
-            <tbody>
-              ${indemnityRows.length === 0 ? `<tr><td colspan="4">선택된 임대 품목이 없습니다.</td></tr>` :
-                indemnityRows.map(r => `
-                  <tr>
-                    <td class="al">${escapeHtml(r.name)}</td>
-                    <td>${r.qty}</td>
-                    <td>${r.unit==null ? '협의' : fmt(r.unit)+'원'}</td>
-                    <td>${r.amount==null ? '-' : fmt(r.amount)+'원'}</td>
-                  </tr>`).join('')
-              }
-              <tr><td colspan="3" style="font-weight:700;">합 계</td><td style="font-weight:700;">${fmt(indemnityTotal)}원</td></tr>
-            </tbody>
-          </table>
-          ${hasUnpricedItem ? `<div class="contract-note">※ 오더포스(리퍼) 배상단가: "협의"</div>` : ''}
-          <div class="contract-note" style="margin-top:6px;">
-            * 해지시 위약금 : <span class="editable-penalty" contenteditable="true">10,000원 × 잔여 계약 개월 수</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="clause" style="margin-top:8px;"><b>제11조 (계약의 해석)</b> 본 계약에서 정하지 아니한 사항은 일반 상관례에 따르며, 관할법원은 "갑"의 소재지 관할법원으로 한다.</div>
+    <div class="contract-intro">
+      임대인 <b>(주)스마트포스시스템</b>(이하 "갑")과 임차인 <b>${escapeHtml(m.storeName)}</b>(이하 "을")은 아래와 같이 임대차 계약을 체결한다.
     </div>
 
-    <div class="cms-page">
-      <h1>CMS 출금이체 신청(동의)서</h1>
+    <table class="ref-table">
+      <tr>
+        <th style="width:15%;">상 호 명</th>
+        <td style="width:35%;">${escapeHtml(m.storeName)}</td>
+        <th style="width:15%;">대 표 자</th>
+        <td style="width:35%;">${escapeHtml(m.ownerName)}</td>
+      </tr>
+      <tr>
+        <th>사업자번호</th>
+        <td><input type="text" value="${escapeHtml(state.contractBizNo || m.bizNo || m.bizNumber || '')}" oninput="state.contractBizNo=this.value" style="border:none; width:100%; text-align:center; font-size:11px;"></td>
+        <th>생년월일</th>
+        <td><input type="text" placeholder="YYMMDD" value="${escapeHtml(state.contractBirth6 || m.birthDate || '')}" oninput="state.contractBirth6=this.value" style="border:none; width:100%; text-align:center; font-size:11px;"></td>
+      </tr>
+      <tr>
+        <th>사업장주소</th>
+        <td colspan="3"><input type="text" value="${escapeHtml(state.contractAddress || m.address || '')}" oninput="state.contractAddress=this.value" style="border:none; width:100%; text-align:left; font-size:11px;"></td>
+      </tr>
+      <tr>
+        <th>연 락 처</th>
+        <td>${escapeHtml(m.ownerPhone || m.storePhone)}</td>
+        <th>설치예정일</th>
+        <td><input type="date" value="${state.installDate}" onchange="state.installDate=this.value" style="border:none; font-size:11px;"></td>
+      </tr>
+    </table>
 
-      <h2>□ 수납기관정보</h2>
-      <div style="font-size: 13px; font-weight: bold; margin-bottom: 5px;">상호명 : ${escapeHtml(m.storeName||'')}</div>
-      <table>
+    <table class="contract-table">
+      <thead>
         <tr>
-          <th>수납기관명</th>
-          <td>주식회사 위드페이먼트</td>
-          <th>사업자등록번호</th>
-          <td>409-86-50093</td>
+          <th>임대 품목 / 모델명</th>
+          <th>수량</th>
+          <th>월 임대료 (VAT별도)</th>
+          <th>배상 책임액 (변상금)</th>
         </tr>
-        <tr>
-          <th>대 표 자</th>
-          <td>고영배</td>
-          <th>연 락 처</th>
-          <td>1599-5413</td>
+      </thead>
+      <tbody>
+        ${itemsList.length === 0 ? `<tr><td colspan="4">선택된 임대 품목이 없습니다.</td></tr>` : itemsList.map(it => `
+          <tr>
+            <td class="al">${it.label}</td>
+            <td>${it.qty} 대</td>
+            <td>${(it.monthly * it.qty).toLocaleString()} 원</td>
+            <td>
+              <span class="editable-penalty" contenteditable="true">${(it.indemnity * it.qty).toLocaleString()}</span> 원
+            </td>
+          </tr>
+        `).join('')}
+        <tr style="background:#F8FAFC; font-weight:700;">
+          <td colspan="2">합 계</td>
+          <td>${totalMonthly.toLocaleString()} 원 / 월</td>
+          <td>-</td>
         </tr>
-      </table>
+      </tbody>
+    </table>
 
-      <h2>□ 출금이체 신청 (신청고객기재)</h2>
-      <table>
-        <tr>
-          <th>신 청 인</th>
-          <td width="32%">${escapeHtml(m.storeName||'')}</td>
-          <th>사업자번호</th>
-          <td width="32%">${escapeHtml(bizNoVal)}</td>
-        </tr>
-        <tr>
-          <th>연 락 처</th>
-          <td>${escapeHtml(m.storePhone||'')}</td>
-          <th>휴 대 폰</th>
-          <td>${escapeHtml(m.ownerPhone||'')}</td>
-        </tr>
-        <tr>
-          <th>주 소</th>
-          <td colspan="3">${escapeHtml(addressVal)}</td>
-        </tr>
-        <tr>
-          <th>출금금액</th>
-          <td><b>${fmt(monthlyTotalVat)}원</b> (VAT포함)</td>
-          <th>출금종류</th>
-          <td>CMS</td>
-        </tr>
-        <tr>
-          <th>출 금 일</th>
-          <td></td>
-          <th>E-mail</th>
-          <td>${escapeHtml(m.email||'')}</td>
-        </tr>
-        <tr>
-          <th>결제은행계좌</th>
-          <td colspan="3"><strong>${escapeHtml(bankNameVal)} / 계좌번호 : ${escapeHtml(accountNoVal)}</strong></td>
-        </tr>
-        <tr>
-          <th>예금주명</th>
-          <td>${escapeHtml(depositorVal)}</td>
-          <th>신청인과의 관계</th>
-          <td><span class="editable-penalty" contenteditable="true">본인</span></td>
-        </tr>
-        <tr>
-          <th>예금주의<br>주민(사업자)등록번호</th>
-          <td colspan="3">
-            <strong>${escapeHtml(birth6Val ? birth6Val + ' - ───────' : bizNoVal)}</strong> 
-            <span style="font-size: 11px; color: #555;">(법인의 경우 반드시 사업자등록번호 기입)</span>
-          </td>
-        </tr>
-      </table>
-
-      <div class="consent-box">
-        <div class="consent-title">[개인정보 및 고유식별정보 수집 및 이용 동의]</div>
-        <div class="consent-content">
-          - 수집 및 이용목적 : CMS 출금이체를 통한 요금 수납<br>
-          - 수집항목 (개인정보) : 성명, 전화번호, 휴대전화번호, 금융기관명, 계좌번호<br>
-          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(고유식별정보) : 주민등록번호<br>
-          - 보유 및 이용기간 : 수집·이용 동의일로부터 CMS 출금이체 종료일(해지일)까지<br>
-          - 신청자는 개인정보 및 고유식별정보 수집 및 이용을 거부할 권리가 있으며 권리행사시 출금이체 신청이 거부될 수 있습니다.
-        </div>
-        <div class="consent-check">
-          (개인정보) &nbsp;&nbsp;&nbsp;<span class="highlight">[ &nbsp; ] 동의함</span> &nbsp;&nbsp;&nbsp;&nbsp; [ &nbsp; ] 동의안함
-          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-          (고유식별정보) &nbsp;&nbsp;&nbsp;<span class="highlight">[ &nbsp; ] 동의함</span> &nbsp;&nbsp;&nbsp;&nbsp; [ &nbsp; ] 동의안함
-        </div>
-
-        <hr style="border: 0; border-top: 1px dashed #ccc; margin: 8px 0;">
-
-        <div class="consent-title">[개인정보 제3자 제공 동의]</div>
-        <div class="consent-content">
-          - 개인정보를 제공받는 자 : 사단법인 금융결제원, 엔콤소프트(주)<br>
-          - 개인정보를 제공받는 자의 개인정보 이용 목적 : CMS 출금이체 서비스 제공 및 출금동의 확인<br>
-          - 제공하는 개인정보의 항목 : 성명, 금융기관명, 계좌번호, 주민등록번호, 전화번호, 휴대전화번호<br>
-          - 개인정보를 제공받는 자의 개인정보 보유 및 이용기간 : CMS 출금이체 서비스 제공 및 출금동의 확인 목적을 달성할 때까지<br>
-          - 신청자는 개인정보에 대해 수납기관이 사단법인 금융결제원과 엔콤소프트(주)에 제공하는 것을 거부할 권리가 있으며 거부시 출금이체 신청이 거부 될 수 있습니다.
-        </div>
-        <div class="consent-check">
-          <span class="highlight">[ &nbsp; ] 동의함</span> &nbsp;&nbsp;&nbsp;&nbsp; [ &nbsp; ] 동의안함
-        </div>
+    <div class="clause-grid" style="margin-top:14px;">
+      <div class="clause-col">
+        <div class="clause"><b>제1조 (목적)</b> 본 계약은 "갑"이 소유한 포스 및 단말기 장비를 "을"에게 임대하고, "을"은 이를 적정하게 사용하여 임대료를 지급하는 것을 목적합니다.</div>
+        <div class="clause"><b>제2조 (계약기간)</b> 계약기간은 설치 완료일로부터 <select onchange="state.contractPeriodYears=this.value" style="border:1px solid #ccc; font-size:10px;"><option value="3" ${state.contractPeriodYears==3?'selected':''}>3년(36개월)</option><option value="2" ${state.contractPeriodYears==2?'selected':''}>2년(24개월)</option></form></select>로 하며, 만료 1개월 전 서면 통지가 없는 경우 1년씩 자동 연장됩니다.</div>
+        <div class="clause"><b>제3조 (임대료 지급)</b> "을"은 지정된 결제일에 CMS 자동이체 방식으로 월 임대료를 지급합니다.</div>
       </div>
-
-      <div class="submit-notice">
-        상기 금융거래정보의 제공 및 개인정보의 수집/이용, 제3자 제공에 동의하며 CMS 출금이체 신청합니다.
-      </div>
-
-      <div class="date">
-        ${currentYear}년 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ${currentMonth}월 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ${currentDate}일
-      </div>
-
-      <table class="signature-table">
-        <tr>
-          <th>신 청 인</th>
-          <td class="center-text">${escapeHtml(m.storeName||'')}</td>
-          <td class="center-text"><span class="highlight">인 또는 서명 &nbsp;&nbsp;(인)</span></td>
-        </tr>
-        <tr>
-          <th>예 금 주</th>
-          <td class="center-text">${escapeHtml(depositorVal)}</td>
-          <td class="center-text"><span class="highlight">인 또는 서명 &nbsp;&nbsp;(인)</span></td>
-        </tr>
-      </table>
-
-      <div class="footer-note">
-        * 인감 또는 서명은 해당 예금계좌(통장) 사용인감 또는 서명을 날인하여야 합니다.
+      <div class="clause-col">
+        <div class="clause"><b>제4조 (유지보수 및 관리)</b> "갑"은 임대 장비의 정상 작동을 위한 A/S를 제공하며, "을"의 고의/과실로 인한 파손 및 분실 시 "을"이 변상 책임을 집니다.</div>
+        <div class="clause"><b>제5조 (계약 해지 및 위약금)</b> "을"의 사정으로 약정 기간 내 중도 해지 시, 잔여 기간 임대료의 30%에 해당하는 위약금과 장비 수거비용을 "갑"에게 지급해야 합니다.</div>
+        <div class="clause"><b>제6조 (관할법원)</b> 본 계약에 관한 분쟁은 "갑"의 소재지 관할 법원으로 합니다.</div>
       </div>
     </div>
 
-    <div class="no-print">
-      <button class="btn btn-secondary" style="width:auto;" onclick="App.backToEquip()">← 장비 및 기간 설정 수정</button>
-      <button class="btn btn-primary" onclick="window.print()">인쇄 / PDF 저장 (계약서 1장, 동의서 1장 총 2장 분리)</button>
-      <button class="btn btn-secondary" style="width:auto;" onclick="App.finishContract()">완료 (목록으로)</button>
+    <div style="margin-top:20px; text-align:center; font-weight:700;">
+      ${year}년 ${month}월 ${day}일
     </div>
+
+    <div style="display:flex; justify-content:space-around; margin-top:20px; font-weight:700;">
+      <div>임대인 (갑): (주)스마트포스시스템 (인)</div>
+      <div>임차인 (을): ${escapeHtml(m.ownerName)} (인 / 서명)</div>
+    </div>
+  </div>
+
+  <div class="cms-page">
+    <h1>CMS 출금이체 동의서</h1>
+
+    <h2>1. 신청인 정보</h2>
+    <table>
+      <tr>
+        <th>성 명 (대표자)</th>
+        <td>${escapeHtml(m.ownerName)}</td>
+        <th>상 호 명</th>
+        <td>${escapeHtml(m.storeName)}</td>
+      </tr>
+      <tr>
+        <th>생년월일</th>
+        <td>${escapeHtml(state.contractBirth6 || m.birthDate || '')}</td>
+        <th>전화번호</th>
+        <td>${escapeHtml(m.ownerPhone || m.storePhone)}</td>
+      </tr>
+    </table>
+
+    <h2>2. 출금계좌 정보</h2>
+    <table>
+      <tr>
+        <th>금융기관명</th>
+        <td><input type="text" value="${escapeHtml(state.cmsBankName || m.bankName || '')}" oninput="state.cmsBankName=this.value" style="border:none; width:100%; font-size:12px;" placeholder="예: 국민은행"></td>
+        <th>계좌번호</th>
+        <td><input type="text" value="${escapeHtml(state.cmsAccountNo || m.accountNumber || '')}" oninput="state.cmsAccountNo=this.value" style="border:none; width:100%; font-size:12px;" placeholder="숫자만 입력"></td>
+      </tr>
+      <tr>
+        <th>예금주명</th>
+        <td colspan="3"><input type="text" value="${escapeHtml(state.cmsDepositor || m.ownerName || '')}" oninput="state.cmsDepositor=this.value" style="border:none; width:100%; font-size:12px;"></td>
+      </tr>
+    </table>
+
+    <h2>3. 개인정보 수집·이용 및 제3자 제공 동의</h2>
+    <div class="consent-box">
+      <div class="consent-title">[개인정보 수집 및 이용 동의]</div>
+      <div class="consent-content">
+        - 수집·이용 목적: CMS 출금이체를 통한 월 임대료 자동수납<br>
+        - 수집 항목: 성명, 생년월일, 금융기관명, 계좌번호, 전화번호<br>
+        - 보유 및 이용기간: 수납 완료 후 5년간 보관
+      </div>
+      <div class="consent-check">동의함 [ v ]</div>
+
+      <div class="consent-title">[개인정보 제3자 제공 동의]</div>
+      <div class="consent-content">
+        - 제공받는 자: 사단법인 금융결제원, 해당 금융기관<br>
+        - 제공 목적: CMS 출금이체 서비스 제공 및 출금동의 확인<br>
+        - 제공 항목: 성명, 생년월일, 금융기관명, 계좌번호
+      </div>
+      <div class="consent-check">동의함 [ v ]</div>
+    </div>
+
+    <div class="submit-notice">
+      본인은 상기 계좌에서 (주)스마트포스시스템이 청구하는 월 임대료가 자동이체 처리되는 것에 동의합니다.
+    </div>
+
+    <div class="date">${year}년 ${month}월 ${day}일</div>
+
+    <table class="signature-table">
+      <tr>
+        <th>예금주 서명</th>
+        <td style="text-align:center; height:50px;">${escapeHtml(state.cmsDepositor || m.ownerName)} (인 / 서명)</td>
+      </tr>
+    </table>
   </div>`;
 }
 
-function compressImage(file, maxDim=1600, quality=0.85){
-  return new Promise((resolve, reject)=>{
-    const reader = new FileReader();
-    reader.onload = e => {
-      const img = new Image();
-      img.onload = () => {
-        let { width, height } = img;
-        if(width > maxDim || height > maxDim){
-          if(width > height){ height = Math.round(height * maxDim/width); width = maxDim; }
-          else { width = Math.round(width * maxDim/height); height = maxDim; }
-        }
-        const canvas = document.createElement('canvas');
-        canvas.width = width; canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, width, height);
-        resolve(canvas.toDataURL('image/jpeg', quality));
-      };
-      img.onerror = reject;
-      img.src = e.target.result;
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
-function readAsDataURL(file){
-  return new Promise((resolve, reject)=>{
-    const reader = new FileReader();
-    reader.onload = e => resolve(e.target.result);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
 const App = {
-  secretClickTimer: null,
-  secretClicks: 0,
-  
   handleSecretClick(){
-    this.secretClicks++;
-    if(this.secretClicks >= 2){
-      this.goAdmin();
-      this.secretClicks = 0;
-      clearTimeout(this.secretClickTimer);
-    } else {
-      this.secretClickTimer = setTimeout(() => { this.secretClicks = 0; }, 500);
+    if(!this.__clicks) this.__clicks = 0;
+    this.__clicks++;
+    if(this.__clicks >= 5){
+      this.__clicks = 0;
+      state.view = state.adminUnlocked ? 'admin' : 'adminLogin';
+      render();
     }
   },
 
@@ -1287,107 +1074,216 @@ const App = {
     render();
   },
 
+  handleFile(key, file){
+    if(!file) return;
+    const isImg = file.type.startsWith('image/');
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      state.files[key] = {
+        name: file.name,
+        type: file.type,
+        dataUrl: e.target.result,
+        isImage: isImg
+      };
+      render();
+    };
+    reader.readAsDataURL(file);
+  },
+
+  removeFile(key){
+    delete state.files[key];
+    render();
+  },
+
   saveTempData(){
     syncFields();
-    const saveData = {
+    const payload = {
       fields: state.fields,
       savedAt: new Date().toLocaleString('ko-KR')
     };
-    try {
-      localStorage.setItem(TEMP_SAVE_KEY, JSON.stringify(saveData));
-      toast('작성 중인 정보가 임시저장되었습니다.');
-      render();
-    } catch(e) {
-      toast('임시저장 실패 (브라우저 용량 초과)');
-    }
+    localStorage.setItem(TEMP_SAVE_KEY, JSON.stringify(payload));
+    toast("현재 작성 중인 데이터가 임시저장되었습니다.");
+    render();
   },
 
   loadTempData(){
     const saved = localStorage.getItem(TEMP_SAVE_KEY);
-    if(!saved){ toast('저장된 내용이 없습니다.'); return; }
-    try {
-      const parsed = JSON.parse(saved);
-      if(parsed.fields) {
+    if(saved){
+      try {
+        const parsed = JSON.parse(saved);
         state.fields = { ...state.fields, ...parsed.fields };
-        toast('저장된 정보를 불러왔습니다.');
+        toast("임시 저장된 데이터를 불러왔습니다.");
         render();
-      }
-    } catch(e) {
-      toast('데이터를 불러오는데 실패했습니다.');
+      } catch(e){ toast("데이터를 불러오지 못했습니다."); }
     }
   },
 
   clearTempData(){
     localStorage.removeItem(TEMP_SAVE_KEY);
-    toast('임시저장 데이터가 삭제되었습니다.');
+    toast("임시 저장 데이터가 삭제되었습니다.");
     render();
   },
 
-  applyExtractedData(extracted) {
-    if (!extracted) return;
-
-    if (extracted.bizNumber) {
-      state.contractBizNo = extracted.bizNumber;
-      if (!state.fields.bizNo) state.fields.bizNo = extracted.bizNumber;
-    }
-    if (extracted.ownerName) {
-      if (!state.fields.ownerName) state.fields.ownerName = extracted.ownerName;
-      if (!state.cmsDepositor) state.cmsDepositor = extracted.ownerName;
-    }
-    if (extracted.birthDate) {
-      state.contractBirth6 = extracted.birthDate;
-    }
-    if (extracted.address) {
-      state.contractAddress = extracted.address;
-    }
-    if (extracted.bankName) {
-      state.cmsBankName = extracted.bankName;
-    }
-    if (extracted.accountNumber) {
-      state.cmsAccountNo = extracted.accountNumber;
-    }
-
-    render();
-    toast('서류 자동 분석(OCR) 정보가 적용되었습니다.');
-  },
-
-  async handleFile(key, file){
-    if(!file) return;
+  async submit(){
     syncFields();
-    const currentDocs = getRequiredDocs(state.fields.businessType, state.fields.bizType, state.hasSign);
-    const docDef = currentDocs.find(d=>d.key===key);
-    if(file.size > 15*1024*1024){ toast('파일 용량이 너무 큽니다 (15MB 이하)'); return; }
-    toast('파일 처리 중...');
-    try{
-      const isImage = file.type.startsWith('image/');
-      let dataUrl;
-      if(isImage) dataUrl = await compressImage(file);
-      else dataUrl = await readAsDataURL(file);
-      state.files[key] = { name:file.name, dataUrl, isImage };
+    const f = state.fields;
+
+    if(!f.storeName || !f.ownerName || !f.storePhone || !f.ownerPhone || !f.email) {
+      toast("필수 입력 정보를 모두 기입해 주세요.");
+      return;
+    }
+
+    const currentDocs = getRequiredDocs(f.businessType, f.bizType, f.hasSign);
+    for(let d of currentDocs) {
+      if(d.required && !state.files[d.key]) {
+        toast(`필수 서류 [${d.label}] 항목을 첨부해 주세요.`);
+        return;
+      }
+    }
+
+    toast("데이터를 서버로 안전하게 전송 중입니다...");
+
+    const payload = {
+      action: "submitMerchant",
+      storeName: f.storeName,
+      ownerName: f.ownerName,
+      bizNo: f.bizNo,
+      businessType: f.businessType,
+      bizType: f.bizType,
+      storePhone: f.storePhone,
+      ownerPhone: f.ownerPhone,
+      email: f.email,
+      hasSign: f.hasSign,
+      filesData: state.files
+    };
+
+    try {
+      const res = await fetch(API_URL, {
+        method: "POST",
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if(data.status === 'success'){
+        state.receiptId = data.extracted ? (data.extracted.id || 'R-' + Date.now().toString().slice(-6)) : 'R-' + Date.now().toString().slice(-6);
+        localStorage.removeItem(TEMP_SAVE_KEY);
+        state.view = 'success';
+        render();
+      } else {
+        toast("제출 실패: " + (data.message || "오류가 발생했습니다."));
+      }
+    } catch(err) {
+      toast("전송 중 네트워크 오류가 발생했습니다.");
+    }
+  },
+
+  async submitSupplement(){
+    const currentDocs = getRequiredDocs();
+    for(let d of currentDocs) {
+      if(d.required && !state.files[d.key]) {
+        toast(`[${d.label}] 서류를 첨부해 주세요.`);
+        return;
+      }
+    }
+
+    toast("보완 서류를 업로드하고 있습니다...");
+
+    const payload = {
+      action: "submitSupplement",
+      receiptId: state.receiptId,
+      filesData: state.files
+    };
+
+    try {
+      const res = await fetch(API_URL, {
+        method: "POST",
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if(data.status === 'success'){
+        state.view = 'success';
+        render();
+      } else {
+        toast("보완서류 제출 실패: " + (data.message || "오류 발생"));
+      }
+    } catch(e){
+      toast("전송 중 오류가 발생했습니다.");
+    }
+  },
+
+  async tryAdminLogin(){
+    const pass = document.getElementById('admin_pass')?.value;
+    if(!pass) return toast("접근 코드를 입력하세요.");
+
+    toast("인증 확인 중...");
+    try {
+      const res = await fetch(API_URL, {
+        method: "POST",
+        body: JSON.stringify({ action: "login", password: pass })
+      });
+      const data = await res.json();
+      if(data.status === 'success'){
+        state.adminUnlocked = true;
+        state.adminToken = data.token;
+        state.view = 'admin';
+        this.loadGoogleData();
+      } else {
+        toast("비밀번호가 올바르지 않습니다.");
+      }
+    } catch(e){
+      toast("로그인 중 통신 오류가 발생했습니다.");
+    }
+  },
+
+  async loadGoogleData(){
+    toast("가맹점 목록을 불러오는 중...");
+    try {
+      const res = await fetch(`${API_URL}?token=${state.adminToken}`);
+      const data = await res.json();
+      if(data.status === 'success'){
+        state.adminMerchants = data.data || [];
+        render();
+        toast("최신 목록으로 업데이트되었습니다.");
+      } else {
+        toast("데이터 불러오기 실패: " + data.message);
+      }
+    } catch(e){
+      toast("목록 조회 중 오류가 발생했습니다.");
+    }
+  },
+
+  logoutAdmin(){
+    state.adminUnlocked = false;
+    state.adminToken = null;
+    state.view = 'form';
+    render();
+  },
+
+  goForm(){
+    state.view = 'form';
+    render();
+  },
+
+  goAdmin(){
+    state.view = 'admin';
+    render();
+  },
+
+  setAdminSearch(val){
+    state.adminSearch = val;
+    render();
+  },
+
+  openSupplementModal(id){
+    const m = state.adminMerchants.find(item => item.id === id);
+    if(m) {
+      state.activeModalMerchant = m;
+      state.selectedModalDocs = [];
       render();
-      toast((docDef ? docDef.label : '서류') + ' 첨부 완료');
-    }catch(e){
-      toast('파일 처리 중 오류가 발생했습니다');
     }
-  },
-  
-  removeFile(key){
-    syncFields();
-    delete state.files[key];
-    render();
-  },
-
-  openSupplementModal(merchantId){
-    const m = (state.adminMerchants || []).find(x => x.id === merchantId);
-    if(!m) return;
-    state.activeModalMerchant = m;
-    state.selectedModalDocs = [];
-    render();
   },
 
   closeSupplementModal(){
     state.activeModalMerchant = null;
-    state.selectedModalDocs = [];
     render();
   },
 
@@ -1395,323 +1291,120 @@ const App = {
     const idx = state.selectedModalDocs.indexOf(key);
     if(idx > -1) state.selectedModalDocs.splice(idx, 1);
     else state.selectedModalDocs.push(key);
-    render();
   },
 
   generateSupplementLink(){
-    if(state.selectedModalDocs.length === 0){
-      toast('보완이 필요한 서류를 1개 이상 선택해 주세요');
+    if(state.selectedModalDocs.length === 0) {
+      toast("최소 하나 이상의 보완 요청 서류를 선택하세요.");
       return;
     }
+    const m = state.activeModalMerchant;
     const baseUrl = window.location.origin + window.location.pathname;
     const docsStr = state.selectedModalDocs.join(',');
-    const mId = state.activeModalMerchant ? state.activeModalMerchant.id : '';
-    const fullUrl = `${baseUrl}?type=supplement&id=${encodeURIComponent(mId)}&docs=${encodeURIComponent(docsStr)}`;
+    const link = `${baseUrl}?type=supplement&id=${m.id}&docs=${docsStr}`;
 
-    navigator.clipboard.writeText(fullUrl).then(() => {
-      toast('보완요청 맞춤 링크가 클립보드에 복사되었습니다!');
+    navigator.clipboard.writeText(link).then(() => {
+      toast("보완서류 제출 링크가 클립보드에 복사되었습니다!");
       this.closeSupplementModal();
     }).catch(() => {
-      prompt('아래 링크를 복사하여 고객에게 전달하세요:', fullUrl);
+      prompt("아래 링크를 복사하여 가맹점에 전달하세요:", link);
       this.closeSupplementModal();
     });
   },
 
-  handleUnauthorized(){
-    state.adminToken = null;
-    state.view = 'adminLogin';
-    render();
-    toast('세션이 만료되었습니다. 다시 로그인해 주세요.');
-  },
-
-  async loadGoogleData() {
-    if(!state.adminToken){ this.handleUnauthorized(); return; }
-    toast('구글 시트에서 최신 데이터를 불러오는 중...');
+  async reOcrMerchant(id){
+    toast("OCR 분석을 다시 진행합니다...");
     try {
-      const url = API_URL + '?token=' + encodeURIComponent(state.adminToken);
-      const response = await fetch(url);
-      const result = await response.json();
-
-      if(result.status === 'success') {
-        state.adminMerchants = result.data || [];
-        render();
-        toast('최신 데이터 동기화 완료!');
-      } else if(result.status === 'unauthorized') {
-        this.handleUnauthorized();
-      } else {
-        toast('데이터 불러오기 실패');
-      }
-    } catch(e) {
-      toast('서버 통신 오류');
-    }
-  },
-
-  async completeAndDelete(id, storeName) {
-    if(!state.adminToken){ this.handleUnauthorized(); return; }
-    if(!confirm(`[${storeName}] 가맹점 서류 확인 및 접수 처리를 완료하셨습니까?\n확인을 누르면 시트 내역과 드라이브의 모든 사진 파일이 개인정보 보호를 위해 영구 삭제됩니다.`)) {
-      return;
-    }
-
-    toast('처리 완료 및 데이터 삭제 중...');
-    try {
-      const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action: 'deleteMerchant', id: id, token: state.adminToken })
+      const res = await fetch(API_URL, {
+        method: "POST",
+        body: JSON.stringify({ action: "reOcrMerchant", token: state.adminToken, id: id })
       });
-      const result = await response.json();
-
-      if(result.status === 'success') {
-        toast('처리가 완료되어 해당 정보와 파일이 안전하게 삭제되었습니다.');
-        App.loadGoogleData();
-      } else if(result.status === 'unauthorized') {
-        this.handleUnauthorized();
+      const data = await res.json();
+      if(data.status === 'success'){
+        toast("OCR 분석이 완료되었습니다.");
+        this.loadGoogleData();
       } else {
-        toast('삭제 처리에 실패했습니다.');
+        toast("OCR 재시도 실패: " + data.message);
       }
-    } catch(e) {
-      toast('서버 통신 오류가 발생했습니다.');
+    } catch(e){
+      toast("OCR 처리 중 오류가 발생했습니다.");
     }
   },
 
-  async submitSupplement(){
-    const currentDocs = getRequiredDocs();
-    const missing = currentDocs.filter(d => !state.files[d.key]);
-    if(missing.length > 0){
-      toast(missing[0].label + ' 서류를 첨부해 주세요'); return;
-    }
-
-    const submitBtn = document.querySelector('.btn-primary');
-    if(submitBtn){ submitBtn.disabled = true; submitBtn.textContent = '제출 중...'; }
-
+  async deleteMerchant(id){
+    if(!confirm("정말로 이 가맹점 내역과 드라이브 폴더를 삭제하시겠습니까?")) return;
+    toast("삭제 처리 중...");
     try {
-      const payload = {
-        id: state.receiptId || ('SUPP-' + Date.now()),
-        isSupplement: true,
-        createdAt: new Date().toISOString(),
-        filesData: state.files
-      };
-
-      const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify(payload)
+      const res = await fetch(API_URL, {
+        method: "POST",
+        body: JSON.stringify({ action: "deleteMerchant", token: state.adminToken, id: id })
       });
-      
-      await response.json();
+      const data = await res.json();
+      if(data.status === 'success'){
+        toast("성공적으로 삭제되었습니다.");
+        this.loadGoogleData();
+      } else {
+        toast("삭제 실패: " + data.message);
+      }
+    } catch(e){
+      toast("삭제 중 통신 오류가 발생했습니다.");
+    }
+  },
 
-      state.files = {};
-      state.view = 'success';
+  openContractForMerchant(id){
+    const m = state.adminMerchants.find(item => item.id === id);
+    if(m) {
+      state.contractMerchant = m;
+      state.selection = defaultSelection();
+      state.view = 'equipmentSelect';
       render();
-    } catch(e) {
-      toast('서류 제출 중 오류가 발생했습니다. 다시 시도해 주세요.');
-      if(submitBtn){ submitBtn.disabled = false; submitBtn.textContent = '보완서류 제출하기'; }
     }
   },
 
-  async submit(){
-    syncFields();
-    const f = state.fields;
-    if(!f.storeName || !f.ownerName || !f.storePhone || !f.ownerPhone || !f.email){
-      toast('필수 정보를 모두 입력해 주세요'); return;
-    }
-    const currentDocs = getRequiredDocs(f.businessType, f.bizType, f.hasSign);
-    const missing = currentDocs.filter(d => d.required && !state.files[d.key]);
-    if(missing.length > 0){
-      toast(missing[0].label + ' 등 필수 서류를 첨부해 주세요'); return;
-    }
-    const submitBtn = document.querySelector('.btn-primary');
-    if(submitBtn){ submitBtn.disabled = true; submitBtn.textContent = '제출 중...'; }
-
-    const id = 'F' + new Date().toISOString().replace(/[-:.TZ]/g,'').slice(0,14) + '-' + Math.floor(Math.random()*900+100);
-    const createdAt = new Date().toISOString();
-
-    try {
-      const payload = {
-        id: id,
-        createdAt: createdAt,
-        storeName: f.storeName,
-        ownerName: f.ownerName,
-        bizNo: f.bizNo,
-        storePhone: f.storePhone,
-        ownerPhone: f.ownerPhone,
-        email: f.email,
-        bizType: f.bizType === 'corporate' ? '법인' : '개인',
-        filesData: state.files
-      };
-
-      const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify(payload)
-      });
-      
-      const res = await response.json();
-
-      if (res && res.extracted) {
-        this.applyExtractedData(res.extracted);
-      }
-
-      this.clearTempData();
-
-      state.receiptId = id;
-      state.files = {};
-      state.fields = { storeName:'', ownerName:'', bizNo:'', businessType:'general', bizType:'personal', storePhone:'', ownerPhone:'', email:'', hasSign:'yes' };
-      state.view = 'success';
-      render();
-    } catch(e) {
-      toast('저장 중 오류가 발생했습니다. 다시 시도해 주세요.');
-      if(submitBtn){ submitBtn.disabled = false; submitBtn.textContent = '접수 제출하기'; }
-    }
-  },
-
-  resetAll(){
-    window.location.href = window.location.pathname;
-  },
-
-  goForm(){ location.hash=''; state.view='form'; render(); },
-  goAdmin(){ location.hash='admin'; state.view='adminLogin'; render(); },
-
-  logoutAdmin(){
-    state.adminToken = null;
-    state.adminUnlocked = false;
-    state.adminMerchants = [];
-    state.view = 'adminLogin';
-    location.hash = 'admin';
-    render();
-  },
-
-  async tryAdminLogin(){
-    const passInput = document.getElementById('admin_pass');
-    const val = passInput.value;
-    const btn = document.getElementById('admin_login_btn');
-    if(btn){ btn.disabled = true; btn.textContent = '확인 중...'; }
-
-    try {
-      const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action: 'login', password: val })
-      });
-      const result = await response.json();
-
-      if(result.status === 'success' && result.token){
-        state.adminToken = result.token;
-        state.adminUnlocked = true;
-        state.view = 'admin';
-        render();
-        App.loadGoogleData();
-      } else if(result.status === 'locked'){
-        toast('시도 횟수를 초과했습니다. 잠시 후 다시 시도해 주세요.');
-      } else {
-        toast('접근 코드가 올바르지 않습니다');
-      }
-    } catch(e) {
-      toast('서버 통신 오류가 발생했습니다.');
-    } finally {
-      if(btn){ btn.disabled = false; btn.textContent = '확인'; }
-      if(passInput) passInput.value = '';
-    }
-  },
-
-  setAdminSearch(v){ state.adminSearch = v; render(); },
-
-  async goEquipmentSelect(merchantId){
-    const m = (state.adminMerchants || []).find(x => x.id === merchantId);
-    if(!m){ toast('가맹점 정보를 찾을 수 없습니다'); return; }
-    if(!state.adminToken){ this.handleUnauthorized(); return; }
-
-    toast('이 가맹점의 서류를 다시 확인하는 중...');
-
-    let freshExtracted = null;
-    try {
-      const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action: 'reOcrMerchant', id: merchantId, token: state.adminToken })
-      });
-      const result = await response.json();
-      if(result.status === 'success'){
-        freshExtracted = result.extracted;
-        toast('서류 정보 자동반영 완료!');
-      } else if(result.status === 'unauthorized'){
-        this.handleUnauthorized();
-        return;
-      } else {
-        toast((result.message || '서류 재확인 실패') + ' (기존 저장된 정보로 진행합니다)');
-      }
-    } catch(e) {
-      toast('서버 통신 오류 (기존 저장된 정보로 진행합니다)');
-    }
-
-    state.contractMerchant = m;
-    state.selection = defaultSelection();
-    state.contractPeriodYears = 3;
-    state.installDate = new Date().toISOString().slice(0,10);
-
-    const src = freshExtracted || {};
-    state.contractBizNo = src.bizNumber || m.bizNo || m.bizNumber || state.contractBizNo || '';
-    state.contractBirth6 = src.birthDate || m.birthDate || state.contractBirth6 || '';
-    state.contractAddress = src.address || m.address || m.storeAddress || state.contractAddress || '';
-    state.cmsBankName = src.bankName || m.bankName || m.bank || state.cmsBankName || '';
-    state.cmsAccountNo = src.accountNumber || m.accountNo || m.accountNumber || m.account || state.cmsAccountNo || '';
-    state.cmsDepositor = src.ownerName || m.depositor || m.ownerName || m.storeName || state.cmsDepositor || '';
-
+  goEquipmentSelect(){
     state.view = 'equipmentSelect';
     render();
   },
 
-  changeQty(category, key, delta){
-    const s = state.selection[category][key];
-    s.qty = Math.max(0, Math.min(99, s.qty + delta));
-    render();
+  changeQty(group, key, delta){
+    const target = state.selection[group][key];
+    if(target) {
+      target.qty = Math.max(0, target.qty + delta);
+      render();
+    }
   },
 
-  setOption(category, key, option){
-    state.selection[category][key].option = option;
-    render();
+  changeOption(key, optionVal){
+    if(state.selection.rental[key]){
+      state.selection.rental[key].option = optionVal;
+      render();
+    }
   },
 
-  setPeriod(val){
-    state.contractPeriodYears = Number(val);
-  },
+  goToContractView(){
+    let totalQty = 0;
+    for(let k in state.selection.rental) totalQty += state.selection.rental[k].qty;
+    for(let k in state.selection.addons) totalQty += state.selection.addons[k].qty;
 
-  setInstallDate(val){
-    state.installDate = val;
-  },
-
-  setExtraField(fieldKey, val){
-    state[fieldKey] = val;
-  },
-
-  goContract(){
-    if(!hasAnySelection(state.selection)){
-      toast('임대 품목을 1개 이상 선택해 주세요');
+    if(totalQty === 0){
+      toast("최소 하나 이상의 임대 장비를 선택해야 합니다.");
       return;
     }
     state.view = 'contract';
     render();
   },
 
-  backToEquip(){ state.view = 'equipmentSelect'; render(); },
-
-  backToAdminFromEquip(){
-    state.contractMerchant = null;
-    state.view = 'admin';
-    render();
-  },
-
-  finishContract(){
-    state.contractMerchant = null;
-    state.selection = defaultSelection();
-    location.hash = 'admin';
-    state.view = 'admin';
-    render();
+  resetAll(){
+    state.files = {};
+    state.receiptId = null;
+    state.fields = { storeName:'', ownerName:'', bizNo:'', businessType:'general', bizType:'personal', storePhone:'', ownerPhone:'', email:'', hasSign:'yes' };
+    state.view = 'form';
+    window.location.href = window.location.pathname;
   }
 };
-window.App = App;
 
-render();
+window.App = App;
+window.onload = () => render();
 </script>
 </body>
 </html>
