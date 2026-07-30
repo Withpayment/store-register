@@ -191,7 +191,7 @@ body{
   padding:24px 28px;box-shadow:var(--shadow);font-size:11px;line-height:1.45;
   margin-bottom:24px;
 }
-.contract-top-title{font-size:16px;font-weight:700;text-align:center;margin-bottom:14px;letter-spacing:1px;}
+.contract-top-title{font-size:20px;font-weight:700;text-align:center;margin-bottom:20px;letter-spacing:2px;text-decoration: underline;}
 .ref-table{width:100%;border-collapse:collapse;margin-bottom:12px;font-size:11px;}
 .ref-table th,.ref-table td{border:1px solid #111;padding:6px 8px;text-align:center;}
 .ref-table th{background:#F2F2F2;font-weight:600;}
@@ -1133,7 +1133,7 @@ function renderContract(){
       <table>
         <tr>
           <th>신 청 인</th>
-          <td width="32%">${escapeHtml(m.storeName||'')}</td>
+          <td width="32%">${escapeHtml(m.ownerName || '')}</td>
           <th>사업자번호</th>
           <td width="32%">${escapeHtml(bizNoVal)}</td>
         </tr>
@@ -1219,7 +1219,7 @@ function renderContract(){
       <table class="signature-table">
         <tr>
           <th>신 청 인</th>
-          <td class="center-text">${escapeHtml(m.storeName||'')}</td>
+          <td class="center-text">${escapeHtml(m.ownerName || '')}</td>
           <td class="center-text"><span class="highlight">인 또는 서명 &nbsp;&nbsp;(인)</span></td>
         </tr>
         <tr>
