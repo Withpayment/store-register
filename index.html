@@ -430,6 +430,8 @@ let state = {
   adminToken: null,
   adminMerchants: [],
   adminSearch: '',
+  editingMerchantId: null,
+  editForm: { ownerName: '', bizNo: '' },
   contractMerchant: null,
   selection: defaultSelection(),
   contractPeriodYears: 3,
@@ -445,8 +447,7 @@ let state = {
 function syncFields(){
   if(state.isSupplementMode) return;
   state.fields.storeName = document.getElementById('f_storeName')?.value || state.fields.storeName;
-  state.fields.ownerName = document.getElementById('f_ownerName')?.value || state.fields.ownerName;
-  state.fields.bizNo = document.getElementById('f_bizNo')?.value || state.fields.bizNo;
+  // 대표자명/사업자번호는 접수화면에서 입력받지 않고 OCR로만 채워짐 (관리자 화면에서 보정)
   state.fields.businessType = document.getElementById('f_businessType')?.value || state.fields.businessType;
   state.fields.storePhone = document.getElementById('f_storePhone')?.value || state.fields.storePhone;
   state.fields.ownerPhone = document.getElementById('f_ownerPhone')?.value || state.fields.ownerPhone;
@@ -548,21 +549,11 @@ function renderForm(){
 
     ${tempInfoHtml}
 
-    <div class="grid2">
-      <div class="field">
-        <label>상호명(매장명) <span class="req">*</span></label>
-        <input type="text" id="f_storeName" placeholder="예: 카페 온기" value="${f.storeName}">
-      </div>
-      <div class="field">
-        <label>대표자명 <span class="req">*</span></label>
-        <input type="text" id="f_ownerName" placeholder="예: 홍길동" value="${f.ownerName}">
-      </div>
-    </div>
-
     <div class="field">
-      <label>사업자등록번호</label>
-      <input type="text" id="f_bizNo" placeholder="예: 123-45-67890" value="${f.bizNo}">
+      <label>상호명(매장명) <span class="req">*</span></label>
+      <input type="text" id="f_storeName" placeholder="예: 카페 온기" value="${f.storeName}">
     </div>
+    <div class="section-sub" style="margin:-10px 0 18px; font-size:12.5px;">💡 대표자명과 사업자등록번호는 첨부하신 사업자등록증에서 자동으로 인식되어 별도로 입력하지 않으셔도 됩니다.</div>
 
     <div class="grid2">
       <div class="field">
@@ -721,12 +712,34 @@ function renderAdmin(){
           }
 
           let bizTypeText = m.bizType === 'corporate' || m.bizType === '법인' ? '법인' : '개인';
+          const isEditing = state.editingMerchantId === m.id;
+
+          const ownerNameCell = isEditing
+            ? `<input type="text" id="edit_ownerName_${escapeAttr(m.id)}" value="${escapeHtml(state.editForm.ownerName)}" style="width:90px; padding:5px 7px; border:1.5px solid var(--teal); border-radius:6px; font-size:12.5px; font-family:'Pretendard';">`
+            : escapeHtml(m.ownerName || '-');
+
+          const bizNoCell = isEditing
+            ? `<input type="text" id="edit_bizNo_${escapeAttr(m.id)}" value="${escapeHtml(state.editForm.bizNo)}" placeholder="123-45-67890" style="width:110px; padding:5px 7px; border:1.5px solid var(--teal); border-radius:6px; font-size:12px; font-family:'Pretendard';">`
+            : escapeHtml(m.bizNo || m.bizNumber || '-');
+
+          const actionButtons = isEditing
+            ? `
+              <button onclick="App.saveEditMerchant('${escapeAttr(m.id)}')" style="background: var(--forest); color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 11.5px;">저장</button>
+              <button onclick="App.cancelEditMerchant()" style="background: var(--paper); color: var(--ink); border: 1.5px solid var(--line); padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 11.5px;">취소</button>
+            `
+            : `
+              <button onclick="App.reOcrRow('${escapeAttr(m.id)}')" style="background: #6C63FF; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 11.5px;">🔄 OCR 재요청</button>
+              <button onclick="App.startEditMerchant('${escapeAttr(m.id)}')" style="background: var(--paper); color: var(--ink); border: 1.5px solid var(--line); padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 11.5px;">✏️ 수정</button>
+              <button onclick="App.openSupplementModal('${escapeAttr(m.id)}')" style="background: #E8A317; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 11.5px;">보완요청</button>
+              <button onclick="App.goEquipmentSelect('${escapeAttr(m.id)}')" style="background: var(--teal); color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 11.5px;">계약서 작성</button>
+              <button onclick="App.completeAndDelete('${escapeAttr(m.id)}', '${escapeAttr(m.storeName)}')" style="background: var(--red); color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 11.5px;">처리완료/삭제</button>
+            `;
 
           return `
-            <tr style="border-bottom: 1px solid var(--line); transition: .1s;">
+            <tr style="border-bottom: 1px solid var(--line); transition: .1s; ${isEditing ? 'background:#F1FBFA;' : ''}">
               <td style="padding: 14px 16px; font-weight: 700;">${escapeHtml(m.storeName || '')}</td>
-              <td style="padding: 14px 16px;">${escapeHtml(m.ownerName || '-')}</td>
-              <td style="padding: 14px 16px; font-size: 12.5px; color: var(--ink-soft);">${escapeHtml(m.bizNo || m.bizNumber || '-')}</td>
+              <td style="padding: 14px 16px;">${ownerNameCell}</td>
+              <td style="padding: 14px 16px; font-size: 12.5px; color: var(--ink-soft);">${bizNoCell}</td>
               <td style="padding: 14px 16px;"><span style="background:${bizTypeText==='법인'?'#E8F4FD':'#EAF6EF'}; color:${bizTypeText==='법인'?'#0066CC':'#2F8F5B'}; padding:3px 8px; border-radius:4px; font-size:11.5px; font-weight:600;">${bizTypeText}</span></td>
               <td style="padding: 14px 16px;">${escapeHtml(m.storePhone || '')}</td>
               <td style="padding: 14px 16px;">${escapeHtml(m.ownerPhone || '')}</td>
@@ -734,9 +747,7 @@ function renderAdmin(){
               <td style="padding: 14px 16px;">${folderBtnHtml}</td>
               <td style="padding: 14px 16px; text-align:center;">
                 <div style="display:flex; gap:6px; justify-content:center; flex-wrap:wrap;">
-                  <button onclick="App.openSupplementModal('${escapeAttr(m.id)}')" style="background: #E8A317; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 11.5px;">보완요청</button>
-                  <button onclick="App.goEquipmentSelect('${escapeAttr(m.id)}')" style="background: var(--teal); color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 11.5px;">계약서 작성</button>
-                  <button onclick="App.completeAndDelete('${escapeAttr(m.id)}', '${escapeAttr(m.storeName)}')" style="background: var(--red); color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 11.5px;">처리완료/삭제</button>
+                  ${actionButtons}
                 </div>
               </td>
             </tr>
@@ -1511,6 +1522,85 @@ const App = {
     }
   },
 
+  async reOcrRow(id){
+    if(!state.adminToken){ this.handleUnauthorized(); return; }
+    toast('서류를 다시 읽어오는 중...');
+    try {
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'reOcrMerchant', id: id, token: state.adminToken })
+      });
+      const result = await response.json();
+
+      if(result.status === 'success'){
+        const m = (state.adminMerchants || []).find(x => x.id === id);
+        const ex = result.extracted || {};
+        if(m){
+          if(ex.bizNumber) m.bizNumber = ex.bizNumber;
+          if(ex.ownerName) m.ownerName = ex.ownerName;
+          if(ex.address) m.address = ex.address;
+          if(ex.bankName) m.bankName = ex.bankName;
+          if(ex.accountNumber) m.accountNumber = ex.accountNumber;
+          if(ex.birthDate) m.birthDate = ex.birthDate;
+        }
+        toast('OCR 재확인 완료! 값이 갱신되었습니다.');
+        render();
+      } else if(result.status === 'unauthorized'){
+        this.handleUnauthorized();
+      } else {
+        toast(result.message || '서류 재확인에 실패했습니다.');
+      }
+    } catch(e) {
+      toast('서버 통신 오류가 발생했습니다.');
+    }
+  },
+
+  startEditMerchant(id){
+    const m = (state.adminMerchants || []).find(x => x.id === id);
+    if(!m) return;
+    state.editingMerchantId = id;
+    state.editForm = { ownerName: m.ownerName || '', bizNo: m.bizNo || m.bizNumber || '' };
+    render();
+  },
+
+  cancelEditMerchant(){
+    state.editingMerchantId = null;
+    render();
+  },
+
+  async saveEditMerchant(id){
+    if(!state.adminToken){ this.handleUnauthorized(); return; }
+    const ownerNameInput = document.getElementById('edit_ownerName_' + id);
+    const bizNoInput = document.getElementById('edit_bizNo_' + id);
+    const ownerName = (ownerNameInput ? ownerNameInput.value : state.editForm.ownerName).trim();
+    const bizNo = (bizNoInput ? bizNoInput.value : state.editForm.bizNo).trim();
+
+    toast('저장 중...');
+    try {
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'updateMerchantInfo', id: id, token: state.adminToken, ownerName: ownerName, bizNo: bizNo })
+      });
+      const result = await response.json();
+
+      if(result.status === 'success'){
+        const m = (state.adminMerchants || []).find(x => x.id === id);
+        if(m){ m.ownerName = ownerName; m.bizNumber = bizNo; m.bizNo = bizNo; }
+        state.editingMerchantId = null;
+        toast('저장되었습니다.');
+        render();
+      } else if(result.status === 'unauthorized'){
+        this.handleUnauthorized();
+      } else {
+        toast(result.message || '저장에 실패했습니다.');
+      }
+    } catch(e) {
+      toast('서버 통신 오류가 발생했습니다.');
+    }
+  },
+
   async submitSupplement(){
     const currentDocs = getRequiredDocs();
     const missing = currentDocs.filter(d => !state.files[d.key] || state.files[d.key].length === 0);
@@ -1555,7 +1645,7 @@ const App = {
   async submit(){
     syncFields();
     const f = state.fields;
-    if(!f.storeName || !f.ownerName || !f.storePhone || !f.ownerPhone || !f.email){
+    if(!f.storeName || !f.storePhone || !f.ownerPhone || !f.email){
       toast('필수 정보를 모두 입력해 주세요'); return;
     }
     const currentDocs = getRequiredDocs(f.businessType, f.bizType, f.hasSign);
