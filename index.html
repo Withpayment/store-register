@@ -1134,10 +1134,8 @@ for (const key in RENTAL_CATALOG) {
   }
 }
 
-const posName = posParts.length ? posParts.join(', ') : '-';
-const terminalName = termParts.length ? termParts.join(', ') : '-'; 
-  }
-
+  const posName = posParts.length ? posParts.join(', ') : '-';
+  const terminalName = termParts.length ? termParts.join(', ') : '-';
   const bizNoVal = state.contractBizNo || m.bizNo || m.bizNumber || '';
   const birth6Val = state.contractBirth6 || m.birthDate || '';
   const addressVal = state.contractAddress || m.address || m.storeAddress || '';
