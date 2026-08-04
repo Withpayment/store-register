@@ -288,7 +288,12 @@ body{
 .cms-page .footer-note { font-size: 10.5px; color: #666; margin-top: 8px; }
 
 .no-print{margin-top:20px;display:flex;gap:10px;}
-
+@media print{
+  .contract-page, .cms-page {
+    width: 99% !important;
+    box-sizing: border-box;
+  }
+}
 @media print{
   @page { size: A4 portrait; margin: 10mm; }
   body{background:white; color:#000;}
