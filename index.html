@@ -317,8 +317,6 @@ const CORP_SEAL_IMG = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/4S4aRX
 
 // 16가지 보완서류 목록 정의
 const SUPPLEMENT_DOC_LIST = [
-// 16가지 보완서류 목록 정의
-const SUPPLEMENT_DOC_LIST = [
   { key: 'supp_1', label: '공동대표자 가맹점 가입 동의 및 위임장' },
   { key: 'supp_2', label: '결제계좌 이용신청 및 동의서' },
   { key: 'supp_3', label: '제3자 결제계좌 등록 요청 및 동의서' },
@@ -1709,18 +1707,10 @@ const App = {
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify(payload)
       });
-
+      
       const res = await response.json();
 
-      // [중요] 서버가 응답을 주긴 했지만 실제로는 실패(status !== 'success')한 경우를
-      // 그냥 지나치면 접수자는 "완료"라고 믿고 떠나는데 시트엔 아무것도 안 남는 사고가 난다.
-      if (!res || res.status !== 'success') {
-        toast((res && res.message ? res.message : '접수 처리에 실패했습니다.') + ' 다시 시도해 주세요.');
-        if(submitBtn){ submitBtn.disabled = false; submitBtn.textContent = '접수 제출하기'; }
-        return;
-      }
-
-      if (res.extracted) {
+      if (res && res.extracted) {
         this.applyExtractedData(res.extracted);
       }
 
