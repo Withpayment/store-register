@@ -1189,7 +1189,7 @@ function renderContract(){
       <h1>CMS 출금이체 신청(동의)서</h1>
 
       <h2>□ 수납기관정보</h2>
-      
+      <div style="font-size: 13px; font-weight: bold; margin-bottom: 5px;">상호명 : ${escapeHtml(m.storeName||'')}</div>
       <table>
         <tr>
           <th>수납기관명</th>
@@ -1204,9 +1204,7 @@ function renderContract(){
           <td>1599-5413</td>
         </tr>
       </table>
-
       <h2>□ 출금이체 신청 (신청고객기재)</h2>
-      <div style="font-size: 13px; font-weight: bold; margin-bottom: 5px;">상호명 : ${escapeHtml(m.storeName||'')}</div>
       <table>
         <tr>
           <th>신 청 인</th>
