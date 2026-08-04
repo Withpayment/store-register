@@ -430,8 +430,8 @@ const RENTAL_CATALOG = {
     key:'posSet', label:'포스set (포스+금전함+프린터)', monthlyPrice:15000,
     hasOption:true,
     indemnityByOption: { naver: 1710000, toss: 1710000 }
-      // 추가: 포스 + 금전함 + 단말기 (요청사항 2번)
-  posSetTerminal: {
+  },
+    posSetTerminal: {
     key:'posSetTerminal', label:'포스set (포스+금전함+단말기)', monthlyPrice:15000,
     hasOption:true,
     indemnityByOption: { naver: 1710000, toss: 1710000 }
@@ -446,7 +446,7 @@ const RENTAL_CATALOG = {
 };
 const RENTAL_ADDONS = {
   kitchenPrinter: { key:'kitchenPrinter', label:'주방프린터 추가', monthlyPrice:5000, indemnity:150000 },
-  orderPosRefurb: { key:'orderPosRefurb', label:'오더포스(리퍼) 추가', monthlyPrice:10000, indemnity:800000 }
+  orderPosRefurb: { key:'orderPosRefurb', label:'오더포스(리퍼) 추가', monthlyPrice:10000, indemnity:800000 },
   usedPrinter: { key:'usedPrinter', label:'중고프린터 추가', monthlyPrice:0, indemnity:0 } // 요청 5)
 };
 
