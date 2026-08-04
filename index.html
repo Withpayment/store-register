@@ -1099,7 +1099,7 @@ function renderContract(){
     const item = RENTAL_CATALOG[key];
     const s = sel.rental[key];
     if(s && s.qty > 0){
-      if (['posSet', 'posSetTerminal'].includes(key)) posName = item.label + ` (${s.qty})`;
+      if (['posModel', 'posModelOther'].includes(key)) posName = item.label + ` (${s.qty})`;
       if(key === 'cardTerminal') terminalName = item.label + ` (${s.qty})`;
       if(item.hasOption) primaryModelOption = s.option === 'naver' ? '네이버 커넥트' : '토스 프론트';
     }
