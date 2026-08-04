@@ -400,8 +400,7 @@ function getRequiredDocs(businessType, bizType, hasSign){
   return docs;
 }
 
-const RENTAL_CATALOG = {
-  // POS / Terminal 모델 목록 (추가)
+// POS / Terminal 모델 목록
 const POS_MODELS = [
   { id: 'n250p', label: '아임유 (N250P)' },
   { id: 'psw3130', label: '포스윙 (PSW-3130)' },
@@ -413,18 +412,26 @@ const TERMINAL_MODELS = [
   { id: 'kpn3103', label: 'KPN-3103' },
   { id: 'ts114a', label: 'TS-114A' }
 ];
+
+const RENTAL_CATALOG = {
   posSet: {
-    key:'posSet', label:'포스set (포스+금전함+프린터)', monthlyPrice:15000,
+    key:'posSet',
+    label:'포스set (포스+금전함+프린터)',
+    monthlyPrice:15000,
     hasOption:true,
     indemnityByOption: { naver: 1710000, toss: 1710000 }
   },
-    posSetTerminal: {
-    key:'posSetTerminal', label:'포스set (포스+금전함+단말기)', monthlyPrice:15000,
+  posSetTerminal: {
+    key:'posSetTerminal',
+    label:'포스set (포스+금전함+단말기)',
+    monthlyPrice:15000,
     hasOption:true,
     indemnityByOption: { naver: 1710000, toss: 1710000 }
   },
   cardTerminal: {
-    key:'cardTerminal', label:'카드단말기', monthlyPrice:5000,
+    key:'cardTerminal',
+    label:'카드단말기',
+    monthlyPrice:5000,
     hasOption:true,
     indemnityByOption: { naver: 400000, toss: 400000 }
   },
