@@ -401,6 +401,18 @@ function getRequiredDocs(businessType, bizType, hasSign){
 }
 
 const RENTAL_CATALOG = {
+  // POS / Terminal 모델 목록 (추가)
+const POS_MODELS = [
+  { id: 'n250p', label: '아임유 (N250P)' },
+  { id: 'psw3130', label: '포스윙 (PSW-3130)' },
+  { id: 'cs273ws', label: '이지체크 (CS-273WS)' }
+];
+
+const TERMINAL_MODELS = [
+  { id: 'mpos1700ae', label: 'MPOS-1700AE' },
+  { id: 'kpn3103', label: 'KPN-3103' },
+  { id: 'ts114a', label: 'TS-114A' }
+];
   posSet: {
     key:'posSet', label:'포스set (포스+금전함+프린터)', monthlyPrice:15000,
     hasOption:true,
@@ -428,9 +440,9 @@ const RENTAL_ADDONS = {
 function defaultSelection(){
   return {
     rental: {
-      posSet:{ qty:0, option:'naver' },
-      posSetTerminal:{ qty:0, option:'naver' }, // 추가한 항목의 기본값
-      cardTerminal:{ qty:0, option:'naver' },
+      posSet:{ qty:0, option:'naver', posModel:'', posModelOther:'' },
+      posSetTerminal:{ qty:0, option:'naver', posModel:'', posModelOther:'', terminalModel:'', terminalModelOther:'' },
+      cardTerminal:{ qty:0, option:'naver', terminalModel:'', terminalModelOther:'' },
       tableOrderNormal:{ qty:0 },
       tableOrderPrepay:{ qty:0 }
     },
@@ -865,12 +877,36 @@ function buildIndemnityRows(sel){
     } else {
       unit = item.indemnity;
     }
-    rows.push({
-      name: item.label + (optionLabel ? ` (${optionLabel})` : ''),
-      qty: s.qty,
-      unit: unit,
-      amount: (unit==null ? null : unit * s.qty)
-    });
+// 모델 정보 추가 (선택)
+let modelInfo = '';
+const selItem = sel.rental && sel.rental[key];
+if(selItem){
+  // pos 모델 정보
+  if(selItem.posModel){
+    if(selItem.posModel === 'other') modelInfo += (selItem.posModelOther || '');
+    else {
+      const found = (typeof POS_MODELS !== 'undefined') ? POS_MODELS.find(m=>m.id===selItem.posModel) : null;
+      modelInfo += (found && found.label) ? found.label : selItem.posModel;
+    }
+  }
+  // terminal 모델 정보
+  if(selItem.terminalModel){
+    if(modelInfo) modelInfo += ' / ';
+    if(selItem.terminalModel === 'other') modelInfo += (selItem.terminalModelOther || '');
+    else {
+      const foundT = (typeof TERMINAL_MODELS !== 'undefined') ? TERMINAL_MODELS.find(m=>m.id===selItem.terminalModel) : null;
+      modelInfo += (foundT && foundT.label) ? foundT.label : selItem.terminalModel;
+    }
+  }
+  if(modelInfo) modelInfo = ` (${modelInfo})`;
+}
+
+rows.push({
+  name: item.label + (optionLabel ? ` (${optionLabel})` : '') + (modelInfo || ''),
+  qty: s.qty,
+  unit: unit,
+  amount: (unit==null ? null : unit * s.qty)
+});
   }
   for(const key in RENTAL_ADDONS){
     const item = RENTAL_ADDONS[key];
@@ -910,7 +946,27 @@ function renderOptionPicker(category, key){
     <label><input type="radio" name="opt_${category}_${key}" value="toss" ${s.option==='toss'?'checked':''} onchange="App.setOption('${category}','${key}','toss')"> 토스프론트</label>
   </div>`;
 }
+function renderModelPicker(category, key, mode){
+  // mode: 'pos' | 'terminal'
+  const s = state.selection[category][key] || {};
+  const models = mode === 'pos' ? POS_MODELS : TERMINAL_MODELS;
+  const modelField = mode === 'pos' ? 'posModel' : 'terminalModel';
+  const otherField = mode === 'pos' ? 'posModelOther' : 'terminalModelOther';
 
+  return `
+    <div style="margin-top:10px;">
+      <label style="font-size:13px;font-weight:600;">${mode === 'pos' ? '포스 종류 선택' : '단말기 종류 선택'}</label>
+      <div style="margin-top:6px;">
+        <select onchange="App.setModel('${category}','${key}','${mode}', this.value)" style="width:100%;padding:8px;border-radius:8px;border:1.5px solid var(--line);">
+          <option value="">선택 없음</option>
+          ${models.map(m => `<option value="${m.id}" ${s[modelField] === m.id ? 'selected' : ''}>${m.label}</option>`).join('')}
+          <option value="other" ${s[modelField] === 'other' ? 'selected' : ''}>목록에 없음 (직접입력)</option>
+        </select>
+        ${s[modelField] === 'other' ? `<input type="text" placeholder="직접 입력 (예: 모델명)" value="${escapeHtml(s[otherField] || '')}" oninput="App.setModelOther('${category}','${key}','${mode}', this.value)" style="margin-top:8px;width:100%;padding:8px;border-radius:8px;border:1.5px solid var(--line);">` : ''}
+      </div>
+    </div>
+  `;
+}
 function renderEquipmentSelect(){
   const m = state.contractMerchant;
   const sel = state.selection;
@@ -928,6 +984,9 @@ function renderEquipmentSelect(){
         ${renderStepper('rental', item.key)}
       </div>
       ${item.hasOption && s.qty>0 ? renderOptionPicker('rental', item.key) : ''}
+      ${s.qty > 0 && (item.key === 'posSet') ? renderModelPicker('rental', item.key, 'pos') : ''}
+      ${s.qty > 0 && (item.key === 'posSetTerminal') ? (renderModelPicker('rental', item.key, 'pos') + renderModelPicker('rental', item.key, 'terminal')) : ''}
+      ${s.qty > 0 && (item.key === 'cardTerminal') ? renderModelPicker('rental', item.key, 'terminal') : ''}
     </div>`;
   }).join('');
 
@@ -1888,6 +1947,20 @@ const App = {
 window.App = App;
 
 render();
+    App.setModel = function(category, key, mode, value){
+    const modelField = mode === 'pos' ? 'posModel' : 'terminalModel';
+    const otherField = mode === 'pos' ? 'posModelOther' : 'terminalModelOther';
+    if(!state.selection[category] || !state.selection[category][key]) return;
+    state.selection[category][key][modelField] = value;
+    if(value !== 'other') state.selection[category][key][otherField] = '';
+    render();
+  };
+  App.setModelOther = function(category, key, mode, value){
+    const otherField = mode === 'pos' ? 'posModelOther' : 'terminalModelOther';
+    if(!state.selection[category] || !state.selection[category][key]) return;
+    state.selection[category][key][otherField] = value;
+    render();
+  };
 </script>
 </body>
 </html>
