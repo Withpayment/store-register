@@ -309,6 +309,31 @@ body{
   }
   .editable-penalty{border:none !important;background:transparent !important;padding:0 !important;}
 }
+  /* 1) 법인인감 이미지 1.5배 확대 (contract / cms 용으로 적용) */
+.contract-page .corp-seal img,
+.cms-page .corp-seal img {
+  transform: scale(1.5);
+  transform-origin: left top;
+  display: inline-block;
+}
+  /* 7) 해지시 위약금 텍스트 빨간색으로 표시 */
+.editable-penalty {
+  color: var(--red);
+  border: 1px dashed var(--red);
+  background: rgba(226,76,76,0.04);
+}
+
+/* 8) 임차물품표(계약서 표)의 글자수에 맞춘 줄바꿈/너비 처리 */
+.contract-table {
+  table-layout: auto; /* 칼럼 너비를 콘텐츠에 맞춤 */
+  width: 100%;
+}
+.contract-table th, .contract-table td {
+  white-space: normal;
+  word-break: break-word; /* 긴 텍스트도 줄바꿈 */
+  padding: 6px 8px;
+  vertical-align: middle;
+}
 </style>
 </head>
 <body>
@@ -405,31 +430,39 @@ const RENTAL_CATALOG = {
     key:'posSet', label:'포스set (포스+금전함+프린터)', monthlyPrice:15000,
     hasOption:true,
     indemnityByOption: { naver: 1710000, toss: 1710000 }
+      // 추가: 포스 + 금전함 + 단말기 (요청사항 2번)
+  posSetTerminal: {
+    key:'posSetTerminal', label:'포스set (포스+금전함+단말기)', monthlyPrice:15000,
+    hasOption:true,
+    indemnityByOption: { naver: 1710000, toss: 1710000 }
   },
   cardTerminal: {
     key:'cardTerminal', label:'카드단말기', monthlyPrice:5000,
     hasOption:true,
     indemnityByOption: { naver: 400000, toss: 400000 }
   },
-  tableOrderNormal: { key:'tableOrderNormal', label:'테이블오더 (주문전용)', monthlyPrice:11000, indemnity: 350000 },
-  tableOrderPrepay: { key:'tableOrderPrepay', label:'테이블오더 (선불형)', monthlyPrice:13000, indemnity: 350000 }
+  tableOrderNormal: { key:'tableOrderNormal', label:'테이블오더 (주문전용)', monthlyPrice:10000, indemnity: 350000 },
+  tableOrderPrepay: { key:'tableOrderPrepay', label:'테이블오더 (선불형)', monthlyPrice:12000, indemnity: 350000 }
 };
 const RENTAL_ADDONS = {
   kitchenPrinter: { key:'kitchenPrinter', label:'주방프린터 추가', monthlyPrice:5000, indemnity:150000 },
   orderPosRefurb: { key:'orderPosRefurb', label:'오더포스(리퍼) 추가', monthlyPrice:10000, indemnity:800000 }
+  usedPrinter: { key:'usedPrinter', label:'중고프린터 추가', monthlyPrice:0, indemnity:0 } // 요청 5)
 };
 
 function defaultSelection(){
   return {
     rental: {
       posSet:{ qty:0, option:'naver' },
+      posSetTerminal:{ qty:0, option:'naver' }, // 추가한 항목의 기본값
       cardTerminal:{ qty:0, option:'naver' },
       tableOrderNormal:{ qty:0 },
       tableOrderPrepay:{ qty:0 }
     },
     addons: {
       kitchenPrinter:{ qty:0 },
-      orderPosRefurb:{ qty:0 }
+      orderPosRefurb:{ qty:0 },
+      usedPrinter:{ qty:0 }
     }
   };
 }
@@ -1156,7 +1189,7 @@ function renderContract(){
       <h1>CMS 출금이체 신청(동의)서</h1>
 
       <h2>□ 수납기관정보</h2>
-      <div style="font-size: 13px; font-weight: bold; margin-bottom: 5px;">상호명 : ${escapeHtml(m.storeName||'')}</div>
+      
       <table>
         <tr>
           <th>수납기관명</th>
@@ -1173,6 +1206,7 @@ function renderContract(){
       </table>
 
       <h2>□ 출금이체 신청 (신청고객기재)</h2>
+      <div style="font-size: 13px; font-weight: bold; margin-bottom: 5px;">상호명 : ${escapeHtml(m.storeName||'')}</div>
       <table>
         <tr>
           <th>신 청 인</th>
