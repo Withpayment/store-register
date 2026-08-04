@@ -309,31 +309,6 @@ body{
   }
   .editable-penalty{border:none !important;background:transparent !important;padding:0 !important;}
 }
-  /* 1) 법인인감 이미지 1.5배 확대 (contract / cms 용으로 적용) */
-.contract-page .corp-seal img,
-.cms-page .corp-seal img {
-  transform: scale(1.5);
-  transform-origin: left top;
-  display: inline-block;
-}
-  /* 7) 해지시 위약금 텍스트 빨간색으로 표시 */
-.editable-penalty {
-  color: var(--red);
-  border: 1px dashed var(--red);
-  background: rgba(226,76,76,0.04);
-}
-
-/* 8) 임차물품표(계약서 표)의 글자수에 맞춘 줄바꿈/너비 처리 */
-.contract-table {
-  table-layout: auto; /* 칼럼 너비를 콘텐츠에 맞춤 */
-  width: 100%;
-}
-.contract-table th, .contract-table td {
-  white-space: normal;
-  word-break: break-word; /* 긴 텍스트도 줄바꿈 */
-  padding: 6px 8px;
-  vertical-align: middle;
-}
 </style>
 </head>
 <body>
