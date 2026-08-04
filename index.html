@@ -1092,17 +1092,50 @@ function renderContract(){
   expiryDateObj.setDate(expiryDateObj.getDate() - 1);
   const expiryStr = expiryDateObj.toLocaleDateString('ko-KR', {year:'numeric', month:'2-digit', day:'2-digit'}).replace(/\. /g, '-').replace(/\./g, '');
 
-  let terminalName = '-';
-  let posName = '-';
-  let primaryModelOption = '-';
-  for(const key in RENTAL_CATALOG){
-    const item = RENTAL_CATALOG[key];
-    const s = sel.rental[key];
-    if(s && s.qty > 0){
-      if (['posModel', 'posModelOther'].includes(key)) posName = item.label + ` (${s.qty})`;
-      if(key === 'cardTerminal') terminalName = item.label + ` (${s.qty})`;
-      if(item.hasOption) primaryModelOption = s.option === 'naver' ? '네이버 커넥트' : '토스 프론트';
+let posParts = [];
+let termParts = [];
+let primaryModelOption = '-';
+
+for (const key in RENTAL_CATALOG) {
+  const item = RENTAL_CATALOG[key];
+  const s = sel.rental[key];
+  if (!s || s.qty <= 0) continue;
+
+  // 모델 정보 구성 (posModel, terminalModel 또는 직접입력 other 값)
+  let modelInfo = '';
+  if (s.posModel) {
+    if (s.posModel === 'other') modelInfo += (s.posModelOther || '');
+    else {
+      const found = (typeof POS_MODELS !== 'undefined') ? POS_MODELS.find(m => m.id === s.posModel) : null;
+      modelInfo += (found && found.label) ? found.label : s.posModel;
     }
+  }
+  if (s.terminalModel) {
+    if (modelInfo) modelInfo += ' / ';
+    if (s.terminalModel === 'other') modelInfo += (s.terminalModelOther || '');
+    else {
+      const foundT = (typeof TERMINAL_MODELS !== 'undefined') ? TERMINAL_MODELS.find(m => m.id === s.terminalModel) : null;
+      modelInfo += (foundT && foundT.label) ? foundT.label : s.terminalModel;
+    }
+  }
+  if (modelInfo) modelInfo = ` (${modelInfo})`;
+
+  // 항목별로 POS / 단말기 배열에 추가 (수량 표기 포함)
+  const qtyLabel = s.qty && s.qty > 1 ? ` x${s.qty}` : '';
+  if (['posSet', 'posSetTerminal'].includes(key)) {
+    posParts.push(`${item.label}${modelInfo}${qtyLabel}`.trim());
+  }
+  if (key === 'cardTerminal') {
+    termParts.push(`${item.label}${modelInfo}${qtyLabel}`.trim());
+  }
+
+  if (item.hasOption) {
+    primaryModelOption = s.option === 'naver' ? '네이버 커넥트' : '토스 프론트';
+  }
+}
+
+const posName = posParts.length ? posParts.join(', ') : '-';
+const terminalName = termParts.length ? termParts.join(', ') : '-'; 
   }
 
   const bizNoVal = state.contractBizNo || m.bizNo || m.bizNumber || '';
