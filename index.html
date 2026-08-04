@@ -969,7 +969,7 @@ function renderModelPicker(category, key, mode){
           ${models.map(m => `<option value="${m.id}" ${s[modelField] === m.id ? 'selected' : ''}>${m.label}</option>`).join('')}
           <option value="other" ${s[modelField] === 'other' ? 'selected' : ''}>목록에 없음 (직접입력)</option>
         </select>
-        ${s[modelField] === 'other' ? `<input type="text" placeholder="직접 입력 (예: 모델명)" value="${escapeHtml(s[otherField] || '')}" oninput="App.setModelOther('${category}','${key}','${mode}', this.value)" style="margin-top:8px;width:100%;padding:8px;border-radius:8px;border:1.5px solid var(--line);">` : ''}
+        ${s[modelField] === 'other' ? `<input type="text" placeholder="직접 입력 (예: 모델명)" value="${escapeHtml(s[otherField] || '')}" oninput="App.setModelOther('${category}','${key}','${mode}', this.value)" style="width:100%;padding:8px;border-radius:8px;border:1.5px solid var(--line);margin-top:8px;">` : ''}
       </div>
     </div>
   `;
@@ -1951,23 +1951,25 @@ const App = {
     render();
   }
 };
-window.App = App;
+  // 장비 모델 직접입력 처리기: App에 메서드로 추가
+App.setModel = function(category, key, mode, value){
+  const modelField = mode === 'pos' ? 'posModel' : 'terminalModel';
+  const otherField = mode === 'pos' ? 'posModelOther' : 'terminalModelOther';
+  if(!state.selection[category] || !state.selection[category][key]) return;
+  state.selection[category][key][modelField] = value;
+  if(value !== 'other') state.selection[category][key][otherField] = '';
+  render();
+};
 
+App.setModelOther = function(category, key, mode, value){
+  const otherField = mode === 'pos' ? 'posModelOther' : 'terminalModelOther';
+  if(!state.selection[category] || !state.selection[category][key]) return;
+  state.selection[category][key][otherField] = value;
+  // 실시간 렌더링이 필요하면 render(); 호출 (입력중 렌더링이 부담이면 주석 처리)
+  // render();
+};
+window.App = App;
 render();
-    App.setModel = function(category, key, mode, value){
-    const modelField = mode === 'pos' ? 'posModel' : 'terminalModel';
-    const otherField = mode === 'pos' ? 'posModelOther' : 'terminalModelOther';
-    if(!state.selection[category] || !state.selection[category][key]) return;
-    state.selection[category][key][modelField] = value;
-    if(value !== 'other') state.selection[category][key][otherField] = '';
-    render();
-  };
-  App.setModelOther = function(category, key, mode, value){
-    const otherField = mode === 'pos' ? 'posModelOther' : 'terminalModelOther';
-    if(!state.selection[category] || !state.selection[category][key]) return;
-    state.selection[category][key][otherField] = value;
-    render();
-  };
 </script>
 </body>
 </html>
