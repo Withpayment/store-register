@@ -1092,50 +1092,45 @@ function renderContract(){
   expiryDateObj.setDate(expiryDateObj.getDate() - 1);
   const expiryStr = expiryDateObj.toLocaleDateString('ko-KR', {year:'numeric', month:'2-digit', day:'2-digit'}).replace(/\. /g, '-').replace(/\./g, '');
 
-let posParts = [];
-let termParts = [];
-let primaryModelOption = '-';
+  // 임대장비목록에서 실제로 선택한 POS/단말기 모델명을 계약서 상단에 반영한다.
+  // (예: '포스set(포스+금전함+단말기)'처럼 POS와 단말기가 결합된 품목도
+  //  posModel/terminalModel 값을 각각 따로 뽑아 두 칸에 나눠 표시)
+  function resolveModelName_(models, modelId, otherText){
+    if(!modelId) return '';
+    if(modelId === 'other') return (otherText || '').trim() || '기타';
+    const found = models.find(m => m.id === modelId);
+    return found ? found.label : modelId;
+  }
 
-for (const key in RENTAL_CATALOG) {
-  const item = RENTAL_CATALOG[key];
-  const s = sel.rental[key];
-  if (!s || s.qty <= 0) continue;
+  let posNames = [];
+  let terminalNames = [];
+  let primaryModelOption = '-';
 
-  // 모델 정보 구성 (posModel, terminalModel 또는 직접입력 other 값)
-  let modelInfo = '';
-  if (s.posModel) {
-    if (s.posModel === 'other') modelInfo += (s.posModelOther || '');
-    else {
-      const found = (typeof POS_MODELS !== 'undefined') ? POS_MODELS.find(m => m.id === s.posModel) : null;
-      modelInfo += (found && found.label) ? found.label : s.posModel;
+  for(const key in RENTAL_CATALOG){
+    const item = RENTAL_CATALOG[key];
+    const s = sel.rental[key];
+    if(!s || s.qty <= 0) continue;
+
+    if(item.hasOption){
+      primaryModelOption = s.option === 'naver' ? '네이버 커넥트' : '토스 프론트';
+    }
+
+    // POS가 포함된 품목: 선택한 모델명이 있으면 그걸, 없으면 품목명을 사용
+    if(key === 'posSet' || key === 'posSetTerminal'){
+      const modelLabel = resolveModelName_(POS_MODELS, s.posModel, s.posModelOther);
+      posNames.push((modelLabel || item.label) + (s.qty > 1 ? ` (${s.qty})` : ''));
+    }
+
+    // 단말기가 포함된 품목: 선택한 모델명이 있으면 그걸, 없으면 품목명을 사용
+    if(key === 'cardTerminal' || key === 'posSetTerminal'){
+      const modelLabelT = resolveModelName_(TERMINAL_MODELS, s.terminalModel, s.terminalModelOther);
+      terminalNames.push((modelLabelT || item.label) + (s.qty > 1 ? ` (${s.qty})` : ''));
     }
   }
-  if (s.terminalModel) {
-    if (modelInfo) modelInfo += ' / ';
-    if (s.terminalModel === 'other') modelInfo += (s.terminalModelOther || '');
-    else {
-      const foundT = (typeof TERMINAL_MODELS !== 'undefined') ? TERMINAL_MODELS.find(m => m.id === s.terminalModel) : null;
-      modelInfo += (foundT && foundT.label) ? foundT.label : s.terminalModel;
-    }
-  }
-  if (modelInfo) modelInfo = ` (${modelInfo})`;
 
-  // 항목별로 POS / 단말기 배열에 추가 (수량 표기 포함)
-  const qtyLabel = s.qty && s.qty > 1 ? ` x${s.qty}` : '';
-  if (['posSet', 'posSetTerminal'].includes(key)) {
-    posParts.push(`${item.label}${modelInfo}${qtyLabel}`.trim());
-  }
-  if (key === 'cardTerminal') {
-    termParts.push(`${item.label}${modelInfo}${qtyLabel}`.trim());
-  }
+  const posName = posNames.length ? posNames.join(', ') : '-';
+  const terminalName = terminalNames.length ? terminalNames.join(', ') : '-';
 
-  if (item.hasOption) {
-    primaryModelOption = s.option === 'naver' ? '네이버 커넥트' : '토스 프론트';
-  }
-}
-
-  const posName = posParts.length ? posParts.join(', ') : '-';
-  const terminalName = termParts.length ? termParts.join(', ') : '-';
   const bizNoVal = state.contractBizNo || m.bizNo || m.bizNumber || '';
   const birth6Val = state.contractBirth6 || m.birthDate || '';
   const addressVal = state.contractAddress || m.address || m.storeAddress || '';
