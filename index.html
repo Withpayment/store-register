@@ -372,6 +372,41 @@ function parseQueryParams() {
 const urlParams = parseQueryParams();
 
 function getRequiredDocs(businessType, bizType, hasSign){
+  // 우선: 링크를 통해 type=payapply&docs=... 로 진입한 경우, docs 파라미터에 따라 요구서류만 반환
+if (urlParams.type === 'payapply' && Array.isArray(urlParams.docs) && urlParams.docs.length > 0) {
+  // helper: find metadata for known keys (search COMMON_DOCS, EXTRA_DOCS, SUPPLEMENT_DOC_LIST, and some manual mappings)
+  function findDocMeta(key){
+    // search COMMON_DOCS
+    const foundCommon = COMMON_DOCS.find(d => d.key === key);
+    if(foundCommon) return foundCommon;
+    // search EXTRA_DOCS values
+    for(const k in EXTRA_DOCS){
+      if(EXTRA_DOCS[k].key === key) return EXTRA_DOCS[k];
+    }
+    // supplement list
+    const supp = SUPPLEMENT_DOC_LIST.find(d => d.key === key);
+    if(supp) return { key: supp.key, label: supp.label, accept:'image/*,.pdf', hint: `${supp.label} 사본 첨부`, required:true };
+    // other known keys
+    const others = {
+      idCard: { key:'idCard', label:'대표자 신분증', accept:'image/*', hint:'주민등록증 또는 운전면허증 사진', required:true },
+      corpReg: { key:'corpReg', label:'법인등기부등본', accept:'image/*,.pdf', hint:'말일 포함 최근 등기부등본', required:true },
+      corpSeal: { key:'corpSeal', label:'법인인감증명서', accept:'image/*,.pdf', hint:'최근 3개월 이내 발급분', required:true },
+      shareholder: { key:'shareholder', label:'주주명부', accept:'image/*,.pdf', hint:'최신 주주명부 사본', required:true },
+      interiorPhoto: { key:'interiorPhoto', label:'매장 내부 사진', accept:'image/*', hint:'매장 내부 전경', required:true },
+      insideOutsidePhoto: { key:'insideOutsidePhoto', label:'내부에서 외부가 보이는 사진', accept:'image/*', hint:'출입구 방향으로 촬영', required:true },
+      bankbook: { key:'bankbook', label:'통장사본', accept:'image/*,.pdf', hint:'입금 계좌 통장 첫 페이지', required:true },
+      bizLicense: { key:'bizLicense', label:'사업자등록증', accept:'image/*,.pdf', hint:'사업자등록증 사본', required:true },
+      exteriorPhoto: { key:'exteriorPhoto', label:'외부 사진 (간판 포함)', accept:'image/*', hint:'간판이 잘 보이도록 촬영', required:true },
+      addressPlate: { key:'addressPlate', label:'도로명주소판 사진', accept:'image/*', hint:'건물에 부착된 도로명주소판 근접 촬영', required:true },
+      addressBuildingPhoto: { key:'addressBuildingPhoto', label:'도로명주소 포함 건물 사진', accept:'image/*', hint:'도로명주소와 건물이 함께 나오게 촬영', required:true }
+    };
+    if(others[key]) return others[key];
+    return { key, label:key, accept:'image/*,.pdf', hint:`${key} 파일`, required:true };
+  }
+
+  const docs = urlParams.docs.map(k => findDocMeta(k)).filter(Boolean);
+  if(docs.length > 0) return docs;
+}
   if (state.isSupplementMode && state.supplementDocKeys.length > 0) {
     return SUPPLEMENT_DOC_LIST.filter(d => state.supplementDocKeys.includes(d.key)).map(d => ({
       key: d.key,
@@ -772,17 +807,17 @@ function renderAdmin(){
     <div class="admin-table-scroll">
     <table class="admin-table">
       <thead>
-        <tr style="background: #F8FAFC; border-bottom: 1.5px solid var(--line); color: var(--ink-soft);">
-          <th style="padding: 14px 16px;">상호명</th>
-          <th style="padding: 14px 16px;">대표자명</th>
-          <th style="padding: 14px 16px;">사업자번호</th>
-          <th style="padding: 14px 16px;">구분</th>
-          <th style="padding: 14px 16px;">대표 폰번호</th>
-          <th style="padding: 14px 16px;">접수일시</th>
-          <th style="padding: 14px 16px;">서류 폴더</th>
-          <th style="padding: 14px 16px; text-align:center;">관리 작업</th>
-        </tr>
-      </thead>
+      <tr style="background: #F8FAFC; border-bottom: 1.5px solid var(--line); color: var(--ink-soft);">
+        <th style="padding: 14px 16px;">상호명</th>
+        <th style="padding: 14px 16px;">대표자명</th>
+        <th style="padding: 14px 16px;">사업자번호</th>
+        <th style="padding: 14px 16px;">구분</th>
+        <th style="padding: 14px 16px;">대표 폰번호</th>
+        <th style="padding: 14px 16px;">접수일시</th>
+        <th style="padding: 14px 16px; text-align:left;">가맹신청</th> <!-- NEW -->
+        <th style="padding: 14px 16px;">서류 폴더</th>
+        <th style="padding: 14px 16px; text-align:center;">관리 작업</th>
+    </tr>
       <tbody>
         ${list.length === 0 ? `
           <tr><td colspan="8" style="text-align:center; padding: 40px; color: var(--ink-soft);">접수된 내역이 없습니다.</td></tr>
@@ -826,6 +861,18 @@ function renderAdmin(){
               <td style="padding: 14px 16px;"><span style="background:${bizTypeText==='법인'?'#E8F4FD':'#EAF6EF'}; color:${bizTypeText==='법인'?'#0066CC':'#2F8F5B'}; padding:3px 8px; border-radius:4px; font-size:11.5px; font-weight:600;">${bizTypeText}</span></td>
               <td class="no-wrap" style="padding: 14px 16px;">${escapeHtml(m.ownerPhone || '')}</td>
               <td class="no-wrap" style="padding: 14px 16px; font-size: 12.5px; color: var(--ink-soft);">${formattedDate}</td>
+              <td class="no-wrap" style="padding: 14px 16px; text-align:left; width:260px;">
+                <div style="display:flex;gap:8px;align-items:center;">
+                  <select id="pay_sel_${escapeAttr(m.id)}" onchange="App.setRowPayOption('${escapeAttr(m.id)}', this.value)" style="padding:6px;border-radius:8px;border:1.5px solid var(--line);">
+                    <option value="toss">Toss 페이</option>
+                    <option value="naver_registered">Naver (플레이스 등록)</option>
+                    <option value="naver_unregistered">Naver (플레이스 미등록)</option>
+                  </select>
+                  <button onclick="App.generatePaymentLinkForRow('${escapeAttr(m.id)}')" style="background:var(--teal); color:white; border:none; padding:8px 10px; border-radius:8px; cursor:pointer;">링크 복사</button>
+                  <button title="새로생성" onclick="App.generatePaymentLinkForRow('${escapeAttr(m.id)}', true)" style="background:#fff;border:1px solid var(--line);padding:8px;border-radius:8px;cursor:pointer;">⟳</button>
+                </div>
+                <div id="pay_link_info_${escapeAttr(m.id)}" style="margin-top:6px;font-size:12px;color:var(--ink-soft);"></div>
+              </td>
               <td class="no-wrap" style="padding: 14px 16px;">${folderBtnHtml}</td>
               <td style="padding: 14px 16px; text-align:center;">
                 <div class="admin-actions">
@@ -865,7 +912,76 @@ function renderSupplementModal() {
     </div>
   </div>`;
 }
+// ===== 관리자용 가맹신청 링크 기능 (삽입) =====
+if (!state.adminPayOption) state.adminPayOption = {};
 
+const PAYMENT_DOC_REQUIREMENTS = {
+  toss: ['bizLicense','idCard','bankbook'], // Toss에 요구되는 파일 키 (email은 파일이 아니므로 폼에서 별도 입력)
+  naver_registered: ['bizLicense','idCard','bankbook'],
+  naver_unregistered: ['bizLicense','idCard','bankbook','interiorPhoto','insideOutsidePhoto']
+};
+
+if (!window.App) window.App = {};
+
+// 선택 저장 (셀렉트가 바뀔 때 호출)
+App.setRowPayOption = function(merchantId, val){
+  state.adminPayOption[merchantId] = val;
+};
+
+// 행 단위로 링크 생성 -> 복사 및 UI 갱신
+App.generatePaymentLinkForRow = function(merchantId, forceRefresh){
+  // read selected option: prefer stored state, fallback to select DOM
+  const sel = state.adminPayOption[merchantId] || (document.getElementById(`pay_sel_${merchantId}`)?.value) || 'toss';
+  const docs = PAYMENT_DOC_REQUIREMENTS[sel] || PAYMENT_DOC_REQUIREMENTS['toss'];
+  // provider param: toss | naver
+  let provider = sel.startsWith('naver') ? 'naver' : 'toss';
+  const place = sel === 'naver_unregistered' ? 'unregistered' : 'registered';
+
+  const params = new URLSearchParams();
+  params.set('type','payapply');
+  params.set('provider', provider);
+  params.set('id', merchantId);
+  params.set('docs', docs.join(','));
+  if(provider === 'naver') params.set('place', place);
+
+  const url = `${location.origin}${location.pathname}?${params.toString()}`;
+
+  // clipboard copy
+  App.copyToClipboard(url).then(()=> {
+    const infoEl = document.getElementById(`pay_link_info_${merchantId}`);
+    if(infoEl) infoEl.textContent = `링크가 복사되었습니다 · ${new Date().toLocaleTimeString()}`;
+    toast('가맹신청 링크가 복사되었습니다');
+    // optional: change button text or color briefly (done via pay_link_info)
+  }).catch(err=>{
+    console.error('copy failed',err);
+    toast('클립보드 복사 실패 (브라우저 권한 확인)');
+  });
+
+  return url;
+};
+
+App.copyToClipboard = function(text){
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    return navigator.clipboard.writeText(text);
+  }
+  // fallback
+  return new Promise((res, rej) => {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta);
+    ta.select();
+    try {
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      res();
+    } catch(e){
+      document.body.removeChild(ta);
+      rej(e);
+    }
+  });
+};
+// ===== end 관리자용 가맹신청 링크 기능 =====
 function escapeHtml(str){
   return String(str||'')
     .replace(/&/g,'&amp;')
