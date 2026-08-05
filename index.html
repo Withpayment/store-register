@@ -527,6 +527,22 @@ function toast(msg){
 
 function render(){
   const app = document.getElementById('app');
+
+  // [최적화] 이 앱은 상태가 바뀔 때마다 화면 전체를 문자열로 다시 그려서 갈아끼우는 방식이라
+  // (가상DOM이 아니라 innerHTML 통재교체), 재렌더링 시점에 어떤 입력창에 포커스가 있었다면
+  // 그 포커스와 커서 위치를 기억해뒀다가 새로 그려진 뒤 그대로 복원한다.
+  // 이렇게 하면 "타이핑 중 렌더링이 껴서 포커스가 끊기는" 문제를 이 함수 한 곳에서
+  // 근본적으로 막아준다 (관리자 검색창 등 id가 있는 모든 입력창에 자동 적용됨).
+  const active = document.activeElement;
+  let focusId = null, selStart = null, selEnd = null;
+  if (active && active.id && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) {
+    focusId = active.id;
+    if (typeof active.selectionStart === 'number') {
+      selStart = active.selectionStart;
+      selEnd = active.selectionEnd;
+    }
+  }
+
   app.className = state.view === 'admin' ? 'admin-app' : '';
   if(state.view === 'form') app.innerHTML = topbar() + renderForm();
   else if(state.view === 'success') app.innerHTML = topbar() + renderSuccess();
@@ -537,6 +553,16 @@ function render(){
 
   if(state.activeModalMerchant) {
     app.innerHTML += renderSupplementModal();
+  }
+
+  if (focusId) {
+    const el = document.getElementById(focusId);
+    if (el) {
+      el.focus();
+      if (selStart !== null && typeof el.setSelectionRange === 'function') {
+        try { el.setSelectionRange(selStart, selEnd); } catch(e) {}
+      }
+    }
   }
 }
 
@@ -740,7 +766,7 @@ function renderAdmin(){
     </div>
   </div>
 
-  <input class="admin-search" placeholder="상호명, 대표자명 또는 전화번호로 검색" value="${state.adminSearch}" oninput="App.setAdminSearch(this.value)">
+  <input class="admin-search" id="admin_search_input" placeholder="상호명, 대표자명 또는 전화번호로 검색" value="${state.adminSearch}" oninput="App.setAdminSearch(this.value)">
 
   <div class="card" style="padding: 0; overflow: hidden;">
     <div class="admin-table-scroll">
@@ -751,7 +777,6 @@ function renderAdmin(){
           <th style="padding: 14px 16px;">대표자명</th>
           <th style="padding: 14px 16px;">사업자번호</th>
           <th style="padding: 14px 16px;">구분</th>
-          <th style="padding: 14px 16px;">매장 전화</th>
           <th style="padding: 14px 16px;">대표 폰번호</th>
           <th style="padding: 14px 16px;">접수일시</th>
           <th style="padding: 14px 16px;">서류 폴더</th>
@@ -760,7 +785,7 @@ function renderAdmin(){
       </thead>
       <tbody>
         ${list.length === 0 ? `
-          <tr><td colspan="9" style="text-align:center; padding: 40px; color: var(--ink-soft);">접수된 내역이 없습니다.</td></tr>
+          <tr><td colspan="8" style="text-align:center; padding: 40px; color: var(--ink-soft);">접수된 내역이 없습니다.</td></tr>
         ` : list.map(m => {
           let formattedDate = m.createdAt;
           try { formattedDate = new Date(m.createdAt).toLocaleString('ko-KR'); } catch(e){}
@@ -799,7 +824,6 @@ function renderAdmin(){
               <td class="no-wrap" style="padding: 14px 16px;">${ownerNameCell}</td>
               <td class="no-wrap" style="padding: 14px 16px; font-size: 12.5px; color: var(--ink-soft);">${bizNoCell}</td>
               <td style="padding: 14px 16px;"><span style="background:${bizTypeText==='법인'?'#E8F4FD':'#EAF6EF'}; color:${bizTypeText==='법인'?'#0066CC':'#2F8F5B'}; padding:3px 8px; border-radius:4px; font-size:11.5px; font-weight:600;">${bizTypeText}</span></td>
-              <td class="no-wrap" style="padding: 14px 16px;">${escapeHtml(m.storePhone || '')}</td>
               <td class="no-wrap" style="padding: 14px 16px;">${escapeHtml(m.ownerPhone || '')}</td>
               <td class="no-wrap" style="padding: 14px 16px; font-size: 12.5px; color: var(--ink-soft);">${formattedDate}</td>
               <td class="no-wrap" style="padding: 14px 16px;">${folderBtnHtml}</td>
@@ -1880,50 +1904,33 @@ const App = {
     }
   },
 
-  setAdminSearch(v){ state.adminSearch = v; render(); },
+  setAdminSearch(v){
+    // [최적화] 목록이 길어질수록 매 글자마다 테이블 전체를 다시 그리는 비용이 커지므로,
+    // 타이핑이 끊긴 후 살짝(120ms) 기다렸다가 한 번만 렌더링한다. 포커스는 render()에서
+    // 자동으로 복원되므로 검색은 여전히 실시간처럼 느껴지되, 불필요한 재렌더 횟수만 줄어든다.
+    state.adminSearch = v;
+    clearTimeout(App._searchDebounceTimer);
+    App._searchDebounceTimer = setTimeout(render, 120);
+  },
 
-  async goEquipmentSelect(merchantId){
+  goEquipmentSelect(merchantId){
+    // [변경] 관리자모드에 별도 "🔄 OCR 재요청" 버튼이 있으므로, 값이 틀렸을 땐 그 버튼으로
+    // 다시 읽어오면 되기 때문에 여기서는 매번 재OCR을 돌리지 않고 시트에 이미 저장된
+    // 값으로 바로 계약서 화면으로 이동한다 (버튼 클릭 즉시 이동 → 대기시간 없음).
     const m = (state.adminMerchants || []).find(x => x.id === merchantId);
     if(!m){ toast('가맹점 정보를 찾을 수 없습니다'); return; }
-    if(!state.adminToken){ this.handleUnauthorized(); return; }
-
-    toast('이 가맹점의 서류를 다시 확인하는 중...');
-
-    let freshExtracted = null;
-    try {
-      const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action: 'reOcrMerchant', id: merchantId, token: state.adminToken })
-      });
-      const result = await response.json();
-      if(result.status === 'success'){
-        freshExtracted = result.extracted;
-        toast(result.ocrEmpty
-          ? (result.message || 'OCR 텍스트를 읽지 못해 기존 정보로 진행합니다.')
-          : '서류 정보 자동반영 완료!');
-      } else if(result.status === 'unauthorized'){
-        this.handleUnauthorized();
-        return;
-      } else {
-        toast((result.message || '서류 재확인 실패') + ' (기존 저장된 정보로 진행합니다)');
-      }
-    } catch(e) {
-      toast('서버 통신 오류 (기존 저장된 정보로 진행합니다)');
-    }
 
     state.contractMerchant = m;
     state.selection = defaultSelection();
     state.contractPeriodYears = 3;
     state.installDate = new Date().toISOString().slice(0,10);
 
-    const src = freshExtracted || {};
-    state.contractBizNo = src.bizNumber || m.bizNo || m.bizNumber || state.contractBizNo || '';
-    state.contractBirth6 = src.birthDate || m.birthDate || state.contractBirth6 || '';
-    state.contractAddress = src.address || m.address || m.storeAddress || state.contractAddress || '';
-    state.cmsBankName = src.bankName || m.bankName || m.bank || state.cmsBankName || '';
-    state.cmsAccountNo = src.accountNumber || m.accountNo || m.accountNumber || m.account || state.cmsAccountNo || '';
-    state.cmsDepositor = src.ownerName || m.depositor || m.ownerName || m.storeName || state.cmsDepositor || '';
+    state.contractBizNo = m.bizNo || m.bizNumber || state.contractBizNo || '';
+    state.contractBirth6 = m.birthDate || state.contractBirth6 || '';
+    state.contractAddress = m.address || m.storeAddress || state.contractAddress || '';
+    state.cmsBankName = m.bankName || m.bank || state.cmsBankName || '';
+    state.cmsAccountNo = m.accountNo || m.accountNumber || m.account || state.cmsAccountNo || '';
+    state.cmsDepositor = m.depositor || m.ownerName || m.storeName || state.cmsDepositor || '';
 
     state.view = 'equipmentSelect';
     render();
