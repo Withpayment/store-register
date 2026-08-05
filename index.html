@@ -360,12 +360,28 @@ const EXTRA_DOCS = {
   academy: { key:'permitLicense', label:'학원(교습소) 설립운영 등록증', accept:'image/*,.pdf', hint:'등록증 사본', required:true }
 };
 
+// [가맹신청(토스/네이버) 전용 서류 목록]
+// 관리자가 발급한 "가맹신청" 링크로 들어온 접수는 사업자 구분/간판 유무와 무관하게
+// 서비스 종류(+네이버는 플레이스 등록 여부)에 따라서만 필요 서류가 정해진다.
+const PAYMENT_COMMON_DOCS = [
+  { key:'bizLicense', label:'사업자등록증', accept:'image/*,.pdf', hint:'사업자등록증 사본', required:true },
+  { key:'idCard', label:'대표자 신분증', accept:'image/*', hint:'주민등록증 또는 운전면허증 사진', required:true },
+  { key:'bankbook', label:'통장사본', accept:'image/*,.pdf', hint:'입금 계좌 통장 첫 페이지', required:true }
+];
+const PAYMENT_NAVER_UNREGISTERED_DOCS = [
+  { key:'interiorPhoto', label:'매장 내부 사진', accept:'image/*', hint:'매장 내부 전경', required:true },
+  { key:'exteriorPhotoNaver', label:'매장 외부 사진', accept:'image/*', hint:'매장 외부 전경(간판 포함)', required:true }
+];
+
 function parseQueryParams() {
   const params = new URLSearchParams(window.location.search);
   return {
     type: params.get('type'),
     receiptId: params.get('id'),
-    docs: params.get('docs') ? params.get('docs').split(',') : []
+    docs: params.get('docs') ? params.get('docs').split(',') : [],
+    service: params.get('service'),
+    naverPlace: params.get('naverPlace'),
+    storeName: params.get('storeName') || ''
   };
 }
 
@@ -380,6 +396,14 @@ function getRequiredDocs(businessType, bizType, hasSign){
       hint: `${d.label} 사본 첨부`,
       required: true
     }));
+  }
+
+  if (state.isPaymentMode) {
+    let docs = [...PAYMENT_COMMON_DOCS];
+    if (state.paymentService === 'naver' && state.paymentNaverPlace === 'unregistered') {
+      docs = docs.concat(PAYMENT_NAVER_UNREGISTERED_DOCS);
+    }
+    return docs;
   }
 
   let docs = [...COMMON_DOCS];
@@ -464,11 +488,16 @@ function defaultSelection(){
 let state = {
   view: location.hash === '#admin' ? 'adminLogin' : 'form',
   isSupplementMode: urlParams.type === 'supplement',
+  isPaymentMode: urlParams.type === 'payment',
+  paymentService: urlParams.service === 'naver' ? 'naver' : 'toss',
+  paymentNaverPlace: urlParams.naverPlace === 'unregistered' ? 'unregistered' : 'registered',
   supplementDocKeys: urlParams.docs,
   receiptId: urlParams.receiptId || null,
   activeModalMerchant: null,
   selectedModalDocs: [],
-  fields: { storeName:'', ownerName:'', bizNo:'', businessType:'general', bizType:'personal', storePhone:'', ownerPhone:'', email:'', hasSign:'yes' },
+  showNewAppModal: false,
+  newAppForm: { storeName: '', service: 'toss', naverPlace: 'registered' },
+  fields: { storeName: urlParams.type === 'payment' ? urlParams.storeName : '', ownerName:'', bizNo:'', businessType:'general', bizType:'personal', storePhone:'', ownerPhone:'', email:'', hasSign:'yes' },
   files: {},
   adminUnlocked: false,
   adminToken: null,
@@ -554,6 +583,9 @@ function render(){
   if(state.activeModalMerchant) {
     app.innerHTML += renderSupplementModal();
   }
+  if(state.showNewAppModal) {
+    app.innerHTML += renderNewAppModal();
+  }
 
   if (focusId) {
     const el = document.getElementById(focusId);
@@ -567,14 +599,23 @@ function render(){
 }
 
 function topbar(){
-  const titleText = state.isSupplementMode ? "보완 서류 제출" : "가맹점 서류 접수";
+  const titleText = state.isSupplementMode
+    ? "보완 서류 제출"
+    : state.isPaymentMode
+      ? (state.paymentService === 'naver' ? '네이버페이 가맹 서류 제출' : '토스페이 가맹 서류 제출')
+      : "가맹점 서류 접수";
+  const subText = state.isSupplementMode
+    ? "요청 서류 제출 페이지"
+    : state.isPaymentMode
+      ? "결제서비스 가맹 서류 업로드 페이지"
+      : "정보 입력 및 서류 제출";
   return `
   <div class="topbar">
     <div class="brand">
       <div class="brand-mark">P</div>
       <div>
         <div class="brand-text">${titleText}</div>
-        <div class="brand-sub">${state.isSupplementMode ? "요청 서류 제출 페이지" : "정보 입력 및 서류 제출"}</div>
+        <div class="brand-sub">${subText}</div>
       </div>
     </div>
     <div class="secret-zone" onclick="App.handleSecretClick()"></div>
@@ -606,6 +647,45 @@ function renderForm(){
 
       <div class="btn-row" style="margin-top:28px;">
         <button class="btn btn-primary" onclick="App.submitSupplement()">보완서류 제출하기</button>
+      </div>
+    </div>`;
+  }
+
+  if (state.isPaymentMode) {
+    const serviceLabel = state.paymentService === 'naver' ? '네이버페이' : '토스페이';
+    const f2 = state.fields;
+    return `
+    <div class="card">
+      <div class="section-title">${serviceLabel} 가맹 서류 제출 — ${escapeHtml(f2.storeName)}</div>
+      <div class="section-sub">관리자가 안내해드린 가맹점명으로 접수됩니다. 아래 연락처와 서류를 입력해 주세요.</div>
+
+      <div class="field">
+        <label>상호명(매장명)</label>
+        <input type="text" value="${escapeHtml(f2.storeName)}" disabled style="background:#F1F3F6; color:var(--ink-soft);">
+      </div>
+
+      <div class="grid2">
+        <div class="field">
+          <label>매장전화번호 <span class="req">*</span></label>
+          <input type="tel" id="pay_storePhone" inputmode="numeric" maxlength="13" placeholder="02-1234-5678" value="${formatKoreanPhone(f2.storePhone)}" oninput="this.value = formatKoreanPhone(this.value)">
+        </div>
+        <div class="field">
+          <label>대표명의 폰번호 <span class="req">*</span></label>
+          <input type="tel" id="pay_ownerPhone" inputmode="numeric" maxlength="13" placeholder="010-1234-5678" value="${formatKoreanPhone(f2.ownerPhone)}" oninput="this.value = formatKoreanPhone(this.value)">
+        </div>
+      </div>
+      <div class="field">
+        <label>메일주소 <span class="req">*</span></label>
+        <input type="email" id="pay_email" placeholder="example@email.com" value="${f2.email}">
+      </div>
+
+      <div class="opt-group-label" style="margin-top:26px;">필수 서류 (${filledRequiredCount}/${requiredDocsCount}) <span class="req">*</span></div>
+      <div class="doc-grid">
+        ${currentDocs.map(d => renderDropzone(d)).join('')}
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="App.submitPaymentApplication()">${serviceLabel} 가맹 서류 제출하기</button>
       </div>
     </div>`;
   }
@@ -760,6 +840,7 @@ function renderAdmin(){
       </div>
     </div>
     <div style="display:flex; gap:8px;">
+      <div class="admin-link" onclick="App.openNewAppModal()" style="background:#6C63FF; color:white; border:none; padding:7px 12px; border-radius:100px; cursor:pointer; font-size:12.5px;">가맹신청</div>
       <div class="admin-link" onclick="App.loadGoogleData()" style="background:var(--teal); color:white; border:none; padding:7px 12px; border-radius:100px; cursor:pointer; font-size:12.5px;">새로고침</div>
       <div class="admin-link" onclick="App.logoutAdmin()" style="border:1px solid var(--line); padding:7px 12px; border-radius:100px; background:var(--paper); cursor:pointer; font-size:12.5px;">로그아웃</div>
       <div class="admin-link" onclick="App.goForm()" style="border:1px solid var(--line); padding:7px 12px; border-radius:100px; background:var(--paper); cursor:pointer; font-size:12.5px;">접수 화면 보기</div>
@@ -861,6 +942,45 @@ function renderSupplementModal() {
       <div style="display:flex; gap:8px;">
         <button class="btn btn-secondary" style="width:35%;" onclick="App.closeSupplementModal()">취소</button>
         <button class="btn btn-primary" style="width:65%;" onclick="App.generateSupplementLink()">보완요청 링크 생성 및 복사</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderNewAppModal() {
+  const f = state.newAppForm;
+  return `
+  <div class="modal-overlay" onclick="App.closeNewAppModal()">
+    <div class="modal-box" onclick="event.stopPropagation()">
+      <div class="modal-title">가맹신청 링크 생성</div>
+      <div class="modal-sub">가맹점명과 신청할 결제서비스를 선택하면, 해당 서비스에 맞는 서류만 첨부하는 전용 접수 링크가 생성됩니다. 폴더는 "가맹점명-서비스명"으로 저장됩니다.</div>
+
+      <div class="field">
+        <label>가맹점명 <span class="req">*</span></label>
+        <input type="text" id="newapp_storeName" placeholder="예: 카페 온기" value="${escapeHtml(f.storeName)}" oninput="App.setNewAppField('storeName', this.value)">
+      </div>
+
+      <div class="field">
+        <label>가입할 서비스 <span class="req">*</span></label>
+        <div class="radio-group">
+          <label class="radio-label"><input type="radio" name="newapp_service" value="toss" ${f.service==='toss'?'checked':''} onchange="App.setNewAppField('service', this.value)"> 토스페이</label>
+          <label class="radio-label"><input type="radio" name="newapp_service" value="naver" ${f.service==='naver'?'checked':''} onchange="App.setNewAppField('service', this.value)"> 네이버페이</label>
+        </div>
+      </div>
+
+      ${f.service === 'naver' ? `
+        <div class="field">
+          <label>네이버플레이스 등록 여부 <span class="req">*</span></label>
+          <div class="radio-group">
+            <label class="radio-label"><input type="radio" name="newapp_naverplace" value="registered" ${f.naverPlace==='registered'?'checked':''} onchange="App.setNewAppField('naverPlace', this.value)"> 등록 사업자</label>
+            <label class="radio-label"><input type="radio" name="newapp_naverplace" value="unregistered" ${f.naverPlace==='unregistered'?'checked':''} onchange="App.setNewAppField('naverPlace', this.value)"> 미등록 사업자</label>
+          </div>
+        </div>
+      ` : ''}
+
+      <div style="display:flex; gap:8px; margin-top:8px;">
+        <button class="btn btn-secondary" style="width:35%;" onclick="App.closeNewAppModal()">취소</button>
+        <button class="btn btn-primary" style="width:65%;" onclick="App.generateNewAppLink()">가맹신청 링크 생성 및 복사</button>
       </div>
     </div>
   </div>`;
@@ -1268,7 +1388,7 @@ function renderContract(){
           </table>
           ${hasUnpricedItem ? `<div class="contract-note">※ 오더포스(리퍼) 배상단가: "협의"</div>` : ''}
           <div class="contract-note" style="margin-top:6px;">
-            * 해지시 위약금 : <span class="editable-penalty" contenteditable="true">30,000원 × 잔여 계약 개월 수</span>
+            * 해지시 위약금 : <span class="editable-penalty" contenteditable="true">10,000원 × 잔여 계약 개월 수</span>
           </div>
         </div>
       </div>
@@ -1618,6 +1738,111 @@ const App = {
       prompt('아래 링크를 복사하여 고객에게 전달하세요:', fullUrl);
       this.closeSupplementModal();
     });
+  },
+
+  openNewAppModal(){
+    state.showNewAppModal = true;
+    state.newAppForm = { storeName: '', service: 'toss', naverPlace: 'registered' };
+    render();
+  },
+
+  closeNewAppModal(){
+    state.showNewAppModal = false;
+    render();
+  },
+
+  setNewAppField(key, val){
+    state.newAppForm[key] = val;
+    // 상호명 입력은 매 글자마다 다시 그릴 필요가 없어 render()를 생략한다
+    // (포커스는 render()에서 자동 복원되긴 하지만, 아예 안 그리는 게 더 가볍다).
+    // 서비스/네이버플레이스 라디오는 조건부 UI(플레이스 등록여부 표시)가 바뀌므로 다시 그린다.
+    if(key !== 'storeName') render();
+  },
+
+  generateNewAppLink(){
+    const storeNameInput = document.getElementById('newapp_storeName');
+    const storeName = (storeNameInput ? storeNameInput.value : state.newAppForm.storeName).trim();
+    if(!storeName){
+      toast('가맹점명을 입력해 주세요');
+      return;
+    }
+    const service = state.newAppForm.service;
+    const naverPlace = state.newAppForm.naverPlace;
+
+    const baseUrl = window.location.origin + window.location.pathname;
+    let fullUrl = `${baseUrl}?type=payment&service=${encodeURIComponent(service)}&storeName=${encodeURIComponent(storeName)}`;
+    if(service === 'naver'){
+      fullUrl += `&naverPlace=${encodeURIComponent(naverPlace)}`;
+    }
+
+    navigator.clipboard.writeText(fullUrl).then(() => {
+      toast('가맹신청 링크가 클립보드에 복사되었습니다!');
+      this.closeNewAppModal();
+    }).catch(() => {
+      prompt('아래 링크를 복사하여 가맹점에 전달하세요:', fullUrl);
+      this.closeNewAppModal();
+    });
+  },
+
+  async submitPaymentApplication(){
+    const storePhone = formatKoreanPhone(document.getElementById('pay_storePhone')?.value || '');
+    const ownerPhone = formatKoreanPhone(document.getElementById('pay_ownerPhone')?.value || '');
+    const email = document.getElementById('pay_email')?.value || '';
+
+    if(!storePhone || !ownerPhone || !email){
+      toast('필수 정보를 모두 입력해 주세요'); return;
+    }
+    const currentDocs = getRequiredDocs();
+    const missing = currentDocs.filter(d => d.required && (!state.files[d.key] || state.files[d.key].length === 0));
+    if(missing.length > 0){
+      toast(missing[0].label + ' 등 필수 서류를 첨부해 주세요'); return;
+    }
+
+    const submitBtn = document.querySelector('.btn-primary');
+    if(submitBtn){ submitBtn.disabled = true; submitBtn.textContent = '제출 중...'; }
+
+    const id = 'F' + new Date().toISOString().replace(/[-:.TZ]/g,'').slice(0,14) + '-' + Math.floor(Math.random()*900+100);
+    const createdAt = new Date().toISOString();
+    // [폴더 규칙] 관리자가 지정한 가맹점명 뒤에 서비스명을 붙여서 저장한다 → "가맹점명-토스" / "가맹점명-네이버"
+    const serviceSuffix = state.paymentService === 'naver' ? '네이버' : '토스';
+    const folderStoreName = `${state.fields.storeName}-${serviceSuffix}`;
+
+    try {
+      const payload = {
+        id: id,
+        createdAt: createdAt,
+        storeName: folderStoreName,
+        storePhone: storePhone,
+        ownerPhone: ownerPhone,
+        email: email,
+        bizType: '개인',
+        filesData: buildFilesPayload(state.files)
+      };
+
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload)
+      });
+
+      const res = await response.json();
+
+      if (!res || res.status !== 'success') {
+        toast((res && res.message ? res.message : '접수 처리에 실패했습니다.') + ' 다시 시도해 주세요.');
+        const service = state.paymentService === 'naver' ? '네이버페이' : '토스페이';
+        if(submitBtn){ submitBtn.disabled = false; submitBtn.textContent = service + ' 가맹 서류 제출하기'; }
+        return;
+      }
+
+      state.receiptId = id;
+      state.files = {};
+      state.view = 'success';
+      render();
+    } catch(e) {
+      toast('저장 중 오류가 발생했습니다. 다시 시도해 주세요.');
+      const service = state.paymentService === 'naver' ? '네이버페이' : '토스페이';
+      if(submitBtn){ submitBtn.disabled = false; submitBtn.textContent = service + ' 가맹 서류 제출하기'; }
+    }
   },
 
   handleUnauthorized(){
@@ -1982,7 +2207,7 @@ const App = {
     location.hash = 'admin';
     state.view = 'admin';
     render();
-  }
+  
 };
   // 장비 모델 직접입력 처리기: App에 메서드로 추가
 App.setModel = function(category, key, mode, value){
@@ -2005,4 +2230,4 @@ window.App = App;
 render();
 </script>
 </body>
-</html>
+</htm
