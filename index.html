@@ -684,6 +684,17 @@ function renderForm(){
       <input type="text" id="pay_storeName" placeholder="예: 카페 온기" value="${escapeHtml(f2.storeName)}" oninput="state.fields.storeName = this.value; App.render()">
     </div>
 
+    <div class="grid2">
+      <div class="field">
+        <label>매장전화번호 <span class="req">*</span></label>
+        <input type="tel" id="pay_storePhone" inputmode="numeric" maxlength="13" placeholder="02-1234-5678" value="${formatKoreanPhone(f2.storePhone)}" oninput="this.value = formatKoreanPhone(this.value); state.fields.storePhone = this.value;">
+      </div>
+      <div class="field">
+        <label>대표명의 폰번호 <span class="req">*</span></label>
+        <input type="tel" id="pay_ownerPhone" inputmode="numeric" maxlength="13" placeholder="010-1234-5678" value="${formatKoreanPhone(f2.ownerPhone)}" oninput="this.value = formatKoreanPhone(this.value); state.fields.ownerPhone = this.value;">
+      </div>
+    </div>
+
     <div class="field">
       <label>메일주소 <span class="req">*</span></label>
       <input type="email" id="pay_email" placeholder="example@email.com" value="${f2.email}" oninput="state.fields.email = this.value">
@@ -868,7 +879,9 @@ function renderAdmin(){
           <th style="padding: 14px 16px;">대표자명</th>
           <th style="padding: 14px 16px;">사업자번호</th>
           <th style="padding: 14px 16px;">구분</th>
+          <th style="padding: 14px 16px;">매장전화번호</th>
           <th style="padding: 14px 16px;">대표 폰번호</th>
+          <th style="padding: 14px 16px;">이메일주소</th>
           <th style="padding: 14px 16px;">접수일시</th>
           <th style="padding: 14px 16px;">서류 폴더</th>
           <th style="padding: 14px 16px; text-align:center;">관리 작업</th>
@@ -876,7 +889,7 @@ function renderAdmin(){
       </thead>
       <tbody>
         ${list.length === 0 ? `
-          <tr><td colspan="8" style="text-align:center; padding: 40px; color: var(--ink-soft);">접수된 내역이 없습니다.</td></tr>
+          <tr><td colspan="10" style="text-align:center; padding: 40px; color: var(--ink-soft);">접수된 내역이 없습니다.</td></tr>
         ` : list.map(m => {
           let formattedDate = m.createdAt;
           try { formattedDate = new Date(m.createdAt).toLocaleString('ko-KR'); } catch(e){}
@@ -903,10 +916,10 @@ function renderAdmin(){
               <button onclick="App.cancelEditMerchant()" style="background: var(--paper); color: var(--ink); border: 1.5px solid var(--line); padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 11.5px;">취소</button>
             `
             : `
-              <button onclick="App.reOcrRow('${escapeAttr(m.id)}')" style="background: #6C63FF; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 11.5px;">🔄 OCR 재요청</button>
-              <button onclick="App.openSupplementModal('${escapeAttr(m.id)}')" style="background: #E8A317; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 11.5px;">보완요청</button>
-              <button onclick="App.goEquipmentSelect('${escapeAttr(m.id)}')" style="background: var(--teal); color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 11.5px;">계약서 작성</button>
-              <button onclick="App.completeAndDelete('${escapeAttr(m.id)}', '${escapeAttr(m.storeName)}')" style="background: var(--red); color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 11.5px;">처리완료/삭제</button>
+              <button onclick="App.reOcrRow('${escapeAttr(m.id)}')" style="background: #6C63FF; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 11.5px;">OCR</button>
+              <button onclick="App.openSupplementModal('${escapeAttr(m.id)}')" style="background: #E8A317; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 11.5px;">보완</button>
+              <button onclick="App.goEquipmentSelect('${escapeAttr(m.id)}')" style="background: var(--teal); color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 11.5px;">계약서</button>
+              <button onclick="App.completeAndDelete('${escapeAttr(m.id)}', '${escapeAttr(m.storeName)}')" style="background: var(--red); color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 11.5px;">삭제</button>
             `;
 
           return `
@@ -915,7 +928,9 @@ function renderAdmin(){
               <td class="no-wrap" style="padding: 14px 16px;">${ownerNameCell}</td>
               <td class="no-wrap" style="padding: 14px 16px; font-size: 12.5px; color: var(--ink-soft);">${bizNoCell}</td>
               <td style="padding: 14px 16px;"><span style="background:${bizTypeText==='법인'?'#E8F4FD':'#EAF6EF'}; color:${bizTypeText==='법인'?'#0066CC':'#2F8F5B'}; padding:3px 8px; border-radius:4px; font-size:11.5px; font-weight:600;">${bizTypeText}</span></td>
+              <td class="no-wrap" style="padding: 14px 16px;">${escapeHtml(m.storePhone || '')}</td>
               <td class="no-wrap" style="padding: 14px 16px;">${escapeHtml(m.ownerPhone || '')}</td>
+              <td class="no-wrap" style="padding: 14px 16px;">${escapeHtml(m.email || '')}</td>
               <td class="no-wrap" style="padding: 14px 16px; font-size: 12.5px; color: var(--ink-soft);">${formattedDate}</td>
               <td class="no-wrap" style="padding: 14px 16px;">${folderBtnHtml}</td>
               <td style="padding: 14px 16px; text-align:center;">
@@ -1787,13 +1802,13 @@ generateNewAppLink(){
 async submitPaymentApplication(){
   // 상호명은 state.fields.storeName으로 들어옵니다 (관리자가 생성한 링크로 들어오면 미리 채워짐)
   const storeName = state.fields.storeName || '';
-  const storePhone = formatKoreanPhone(document.getElementById('pay_storePhone')?.value || ''); // 선택 입력일 수도 있음
-  const ownerPhone = formatKoreanPhone(document.getElementById('pay_ownerPhone')?.value || ''); // 선택 입력일 수도 있음
+  const storePhone = formatKoreanPhone(document.getElementById('pay_storePhone')?.value || '');
+  const ownerPhone = formatKoreanPhone(document.getElementById('pay_ownerPhone')?.value || '');
   const email = document.getElementById('pay_email')?.value || '';
 
-  // UI에서 실제로 받는 항목(상호명, 이메일)만 필수로 검사하도록 변경
-  if(!storeName || !email){
-    toast('상호명과 메일주소를 입력해 주세요'); 
+  // UI에서 받는 항목(상호명, 매장전화번호, 대표명의 폰번호, 이메일) 모두 필수로 검사
+  if(!storeName || !storePhone || !ownerPhone || !email){
+    toast('상호명, 매장전화번호, 대표명의 폰번호, 메일주소를 입력해 주세요'); 
     return;
   }
 
