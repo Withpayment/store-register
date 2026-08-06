@@ -343,8 +343,13 @@ const SUPPLEMENT_DOC_LIST = [
 const BUSINESS_TYPES = [
   { id: 'general', name: '일반 도소매/서비스업 (일반 사업자)' },
   { id: 'food', name: '음식점 / 카페 / 유흥주점 (식품위생업)' },
-  { id: 'beauty', name: '미용실 / 피부샵 / 네일샵 (공중위생업)' },
-  { id: 'academy', name: '학원 / 교습소' }
+  { id: 'beauty', name: '미용실 / 피부샵 / 네일샵 / 숙박업 (공중위생업)' },
+  { id: 'academy', name: '학원 / 교습소 (교육업)' },
+  { id: 'health', name: '건강기능식품 판매업 (유통·판매업)' },         // 추가: 건강기능식품
+  { id: 'ecommerce', name: '통신판매업 / 온라인 쇼핑몰 (이커머스)' },     // 추가: 통신판매업(온라인)
+  { id: 'tobacco', name: '담배 소매업' },                             // 추가: 담배 소매업
+  { id: 'meat', name: '축산물 유통·판매업 (정육점 등)' },              // 추가: 축산물 판매업
+  { id: 'medical', name: '병·의원 / 약국 (의료기관)' }                 // 추가: 병·의원 및 약국
 ];
 
 const COMMON_DOCS = [
@@ -357,7 +362,15 @@ const COMMON_DOCS = [
 const EXTRA_DOCS = {
   food: { key:'permitLicense', label:'영업신고증', accept:'image/*,.pdf', hint:'식품영업신고증 사본', required:true },
   beauty: { key:'permitLicense', label:'공중위생 영업신고증', accept:'image/*,.pdf', hint:'영업신고증 사본', required:true },
-  academy: { key:'permitLicense', label:'학원(교습소) 설립운영 등록증', accept:'image/*,.pdf', hint:'등록증 사본', required:true }
+  academy: { key:'permitLicense', label:'학원(교습소) 설립운영 등록증', accept:'image/*,.pdf', hint:'등록증 사본', required:true },
+
+  // 추가 업종별 서류
+  health: { key:'healthPermit', label:'건강기능식품 영업신고증', accept:'image/*,.pdf', hint:'건강기능식품 영업신고증 사본 (관할 시·군·구청 또는 보건소 발급)', required:true },
+  ecommerce: { key:'ecomPermit', label:'통신판매업 신고증', accept:'image/*,.pdf', hint:'통신판매업 신고증 사본 (정부24 또는 관할 시·군·구청 발급)', required:true },
+  tobacco: { key:'tobaccoPermit', label:'담배소매인 지정증', accept:'image/*,.pdf', hint:'담배소매인 지정증 사본 (관할 지자체 발급)', required:true },
+  meat: { key:'meatPermit', label:'축산물판매업 영업신고증', accept:'image/*,.pdf', hint:'축산물판매업 영업신고증 사본 (관할 시·군·구청 발급)', required:true },
+  // 의료기관은 사업자등록증 대신 고유번호증을 쓰는 경우가 있어 안내 문구를 하나로 합칩니다.
+  medical: { key:'medicalPermit', label:'의료기관 허가/등록증', accept:'image/*,.pdf', hint:'의료기관 개설허가증(병·의원) 또는 약국 개설등록증 사본', required:true }
 };
 
 // [가맹신청(토스/네이버) 전용 서류 목록]
