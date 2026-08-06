@@ -532,8 +532,9 @@ function formatKoreanPhone(value) {
 
 function syncFields(){
   if(state.isSupplementMode) return;
+  
+  // 일반 접수 폼
   state.fields.storeName = document.getElementById('f_storeName')?.value || state.fields.storeName;
-  // 대표자명/사업자번호는 접수화면에서 입력받지 않고 OCR로만 채워짐 (관리자 화면에서 보정)
   state.fields.businessType = document.getElementById('f_businessType')?.value || state.fields.businessType;
   state.fields.storePhone = formatKoreanPhone(document.getElementById('f_storePhone')?.value || state.fields.storePhone);
   state.fields.ownerPhone = formatKoreanPhone(document.getElementById('f_ownerPhone')?.value || state.fields.ownerPhone);
@@ -544,6 +545,12 @@ function syncFields(){
 
   const signRadio = document.querySelector('input[name="f_hasSign"]:checked');
   if(signRadio) state.fields.hasSign = signRadio.value;
+
+  // 결제서비스 가맹신청 폼
+  if(state.isPaymentMode) {
+    state.fields.storeName = document.getElementById('pay_storeName')?.value || state.fields.storeName;
+    state.fields.email = document.getElementById('pay_email')?.value || state.fields.email;
+  }
 }
 
 function toast(msg){
@@ -556,7 +563,7 @@ function toast(msg){
 
 function render(){
   const app = document.getElementById('app');
-
+  if(state.view === 'form') syncFields();
   // [최적화] 이 앱은 상태가 바뀔 때마다 화면 전체를 문자열로 다시 그려서 갈아끼우는 방식이라
   // (가상DOM이 아니라 innerHTML 통재교체), 재렌더링 시점에 어떤 입력창에 포커스가 있었다면
   // 그 포커스와 커서 위치를 기억해뒀다가 새로 그려진 뒤 그대로 복원한다.
@@ -651,44 +658,34 @@ function renderForm(){
     </div>`;
   }
 
-  if (state.isPaymentMode) {
-    const serviceLabel = state.paymentService === 'naver' ? '네이버페이' : '토스페이';
-    const f2 = state.fields;
-    return `
-    <div class="card">
-      <div class="section-title">${serviceLabel} 가맹 서류 제출 — ${escapeHtml(f2.storeName)}</div>
-      <div class="section-sub">관리자가 안내해드린 가맹점명으로 접수됩니다. 아래 연락처와 서류를 입력해 주세요.</div>
+ if (state.isPaymentMode) {
+  const serviceLabel = state.paymentService === 'naver' ? '네이버페이' : '토스페이';
+  const f2 = state.fields;
+  return `
+  <div class="card">
+    <div class="section-title">${serviceLabel} 가맹 서류 제출</div>
+    <div class="section-sub">가맹점 정보와 필수 서류를 입력해 주세요.</div>
 
-      <div class="field">
-        <label>상호명(매장명)</label>
-        <input type="text" value="${escapeHtml(f2.storeName)}" disabled style="background:#F1F3F6; color:var(--ink-soft);">
-      </div>
+    <div class="field">
+      <label>상호명(매장명) <span class="req">*</span></label>
+      <input type="text" id="pay_storeName" placeholder="예: 카페 온기" value="${escapeHtml(f2.storeName)}" oninput="state.fields.storeName = this.value; App.render()">
+    </div>
 
-      <div class="grid2">
-        <div class="field">
-          <label>매장전화번호 <span class="req">*</span></label>
-          <input type="tel" id="pay_storePhone" inputmode="numeric" maxlength="13" placeholder="02-1234-5678" value="${formatKoreanPhone(f2.storePhone)}" oninput="this.value = formatKoreanPhone(this.value)">
-        </div>
-        <div class="field">
-          <label>대표명의 폰번호 <span class="req">*</span></label>
-          <input type="tel" id="pay_ownerPhone" inputmode="numeric" maxlength="13" placeholder="010-1234-5678" value="${formatKoreanPhone(f2.ownerPhone)}" oninput="this.value = formatKoreanPhone(this.value)">
-        </div>
-      </div>
-      <div class="field">
-        <label>메일주소 <span class="req">*</span></label>
-        <input type="email" id="pay_email" placeholder="example@email.com" value="${f2.email}">
-      </div>
+    <div class="field">
+      <label>메일주소 <span class="req">*</span></label>
+      <input type="email" id="pay_email" placeholder="example@email.com" value="${f2.email}" oninput="state.fields.email = this.value">
+    </div>
 
-      <div class="opt-group-label" style="margin-top:26px;">필수 서류 (${filledRequiredCount}/${requiredDocsCount}) <span class="req">*</span></div>
-      <div class="doc-grid">
-        ${currentDocs.map(d => renderDropzone(d)).join('')}
-      </div>
+    <div class="opt-group-label" style="margin-top:26px;">필수 서류 (${filledRequiredCount}/${requiredDocsCount}) <span class="req">*</span></div>
+    <div class="doc-grid">
+      ${currentDocs.map(d => renderDropzone(d)).join('')}
+    </div>
 
-      <div class="btn-row">
-        <button class="btn btn-primary" onclick="App.submitPaymentApplication()">${serviceLabel} 가맹 서류 제출하기</button>
-      </div>
-    </div>`;
-  }
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="App.submitPaymentApplication()">${serviceLabel} 가맹 서류 제출하기</button>
+    </div>
+  </div>`;
+}
 
   const savedTemp = localStorage.getItem(TEMP_SAVE_KEY);
   let tempInfoHtml = '';
