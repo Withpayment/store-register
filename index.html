@@ -51,11 +51,34 @@ body{
 
 #app{max-width:960px;margin:0 auto;padding:28px 20px 80px;}
 #app.admin-app{max-width:1440px;}
-.admin-table-scroll{overflow-x:auto;}
-.admin-table{width:100%;min-width:1510px;border-collapse:collapse;text-align:left;font-size:13.5px;}
-.admin-table th{white-space:nowrap;}
+.admin-table-scroll{overflow-x:auto;border-radius:var(--radius);}
+.admin-table{width:100%;min-width:1180px;border-collapse:separate;border-spacing:0;text-align:left;font-size:13px;}
+.admin-table th{
+  white-space:nowrap;position:sticky;top:0;z-index:2;
+  background:#F8FAFC;color:var(--ink-soft);font-weight:700;font-size:12px;
+  letter-spacing:.01em;padding:13px 14px;border-bottom:1.5px solid var(--line-strong);
+}
+.admin-table td{padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:middle;}
+.admin-table tbody tr{transition:background .12s;}
+.admin-table tbody tr:nth-child(even){background:#FAFBFC;}
+.admin-table tbody tr:hover{background:#F1FBFA;}
 .admin-table .no-wrap{white-space:nowrap;}
-.admin-actions{display:flex;gap:6px;justify-content:center;flex-wrap:nowrap;min-width:405px;white-space:nowrap;}
+.admin-table .mono-cell{font-family:'Plex Mono','Pretendard',monospace;font-size:12px;color:var(--ink-soft);}
+.contact-cell{display:flex;flex-direction:column;gap:4px;}
+.contact-row{display:flex;align-items:center;gap:6px;font-family:'Plex Mono','Pretendard',monospace;font-size:12px;white-space:nowrap;}
+.contact-tag{
+  flex:0 0 auto;font-family:'Pretendard';font-size:10px;font-weight:700;color:var(--ink-soft);
+  background:#EEF1F5;border-radius:4px;padding:1px 5px;
+}
+.contact-row.empty{color:#B9C2CC;}
+.admin-actions{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;width:120px;margin:0 auto;}
+.admin-actions button{
+  width:100%;padding:6px 0;border:none;border-radius:6px;color:white;font-weight:700;
+  font-size:11px;cursor:pointer;transition:filter .12s;white-space:nowrap;
+}
+.admin-actions button:hover{filter:brightness(0.93);}
+.admin-edit-actions{display:flex;gap:6px;justify-content:center;}
+.admin-edit-actions button{padding:6px 12px;border-radius:6px;font-weight:700;font-size:11.5px;cursor:pointer;}
 .inline-edit-button{margin-left:6px;background:var(--paper);color:var(--teal-deep);border:1px solid var(--line-strong);padding:3px 7px;border-radius:5px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;}
 .inline-edit-button:hover{border-color:var(--teal);background:#F1FBFA;}
 @media(max-width:700px){
@@ -848,7 +871,7 @@ function renderAdmin(){
   const list = (state.adminMerchants || []).filter(m => {
     if(!state.adminSearch) return true;
     const q = state.adminSearch.toLowerCase();
-    return (m.storeName||'').toLowerCase().includes(q) || (m.ownerName||'').toLowerCase().includes(q) || (m.storePhone||'').includes(q);
+    return (m.storeName||'').toLowerCase().includes(q) || (m.ownerName||'').toLowerCase().includes(q) || (m.storePhone||'').includes(q) || (m.ownerPhone||'').includes(q) || (m.email||'').toLowerCase().includes(q);
   });
 
   return `
@@ -868,28 +891,39 @@ function renderAdmin(){
     </div>
   </div>
 
-  <input class="admin-search" id="admin_search_input" placeholder="상호명, 대표자명 또는 전화번호로 검색" value="${state.adminSearch}" oninput="App.setAdminSearch(this.value)">
+  <input class="admin-search" id="admin_search_input" placeholder="🔍  상호명, 대표자명, 전화번호 또는 이메일로 검색" value="${state.adminSearch}" oninput="App.setAdminSearch(this.value)">
+  <div style="font-size:12px; color:var(--ink-soft); margin:-10px 0 14px 4px;">총 <b style="color:var(--ink);">${list.length}</b>건</div>
 
   <div class="card" style="padding: 0; overflow: hidden;">
     <div class="admin-table-scroll">
     <table class="admin-table">
+      <colgroup>
+        <col style="width:13%;">
+        <col style="width:10%;">
+        <col style="width:11%;">
+        <col style="width:6%;">
+        <col style="width:13%;">
+        <col style="width:14%;">
+        <col style="width:11%;">
+        <col style="width:9%;">
+        <col style="width:13%;">
+      </colgroup>
       <thead>
-        <tr style="background: #F8FAFC; border-bottom: 1.5px solid var(--line); color: var(--ink-soft);">
-          <th style="padding: 14px 16px;">상호명</th>
-          <th style="padding: 14px 16px;">대표자명</th>
-          <th style="padding: 14px 16px;">사업자번호</th>
-          <th style="padding: 14px 16px;">구분</th>
-          <th style="padding: 14px 16px;">매장전화번호</th>
-          <th style="padding: 14px 16px;">대표 폰번호</th>
-          <th style="padding: 14px 16px;">이메일주소</th>
-          <th style="padding: 14px 16px;">접수일시</th>
-          <th style="padding: 14px 16px;">서류 폴더</th>
-          <th style="padding: 14px 16px; text-align:center;">관리 작업</th>
+        <tr>
+          <th>상호명</th>
+          <th>대표자명</th>
+          <th>사업자번호</th>
+          <th>구분</th>
+          <th>연락처</th>
+          <th>이메일주소</th>
+          <th>접수일시</th>
+          <th>서류 폴더</th>
+          <th style="text-align:center;">관리 작업</th>
         </tr>
       </thead>
       <tbody>
         ${list.length === 0 ? `
-          <tr><td colspan="10" style="text-align:center; padding: 40px; color: var(--ink-soft);">접수된 내역이 없습니다.</td></tr>
+          <tr><td colspan="9" style="text-align:center; padding: 48px; color: var(--ink-soft);">접수된 내역이 없습니다.</td></tr>
         ` : list.map(m => {
           let formattedDate = m.createdAt;
           try { formattedDate = new Date(m.createdAt).toLocaleString('ko-KR'); } catch(e){}
@@ -922,21 +956,26 @@ function renderAdmin(){
               <button onclick="App.completeAndDelete('${escapeAttr(m.id)}', '${escapeAttr(m.storeName)}')" style="background: var(--red); color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 11.5px;">삭제</button>
             `;
 
+          const contactCell = `
+            <div class="contact-cell">
+              <div class="contact-row ${m.storePhone ? '' : 'empty'}"><span class="contact-tag">매장</span>${escapeHtml(m.storePhone || '미입력')}</div>
+              <div class="contact-row ${m.ownerPhone ? '' : 'empty'}"><span class="contact-tag">대표</span>${escapeHtml(m.ownerPhone || '미입력')}</div>
+            </div>`;
+
           return `
-            <tr style="border-bottom: 1px solid var(--line); transition: .1s; ${isEditing ? 'background:#F1FBFA;' : ''}">
-              <td style="padding: 14px 16px; font-weight: 700;">${escapeHtml(m.storeName || '')}</td>
-              <td class="no-wrap" style="padding: 14px 16px;">${ownerNameCell}</td>
-              <td class="no-wrap" style="padding: 14px 16px; font-size: 12.5px; color: var(--ink-soft);">${bizNoCell}</td>
-              <td style="padding: 14px 16px;"><span style="background:${bizTypeText==='법인'?'#E8F4FD':'#EAF6EF'}; color:${bizTypeText==='법인'?'#0066CC':'#2F8F5B'}; padding:3px 8px; border-radius:4px; font-size:11.5px; font-weight:600;">${bizTypeText}</span></td>
-              <td class="no-wrap" style="padding: 14px 16px;">${escapeHtml(m.storePhone || '')}</td>
-              <td class="no-wrap" style="padding: 14px 16px;">${escapeHtml(m.ownerPhone || '')}</td>
-              <td class="no-wrap" style="padding: 14px 16px;">${escapeHtml(m.email || '')}</td>
-              <td class="no-wrap" style="padding: 14px 16px; font-size: 12.5px; color: var(--ink-soft);">${formattedDate}</td>
-              <td class="no-wrap" style="padding: 14px 16px;">${folderBtnHtml}</td>
-              <td style="padding: 14px 16px; text-align:center;">
-                <div class="admin-actions">
-                  ${actionButtons}
-                </div>
+            <tr style="${isEditing ? 'background:#F1FBFA;' : ''}">
+              <td style="font-weight: 700;">${escapeHtml(m.storeName || '')}</td>
+              <td class="no-wrap">${ownerNameCell}</td>
+              <td class="no-wrap mono-cell">${bizNoCell}</td>
+              <td><span style="background:${bizTypeText==='법인'?'#E8F4FD':'#EAF6EF'}; color:${bizTypeText==='법인'?'#0066CC':'#2F8F5B'}; padding:3px 8px; border-radius:4px; font-size:11.5px; font-weight:600; white-space:nowrap;">${bizTypeText}</span></td>
+              <td>${contactCell}</td>
+              <td style="font-size:12.5px; word-break:break-all;">${escapeHtml(m.email || '')}</td>
+              <td class="no-wrap" style="font-size: 12px; color: var(--ink-soft);">${formattedDate}</td>
+              <td class="no-wrap">${folderBtnHtml}</td>
+              <td>
+                ${isEditing
+                  ? `<div class="admin-edit-actions">${actionButtons}</div>`
+                  : `<div class="admin-actions">${actionButtons}</div>`}
               </td>
             </tr>
           `;
