@@ -261,6 +261,24 @@ body{
 .modal-item { display: flex; align-items: center; gap: 10px; font-size: 13.5px; font-weight: 500; cursor: pointer; }
 .modal-item input { accent-color: var(--teal); width: 18px; height: 18px; cursor: pointer; }
 
+/* 파일 첨부 방식 선택 시트 (직접 촬영 / 사진첩 / 파일) */
+.upload-sheet-overlay{ align-items: flex-end; }
+@media (min-width: 640px){ .upload-sheet-overlay{ align-items: center; } }
+.upload-sheet-box{ max-width: 420px; border-radius: 20px 20px 0 0; padding: 22px 18px 18px; }
+@media (min-width: 640px){ .upload-sheet-box{ border-radius: var(--radius); } }
+.upload-choice-list{ display:flex; flex-direction:column; gap:10px; margin: 14px 0 16px; }
+.upload-choice-btn{
+  display:flex; align-items:center; gap:14px; width:100%; text-align:left;
+  background:#F8FAFC; border:1.5px solid var(--line); border-radius:12px;
+  padding:13px 14px; cursor:pointer; transition:.12s;
+}
+.upload-choice-btn:hover{ background:#F1FBFA; border-color: var(--teal); }
+.upload-choice-btn:active{ transform: scale(0.98); }
+.upload-choice-icon{ font-size:22px; flex:0 0 auto; }
+.upload-choice-text{ display:flex; flex-direction:column; gap:2px; }
+.upload-choice-text b{ font-size:14px; color: var(--ink); }
+.upload-choice-text small{ font-size:11.5px; color: var(--ink-soft); font-weight:400; }
+
 /* CMS 동의서 전용 스타일 */
 .cms-page{
   background:white;border:1px solid var(--line);border-radius:var(--radius);
@@ -535,6 +553,9 @@ let state = {
   newAppForm: { storeName: '', service: 'toss', naverPlace: 'registered' },
   fields: { storeName: urlParams.type === 'payment' ? urlParams.storeName : '', ownerName:'', bizNo:'', businessType:'general', bizType:'personal', storePhone:'', ownerPhone:'', email:'', hasSign:'yes' },
   files: {},
+  uploadChoiceKey: null,
+  uploadChoiceAccept: '',
+  uploadChoiceLabel: '',
   adminUnlocked: false,
   adminToken: null,
   adminMerchants: [],
@@ -628,6 +649,9 @@ function render(){
   }
   if(state.showNewAppModal) {
     app.innerHTML += renderNewAppModal();
+  }
+  if(state.uploadChoiceKey) {
+    app.innerHTML += renderUploadChoiceSheet();
   }
 
   if (focusId) {
@@ -822,7 +846,7 @@ function renderDropzone(d){
   return `
   <div class="dropzone ${hasFiles?'filled':''}">
     <input type="file" id="file_${d.key}" accept="${d.accept}" multiple style="display:none" onchange="App.handleFile('${d.key}', this.files); this.value='';">
-    <div class="dz-head" style="cursor:pointer;" onclick="document.getElementById('file_${d.key}').click()">
+    <div class="dz-head" style="cursor:pointer;" onclick="App.openUploadChoice('${d.key}', '${d.accept}', '${escapeAttr(d.label)}')">
       <div class="dz-title">${d.label} ${labelBadge}</div>
       <div class="dz-status ${hasFiles?'ok':''}">${hasFiles ? filesArr.length + '장 첨부됨' : '미첨부'}</div>
     </div>
@@ -834,8 +858,38 @@ function renderDropzone(d){
           <button class="dz-remove" onclick="App.removeFile('${d.key}', ${idx})">삭제</button>
         </div>
       `).join('')}
-      <button type="button" class="btn btn-secondary btn-sm" style="width:auto;margin-top:8px;" onclick="document.getElementById('file_${d.key}').click()">+ 사진 추가</button>
-    ` : `<div class="dz-placeholder" style="cursor:pointer;" onclick="document.getElementById('file_${d.key}').click()">${d.hint} <span style="color:var(--teal);font-weight:600;">(여러 장 선택 가능)</span></div>`}
+      <button type="button" class="btn btn-secondary btn-sm" style="width:auto;margin-top:8px;" onclick="App.openUploadChoice('${d.key}', '${d.accept}', '${escapeAttr(d.label)}')">+ 사진 추가</button>
+    ` : `<div class="dz-placeholder" style="cursor:pointer;" onclick="App.openUploadChoice('${d.key}', '${d.accept}', '${escapeAttr(d.label)}')">${d.hint} <span style="color:var(--teal);font-weight:600;">(여러 장 선택 가능)</span></div>`}
+  </div>`;
+}
+
+function renderUploadChoiceSheet(){
+  const key = state.uploadChoiceKey;
+  const accept = state.uploadChoiceAccept || '';
+  const label = state.uploadChoiceLabel || '';
+  const hasPdf = accept.includes('pdf');
+  return `
+  <div class="modal-overlay upload-sheet-overlay" onclick="App.closeUploadChoice()">
+    <div class="modal-box upload-sheet-box" onclick="event.stopPropagation()">
+      <div class="modal-title">${escapeHtml(label)}</div>
+      <div class="modal-sub">첨부 방법을 선택하세요</div>
+      <div class="upload-choice-list">
+        <button type="button" class="upload-choice-btn" onclick="App.pickFile('camera')">
+          <span class="upload-choice-icon">📷</span>
+          <span class="upload-choice-text"><b>직접 촬영</b><small>카메라로 바로 찍어서 첨부</small></span>
+        </button>
+        <button type="button" class="upload-choice-btn" onclick="App.pickFile('gallery')">
+          <span class="upload-choice-icon">🖼️</span>
+          <span class="upload-choice-text"><b>사진첩(갤러리)</b><small>기존에 찍어둔 사진 중에서 선택</small></span>
+        </button>
+        ${hasPdf ? `
+        <button type="button" class="upload-choice-btn" onclick="App.pickFile('file')">
+          <span class="upload-choice-icon">📁</span>
+          <span class="upload-choice-text"><b>파일 선택</b><small>PDF 등 다른 파일에서 선택</small></span>
+        </button>` : ''}
+      </div>
+      <button type="button" class="btn btn-secondary" style="width:100%;margin-top:4px;" onclick="App.closeUploadChoice()">취소</button>
+    </div>
   </div>`;
 }
 
@@ -1720,6 +1774,39 @@ const App = {
 
     render();
     toast('서류 자동 분석(OCR) 정보가 적용되었습니다.');
+  },
+
+  openUploadChoice(key, accept, label){
+    state.uploadChoiceKey = key;
+    state.uploadChoiceAccept = accept;
+    state.uploadChoiceLabel = label;
+    render();
+  },
+
+  closeUploadChoice(){
+    state.uploadChoiceKey = null;
+    render();
+  },
+
+  pickFile(mode){
+    const key = state.uploadChoiceKey;
+    const accept = state.uploadChoiceAccept;
+    if(!key) return;
+    state.uploadChoiceKey = null;
+    render();
+    const input = document.getElementById('file_' + key);
+    if(!input) return;
+    if(mode === 'camera'){
+      input.setAttribute('capture', 'environment');
+      input.setAttribute('accept', 'image/*');
+    } else if(mode === 'gallery'){
+      input.removeAttribute('capture');
+      input.setAttribute('accept', 'image/*');
+    } else {
+      input.removeAttribute('capture');
+      input.setAttribute('accept', accept);
+    }
+    input.click();
   },
 
   async handleFile(key, fileList){
