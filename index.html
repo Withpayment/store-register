@@ -1764,30 +1764,25 @@ const App = {
     if(key !== 'storeName') render();
   },
 
-  generateNewAppLink(){
-    const storeNameInput = document.getElementById('newapp_storeName');
-    const storeName = (storeNameInput ? storeNameInput.value : state.newAppForm.storeName).trim();
-    if(!storeName){
-      toast('가맹점명을 입력해 주세요');
-      return;
-    }
-    const service = state.newAppForm.service;
-    const naverPlace = state.newAppForm.naverPlace;
+generateNewAppLink(){
+  // 가맹점명 없이 서비스 정보만 포함한 링크 생성
+  const service = state.newAppForm.service;
+  const naverPlace = state.newAppForm.naverPlace;
 
-    const baseUrl = window.location.origin + window.location.pathname;
-    let fullUrl = `${baseUrl}?type=payment&service=${encodeURIComponent(service)}&storeName=${encodeURIComponent(storeName)}`;
-    if(service === 'naver'){
-      fullUrl += `&naverPlace=${encodeURIComponent(naverPlace)}`;
-    }
+  const baseUrl = window.location.origin + window.location.pathname;
+  let fullUrl = `${baseUrl}?type=payment&service=${encodeURIComponent(service)}`;
+  if(service === 'naver'){
+    fullUrl += `&naverPlace=${encodeURIComponent(naverPlace)}`;
+  }
 
-    navigator.clipboard.writeText(fullUrl).then(() => {
-      toast('가맹신청 링크가 클립보드에 복사되었습니다!');
-      this.closeNewAppModal();
-    }).catch(() => {
-      prompt('아래 링크를 복사하여 가맹점에 전달하세요:', fullUrl);
-      this.closeNewAppModal();
-    });
-  },
+  navigator.clipboard.writeText(fullUrl).then(() => {
+    toast('가맹신청 링크가 클립보드에 복사되었습니다!');
+    this.closeNewAppModal();
+  }).catch(() => {
+    prompt('아래 링크를 복사하여 가맹점에 전달하세요:', fullUrl);
+    this.closeNewAppModal();
+  });
+},
 
   async submitPaymentApplication(){
     const storePhone = formatKoreanPhone(document.getElementById('pay_storePhone')?.value || '');
