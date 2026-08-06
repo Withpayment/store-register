@@ -837,7 +837,7 @@ function renderAdmin(){
   const list = (state.adminMerchants || []).filter(m => {
     if(!state.adminSearch) return true;
     const q = state.adminSearch.toLowerCase();
-    return (m.storeName||'').toLowerCase().includes(q) || (m.ownerName||'').toLowerCase().includes(q) || (m.storePhone||'').includes(q);
+    return (m.storeName||'').toLowerCase().includes(q) || (m.ownerName||'').toLowerCase().includes(q) || (m.storePhone||'').includes(q) || (m.email||'').toLowerCase().includes(q);
   });
 
   return `
@@ -868,15 +868,16 @@ function renderAdmin(){
           <th style="padding: 14px 16px;">대표자명</th>
           <th style="padding: 14px 16px;">사업자번호</th>
           <th style="padding: 14px 16px;">구분</th>
-          <th style="padding: 14px 16px;">대표 폰번호</th>
-          <th style="padding: 14px 16px;">접수일시</th>
-          <th style="padding: 14px 16px;">서류 폴더</th>
+          <th style="padding: 14px 16px;">대표 폰번호</th> 
+          <th style="padding: 14px 16px;">이메일</th> 
+          <th style="padding: 14px 16px;">접수일시</th> 
+          <th style="padding: 14px 16px;">서류 폴더</th> 
           <th style="padding: 14px 16px; text-align:center;">관리 작업</th>
         </tr>
       </thead>
       <tbody>
         ${list.length === 0 ? `
-          <tr><td colspan="8" style="text-align:center; padding: 40px; color: var(--ink-soft);">접수된 내역이 없습니다.</td></tr>
+          <tr><td colspan="9" style="text-align:center; padding: 40px; color: var(--ink-soft);">접수된 내역이 없습니다.</td></tr>
         ` : list.map(m => {
           let formattedDate = m.createdAt;
           try { formattedDate = new Date(m.createdAt).toLocaleString('ko-KR'); } catch(e){}
@@ -915,10 +916,10 @@ function renderAdmin(){
               <td class="no-wrap" style="padding: 14px 16px;">${ownerNameCell}</td>
               <td class="no-wrap" style="padding: 14px 16px; font-size: 12.5px; color: var(--ink-soft);">${bizNoCell}</td>
               <td style="padding: 14px 16px;"><span style="background:${bizTypeText==='법인'?'#E8F4FD':'#EAF6EF'}; color:${bizTypeText==='법인'?'#0066CC':'#2F8F5B'}; padding:3px 8px; border-radius:4px; font-size:11.5px; font-weight:600;">${bizTypeText}</span></td>
-              <td class="no-wrap" style="padding: 14px 16px;">${escapeHtml(m.ownerPhone || '')}</td>
-              <td class="no-wrap" style="padding: 14px 16px; font-size: 12.5px; color: var(--ink-soft);">${formattedDate}</td>
+              <td class="no-wrap" style="padding: 14px 16px;">${escapeHtml(m.ownerPhone || '')}</td> 
+              <td class="no-wrap" style="padding: 14px 16px;">${escapeHtml(m.email || '-')}</td> 
+              <td class="no-wrap" style="padding: 14px 16px; font-size: 12.5px; color: var(--ink-soft);">${formattedDate}</td> 
               <td class="no-wrap" style="padding: 14px 16px;">${folderBtnHtml}</td>
-              <td style="padding: 14px 16px; text-align:center;">
                 <div class="admin-actions">
                   ${actionButtons}
                 </div>
