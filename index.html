@@ -1784,67 +1784,73 @@ generateNewAppLink(){
   });
 },
 
-  async submitPaymentApplication(){
-    const storePhone = formatKoreanPhone(document.getElementById('pay_storePhone')?.value || '');
-    const ownerPhone = formatKoreanPhone(document.getElementById('pay_ownerPhone')?.value || '');
-    const email = document.getElementById('pay_email')?.value || '';
+async submitPaymentApplication(){
+  // 상호명은 state.fields.storeName으로 들어옵니다 (관리자가 생성한 링크로 들어오면 미리 채워짐)
+  const storeName = state.fields.storeName || '';
+  const storePhone = formatKoreanPhone(document.getElementById('pay_storePhone')?.value || ''); // 선택 입력일 수도 있음
+  const ownerPhone = formatKoreanPhone(document.getElementById('pay_ownerPhone')?.value || ''); // 선택 입력일 수도 있음
+  const email = document.getElementById('pay_email')?.value || '';
 
-    if(!storePhone || !ownerPhone || !email){
-      toast('필수 정보를 모두 입력해 주세요'); return;
+  // UI에서 실제로 받는 항목(상호명, 이메일)만 필수로 검사하도록 변경
+  if(!storeName || !email){
+    toast('상호명과 메일주소를 입력해 주세요'); 
+    return;
+  }
+
+  // required 서류 검사 (기존 로직 유지)
+  const currentDocs = getRequiredDocs();
+  const missing = currentDocs.filter(d => d.required && (!state.files[d.key] || state.files[d.key].length === 0));
+  if(missing.length > 0){
+    const labels = missing.map(m => m.label).join(', ');
+    toast('다음 서류가 누락되었습니다: ' + labels);
+    return;
+  }
+
+  const submitBtn = document.querySelector('.btn-primary');
+  if(submitBtn){ submitBtn.disabled = true; submitBtn.textContent = '제출 중...'; }
+
+  const id = 'F' + new Date().toISOString().replace(/[-:.TZ]/g,'').slice(0,14) + '-' + Math.floor(Math.random()*900+100);
+  const createdAt = new Date().toISOString();
+  // [폴더 규칙] 관리자가 지정한 가맹점명 뒤에 서비스명을 붙여서 저장한다 → "가맹점명-토스" / "가맹점명-네이버"
+  const serviceSuffix = state.paymentService === 'naver' ? '네이버' : '토스';
+  const folderStoreName = `${storeName}-${serviceSuffix}`;
+
+  try {
+    const payload = {
+      id: id,
+      createdAt: createdAt,
+      storeName: folderStoreName,
+      storePhone: storePhone,
+      ownerPhone: ownerPhone,
+      email: email,
+      service: state.paymentService === 'naver' ? 'naver' : 'toss',
+      naverPlace: state.paymentNaverPlace,
+      filesData: buildFilesPayload(state.files)
+    };
+
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    });
+
+    const res = await response.json();
+
+    if (res && res.extracted) {
+      this.applyExtractedData(res.extracted);
     }
-    const currentDocs = getRequiredDocs();
-    const missing = currentDocs.filter(d => d.required && (!state.files[d.key] || state.files[d.key].length === 0));
-    if(missing.length > 0){
-      toast(missing[0].label + ' 등 필수 서류를 첨부해 주세요'); return;
-    }
 
-    const submitBtn = document.querySelector('.btn-primary');
-    if(submitBtn){ submitBtn.disabled = true; submitBtn.textContent = '제출 중...'; }
+    this.clearTempData();
 
-    const id = 'F' + new Date().toISOString().replace(/[-:.TZ]/g,'').slice(0,14) + '-' + Math.floor(Math.random()*900+100);
-    const createdAt = new Date().toISOString();
-    // [폴더 규칙] 관리자가 지정한 가맹점명 뒤에 서비스명을 붙여서 저장한다 → "가맹점명-토스" / "가맹점명-네이버"
-    const serviceSuffix = state.paymentService === 'naver' ? '네이버' : '토스';
-    const folderStoreName = `${state.fields.storeName}-${serviceSuffix}`;
-
-    try {
-      const payload = {
-        id: id,
-        createdAt: createdAt,
-        storeName: folderStoreName,
-        storePhone: storePhone,
-        ownerPhone: ownerPhone,
-        email: email,
-        bizType: '개인',
-        filesData: buildFilesPayload(state.files)
-      };
-
-      const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify(payload)
-      });
-
-      const res = await response.json();
-
-      if (!res || res.status !== 'success') {
-        toast((res && res.message ? res.message : '접수 처리에 실패했습니다.') + ' 다시 시도해 주세요.');
-        const service = state.paymentService === 'naver' ? '네이버페이' : '토스페이';
-        if(submitBtn){ submitBtn.disabled = false; submitBtn.textContent = service + ' 가맹 서류 제출하기'; }
-        return;
-      }
-
-      state.receiptId = id;
-      state.files = {};
-      state.view = 'success';
-      render();
-    } catch(e) {
-      toast('저장 중 오류가 발생했습니다. 다시 시도해 주세요.');
-      const service = state.paymentService === 'naver' ? '네이버페이' : '토스페이';
-      if(submitBtn){ submitBtn.disabled = false; submitBtn.textContent = service + ' 가맹 서류 제출하기'; }
-    }
-  },
-
+    state.receiptId = id;
+    state.files = {};
+    state.view = 'success';
+    render();
+  } catch(e) {
+    toast('제출 중 오류가 발생했습니다. 다시 시도해 주세요.');
+    if(submitBtn){ submitBtn.disabled = false; submitBtn.textContent = (state.isPaymentMode ? (state.paymentService === 'naver' ? '네이버 가맹 서류 제출하기' : '토스 가맹 서류 제출하기') : '제출하기'); }
+  }
+},
   handleUnauthorized(){
     state.adminToken = null;
     state.view = 'adminLogin';
