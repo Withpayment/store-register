@@ -190,6 +190,38 @@ body{
 }
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
+/* 서류 접수 진행 중 오버레이 - 정지 화면처럼 보이지 않도록 애니메이션으로 진행 상태를 명확히 표시 */
+.submit-overlay{
+  position:fixed;inset:0;background:rgba(15,23,32,0.55);backdrop-filter:blur(2px);
+  z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;
+  opacity:0;pointer-events:none;transition:opacity .18s;
+}
+.submit-overlay.show{opacity:1;pointer-events:all;}
+.submit-overlay-box{
+  background:var(--paper);border-radius:20px;padding:36px 30px 30px;max-width:340px;width:100%;
+  text-align:center;box-shadow:var(--shadow);
+}
+.submit-spinner{
+  width:52px;height:52px;margin:0 auto 20px;border-radius:50%;
+  border:4px solid var(--line);border-top-color:var(--teal);
+  animation:submit-spin .8s linear infinite;
+}
+@keyframes submit-spin{ to{ transform:rotate(360deg); } }
+.submit-overlay-title{font-size:16px;font-weight:700;color:var(--ink);margin-bottom:8px;}
+.submit-overlay-msg{font-size:13px;color:var(--ink-soft);line-height:1.6;min-height:38px;}
+.submit-overlay-bar{
+  margin-top:20px;height:5px;border-radius:100px;background:var(--line);overflow:hidden;position:relative;
+}
+.submit-overlay-bar::after{
+  content:'';position:absolute;top:0;left:0;height:100%;width:40%;border-radius:100px;
+  background:var(--teal);animation:submit-bar-move 1.3s ease-in-out infinite;
+}
+@keyframes submit-bar-move{
+  0%{ left:-40%; }
+  100%{ left:100%; }
+}
+.submit-overlay-elapsed{margin-top:14px;font-size:11.5px;color:#B9C2CC;font-variant-numeric:tabular-nums;}
+
 .success-wrap{max-width:520px;margin:40px auto;text-align:center;}
 .success-badge{
   width:72px;height:72px;border-radius:50%;background:var(--forest-bg);color:var(--forest);
@@ -355,6 +387,15 @@ body{
 <body>
 <div id="app"></div>
 <div class="toast" id="toast"></div>
+<div class="submit-overlay" id="submit-overlay">
+  <div class="submit-overlay-box">
+    <div class="submit-spinner"></div>
+    <div class="submit-overlay-title">서류를 접수하고 있어요</div>
+    <div class="submit-overlay-msg" id="submit-overlay-msg">잠시만 기다려주세요...</div>
+    <div class="submit-overlay-bar"></div>
+    <div class="submit-overlay-elapsed" id="submit-overlay-elapsed">0초 경과</div>
+  </div>
+</div>
 
 <script>
 const API_URL = "https://script.google.com/macros/s/AKfycbzfwuq6l7AALOeLDAMz8LKWPR0Be0hCoq2zcXKrHXEIUcAzKv0V-Gl6diLHgVvC1j0/exec";
@@ -616,6 +657,53 @@ function toast(msg){
   t.classList.add('show');
   clearTimeout(window.__toastTimer);
   window.__toastTimer = setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+// 서류 접수/제출 중 진행 상태를 명확히 보여주는 오버레이.
+// render() 재호출과 무관하게 동작하도록 #app 바깥의 고정 DOM을 직접 제어한다.
+// 업로드 + 서버 OCR 처리가 문서 개수에 따라 수십 초 걸릴 수 있어,
+// 그 시간 동안 "멈춘 것처럼" 보이지 않도록 스피너/진행바/경과 시간/단계별 안내문구를 보여준다.
+const SUBMIT_OVERLAY_STAGES = [
+  { atSec: 0,  msg: '첨부하신 서류를 업로드하고 있어요...' },
+  { atSec: 4,  msg: 'AI가 서류 내용을 확인하고 있어요...' },
+  { atSec: 12, msg: '사업자등록증·통장사본 정보를 인식하고 있어요...' },
+  { atSec: 25, msg: '거의 다 됐어요, 조금만 더 기다려주세요...' },
+  { atSec: 45, msg: '문서 양이 많아 시간이 더 걸리고 있어요. 창을 닫지 말고 기다려주세요.' }
+];
+
+function showSubmitOverlay(){
+  const overlay = document.getElementById('submit-overlay');
+  const msgEl = document.getElementById('submit-overlay-msg');
+  const elapsedEl = document.getElementById('submit-overlay-elapsed');
+  window.__submitOverlayStart = Date.now();
+  msgEl.textContent = SUBMIT_OVERLAY_STAGES[0].msg;
+  elapsedEl.textContent = '0초 경과';
+  overlay.classList.add('show');
+
+  // 접수 진행 중 실수로 새로고침/닫기 하면 서류가 일부만 저장될 수 있어 경고
+  window.onbeforeunload = function(e){
+    e.preventDefault();
+    e.returnValue = '';
+    return '';
+  };
+
+  clearInterval(window.__submitOverlayTimer);
+  window.__submitOverlayTimer = setInterval(() => {
+    const elapsedSec = Math.floor((Date.now() - window.__submitOverlayStart) / 1000);
+    elapsedEl.textContent = elapsedSec + '초 경과';
+    let currentMsg = SUBMIT_OVERLAY_STAGES[0].msg;
+    for (const stage of SUBMIT_OVERLAY_STAGES) {
+      if (elapsedSec >= stage.atSec) currentMsg = stage.msg;
+    }
+    if (msgEl.textContent !== currentMsg) msgEl.textContent = currentMsg;
+  }, 1000);
+}
+
+function hideSubmitOverlay(){
+  const overlay = document.getElementById('submit-overlay');
+  overlay.classList.remove('show');
+  clearInterval(window.__submitOverlayTimer);
+  window.onbeforeunload = null;
 }
 
 function render(){
@@ -1949,6 +2037,7 @@ async submitPaymentApplication(){
 
   const submitBtn = document.querySelector('.btn-primary');
   if(submitBtn){ submitBtn.disabled = true; submitBtn.textContent = '제출 중...'; }
+  showSubmitOverlay();
 
   const id = 'F' + new Date().toISOString().replace(/[-:.TZ]/g,'').slice(0,14) + '-' + Math.floor(Math.random()*900+100);
   const createdAt = new Date().toISOString();
@@ -1986,8 +2075,10 @@ async submitPaymentApplication(){
     state.receiptId = id;
     state.files = {};
     state.view = 'success';
+    hideSubmitOverlay();
     render();
   } catch(e) {
+    hideSubmitOverlay();
     toast('제출 중 오류가 발생했습니다. 다시 시도해 주세요.');
     if(submitBtn){ submitBtn.disabled = false; submitBtn.textContent = (state.isPaymentMode ? (state.paymentService === 'naver' ? '네이버 가맹 서류 제출하기' : '토스 가맹 서류 제출하기') : '제출하기'); }
   }
@@ -2139,6 +2230,7 @@ async submitPaymentApplication(){
 
     const submitBtn = document.querySelector('.btn-primary');
     if(submitBtn){ submitBtn.disabled = true; submitBtn.textContent = '제출 중...'; }
+    showSubmitOverlay();
 
     try {
       const payload = {
@@ -2157,6 +2249,7 @@ async submitPaymentApplication(){
       const result = await response.json();
 
       if (result.status !== 'success') {
+        hideSubmitOverlay();
         toast(result.message || '제출 중 문제가 발생했습니다. 다시 시도해 주세요.');
         if(submitBtn){ submitBtn.disabled = false; submitBtn.textContent = '보완서류 제출하기'; }
         return;
@@ -2164,8 +2257,10 @@ async submitPaymentApplication(){
 
       state.files = {};
       state.view = 'success';
+      hideSubmitOverlay();
       render();
     } catch(e) {
+      hideSubmitOverlay();
       toast('서류 제출 중 오류가 발생했습니다. 다시 시도해 주세요.');
       if(submitBtn){ submitBtn.disabled = false; submitBtn.textContent = '보완서류 제출하기'; }
     }
@@ -2184,6 +2279,7 @@ async submitPaymentApplication(){
     }
     const submitBtn = document.querySelector('.btn-primary');
     if(submitBtn){ submitBtn.disabled = true; submitBtn.textContent = '제출 중...'; }
+    showSubmitOverlay();
 
     const id = 'F' + new Date().toISOString().replace(/[-:.TZ]/g,'').slice(0,14) + '-' + Math.floor(Math.random()*900+100);
     const createdAt = new Date().toISOString();
@@ -2220,8 +2316,10 @@ async submitPaymentApplication(){
       state.files = {};
       state.fields = { storeName:'', ownerName:'', bizNo:'', businessType:'general', bizType:'personal', storePhone:'', ownerPhone:'', email:'', hasSign:'yes' };
       state.view = 'success';
+      hideSubmitOverlay();
       render();
     } catch(e) {
+      hideSubmitOverlay();
       toast('저장 중 오류가 발생했습니다. 다시 시도해 주세요.');
       if(submitBtn){ submitBtn.disabled = false; submitBtn.textContent = '접수 제출하기'; }
     }
