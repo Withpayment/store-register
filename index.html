@@ -612,7 +612,8 @@ const POS_MODELS = [
 const TERMINAL_MODELS = [
   { id: 'mpos1700ae', label: 'MPOS-1700AE' },
   { id: 'kpn3103', label: 'KPN-3103' },
-  { id: 'ts114a', label: 'TS-114A' }
+  { id: 'ts114a', label: 'TS-114A' },
+  { id: 'tosTerm2', label: '토스터미널2' }
 ];
 
 const RENTAL_CATALOG = {
@@ -621,21 +622,21 @@ const RENTAL_CATALOG = {
     label:'포스set (포스+금전함+프린터)',
     monthlyPrice:15000,
     hasOption:true,
-    indemnityByOption: { naver: 1710000, toss: 1710000 }
+    indemnityByOption: { naver: 2010000, toss: 2010000 }
   },
   posSetTerminal: {
     key:'posSetTerminal',
     label:'포스set (포스+금전함+단말기)',
     monthlyPrice:15000,
     hasOption:true,
-    indemnityByOption: { naver: 1710000, toss: 1710000 }
+    indemnityByOption: { naver: 2010000, toss: 2010000 }
   },
   cardTerminal: {
     key:'cardTerminal',
     label:'카드단말기',
     monthlyPrice:5000,
     hasOption:true,
-    indemnityByOption: { naver: 400000, toss: 400000 }
+    indemnityByOption: { naver: 700000, toss: 700000 }
   },
   tableOrderNormal: { key:'tableOrderNormal', label:'테이블오더 (주문전용)', monthlyPrice:10000, indemnity: 350000 },
   tableOrderPrepay: { key:'tableOrderPrepay', label:'테이블오더 (선불형)', monthlyPrice:12000, indemnity: 350000 }
