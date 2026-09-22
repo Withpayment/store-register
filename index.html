@@ -442,9 +442,10 @@ const ORIGINAL_REQUEST_DOC_LIST = [
   { key: 'corpSeal', label: '법인인감증명서 (법인)' },
   { key: 'corpReg', label: '법인등기부등본 (법인)' },
   { key: 'shareholder', label: '주주명부 (법인)' },
-  { key: 'orgPermit', label: '사단법인 설립허가증 (사단법인)' },
-  { key: 'articles', label: '정관 (사단법인)' },
-  { key: 'repAppointment', label: '대표자 선임 확인서류 (사단법인)' },
+  { key: 'orgPermit', label: '사단법인/재단법인 설립허가증' },
+  { key: 'articles', label: '정관 (법인/비영리단체)' },
+  { key: 'repAppointment', label: '대표자 선임·확인서류' },
+  { key: 'uniqueNo', label: '고유번호증 (비영리단체/기관)' },
   { key: 'permitLicense', label: '업종별 영업신고증/등록증 (식품·공중위생·학원 등)' }
 ];
 
@@ -604,7 +605,13 @@ function getRequiredDocs(businessType, bizType, hasSign){
   let docs = [];
 
   // 1. 사업자 확인
-  docs.push(doc('bizLicense', '사업자등록증', 'image/*,.pdf', '사업자등록증 사본'));
+  if (bizType === 'nonprofit_org') {
+    docs.push(doc('uniqueNo', '고유번호증', 'image/*,.pdf', '고유번호증 사본'));
+  } else if (bizType === 'other') {
+    docs.push(doc('otherBizProof', '사업자등록증 또는 고유번호증', 'image/*,.pdf', '사업자등록증 또는 고유번호증 사본'));
+  } else {
+    docs.push(doc('bizLicense', '사업자등록증', 'image/*,.pdf', '사업자등록증 사본'));
+  }
 
   if (bizType === 'corporate') {
     // 일반 법인
@@ -617,6 +624,16 @@ function getRequiredDocs(businessType, bizType, hasSign){
     docs.push(doc('articles', '정관', 'image/*,.pdf', '현재 적용 중인 정관 사본'));
     docs.push(doc('repAppointment', '대표자 선임 확인서류', 'image/*,.pdf', '대표자 선임 사실을 확인할 수 있는 총회·이사회 의사록 등'));
     docs.push(doc('corpSeal', '법인인감증명서', 'image/*,.pdf', '최근 3개월 이내 발급분'));
+  } else if (bizType === 'foundation') {
+    // 재단법인
+    docs.push(doc('corpReg', '법인등기부등본', 'image/*,.pdf', '말일 포함 최근 등기부등본'));
+    docs.push(doc('orgPermit', '재단법인 설립허가증', 'image/*,.pdf', '주무관청에서 발급한 법인 설립허가증 사본'));
+    docs.push(doc('articles', '정관', 'image/*,.pdf', '현재 적용 중인 정관 사본'));
+    docs.push(doc('repAppointment', '대표자 선임 확인서류', 'image/*,.pdf', '대표자 선임 사실을 확인할 수 있는 이사회 등 의사록·선임자료'));
+    docs.push(doc('corpSeal', '법인인감증명서', 'image/*,.pdf', '최근 3개월 이내 발급분'));
+  } else if (bizType === 'nonprofit_org') {
+    // 비영리단체/기관: 법인등기 대상이 아닌 고유번호증 단체 등을 고려
+    docs.push(doc('repAppointment', '대표자 확인서류', 'image/*,.pdf', '대표자 선임 또는 단체 대표자임을 확인할 수 있는 서류'));
   }
 
   // 2. 정산정보
@@ -630,11 +647,9 @@ function getRequiredDocs(businessType, bizType, hasSign){
     bizType === 'nonprofit' ? '현재 대표자 본인 확인용 신분증 사진' : '주민등록증 또는 운전면허증 사진'
   ));
 
-  // 4. 매장 확인
-  docs.push(doc('interiorPhoto', '매장 내부 사진', 'image/*', '매장 내부 전경'));
-  docs.push(doc('insideOutsidePhoto', '내부에서 외부가 보이는 사진', 'image/*', '출입구 방향으로 촬영'));
-
-  // 법인 추가 확인서류
+  // 4. 법인/비영리 관련 추가서류
+  // 사업자등록증/법인서류/정산서류/대표자 확인까지 먼저 배치하고,
+  // 매장 사진은 그 다음에 모아서 보여준다.
   if (bizType === 'corporate') {
     docs.push(doc('shareholder', '주주명부', 'image/*,.pdf', '최신 주주명부 사본'));
   }
@@ -644,7 +659,11 @@ function getRequiredDocs(businessType, bizType, hasSign){
     docs.push(EXTRA_DOCS[businessType]);
   }
 
-  // 6. 간판/주소 확인
+  // 6. 매장 확인
+  docs.push(doc('interiorPhoto', '매장 내부 사진', 'image/*', '매장 내부 전경'));
+  docs.push(doc('insideOutsidePhoto', '내부에서 외부가 보이는 사진', 'image/*', '출입구 방향으로 촬영'));
+
+  // 7. 간판/주소 확인
   if(hasSign === 'yes') {
     docs.push(doc('exteriorPhoto', '외부 사진 (간판 포함)', 'image/*', '간판이 잘 보이도록 촬영'));
   } else {
@@ -1063,9 +1082,15 @@ function renderForm(){
         <label class="radio-label"><input type="radio" name="f_bizType" value="personal" ${f.bizType==='personal'?'checked':''} onchange="App.changeFormState()"> 개인사업자</label>
         <label class="radio-label"><input type="radio" name="f_bizType" value="corporate" ${f.bizType==='corporate'?'checked':''} onchange="App.changeFormState()"> 법인사업자</label>
         <label class="radio-label"><input type="radio" name="f_bizType" value="nonprofit" ${f.bizType==='nonprofit'?'checked':''} onchange="App.changeFormState()"> 사단법인</label>
+        <label class="radio-label"><input type="radio" name="f_bizType" value="foundation" ${f.bizType==='foundation'?'checked':''} onchange="App.changeFormState()"> 재단법인</label>
+        <label class="radio-label"><input type="radio" name="f_bizType" value="nonprofit_org" ${f.bizType==='nonprofit_org'?'checked':''} onchange="App.changeFormState()"> 비영리단체/기관</label>
+        <label class="radio-label"><input type="radio" name="f_bizType" value="other" ${f.bizType==='other'?'checked':''} onchange="App.changeFormState()"> 기타</label>
       </div>
     </div>
     ${f.bizType==='nonprofit' ? `<div style="margin:-8px 0 18px; padding:10px 12px; border-radius:8px; background:#F7F1FF; color:#7040A0; font-size:12px; line-height:1.55;">💡 사단법인은 일반 법인과 달리 주주명부 대신 <b>설립허가증·정관·대표자 선임 확인서류</b>가 추가됩니다.</div>` : ''}
+    ${f.bizType==='foundation' ? `<div style="margin:-8px 0 18px; padding:10px 12px; border-radius:8px; background:#F7F1FF; color:#7040A0; font-size:12px; line-height:1.55;">💡 재단법인은 <b>설립허가증·정관·대표자 선임 확인서류</b>를 추가로 제출합니다.</div>` : ''}
+    ${f.bizType==='nonprofit_org' ? `<div style="margin:-8px 0 18px; padding:10px 12px; border-radius:8px; background:#F7F1FF; color:#7040A0; font-size:12px; line-height:1.55;">💡 비영리단체/기관은 <b>고유번호증 및 대표자 확인서류</b>를 제출합니다.</div>` : ''}
+    ${f.bizType==='other' ? `<div style="margin:-8px 0 18px; padding:10px 12px; border-radius:8px; background:#FFF8E8; color:#8A6414; font-size:12px; line-height:1.55;">💡 기타 유형은 <b>사업자등록증 또는 고유번호증</b>을 먼저 제출하고, 필요한 추가서류는 담당자가 확인합니다.</div>` : ''}
 
     <div class="field">
       <label>업종 선택 <span class="req">*</span></label>
