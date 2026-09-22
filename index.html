@@ -594,28 +594,67 @@ function getRequiredDocs(businessType, bizType, hasSign){
     return docs;
   }
 
-  let docs = [...COMMON_DOCS];
-  if(bizType === 'corporate') {
-    docs.unshift({ key:'corpReg', label:'법인등기부등본', accept:'image/*,.pdf', hint:'말일 포함 최근 등기부등본', required:true });
-    docs.unshift({ key:'corpSeal', label:'법인인감증명서', accept:'image/*,.pdf', hint:'최근 3개월 이내 발급분', required:true });
-    docs.push({ key:'shareholder', label:'주주명부', accept:'image/*,.pdf', hint:'최신 주주명부 사본', required:true });
-  } else if(bizType === 'nonprofit') {
-    docs.unshift({ key:'corpReg', label:'법인등기부등본', accept:'image/*,.pdf', hint:'말일 포함 최근 등기부등본', required:true });
-    docs.unshift({ key:'corpSeal', label:'법인인감증명서', accept:'image/*,.pdf', hint:'최근 3개월 이내 발급분', required:true });
-    docs.push(...NONPROFIT_CORP_DOCS);
-    docs.push({ key:'idCard', label:'대표자 신분증', accept:'image/*', hint:'현재 대표자 본인 확인용 신분증 사진', required:true });
-  } else {
-    docs.unshift({ key:'idCard', label:'대표자 신분증', accept:'image/*', hint:'주민등록증 또는 운전면허증 사진', required:true });
+  // 서류는 실제 접수 흐름에 맞춰
+  // ① 사업자 확인 → ② 정산정보 → ③ 대표자 확인 → ④ 매장 확인 → ⑤ 추가서류
+  // 순서로 표시한다.
+  const doc = (key, label, accept, hint) => ({
+    key, label, accept, hint, required:true
+  });
+
+  let docs = [];
+
+  // 1. 사업자 확인
+  docs.push(doc('bizLicense', '사업자등록증', 'image/*,.pdf', '사업자등록증 사본'));
+
+  if (bizType === 'corporate') {
+    // 일반 법인
+    docs.push(doc('corpReg', '법인등기부등본', 'image/*,.pdf', '말일 포함 최근 등기부등본'));
+    docs.push(doc('corpSeal', '법인인감증명서', 'image/*,.pdf', '최근 3개월 이내 발급분'));
+  } else if (bizType === 'nonprofit') {
+    // 사단법인
+    docs.push(doc('corpReg', '법인등기부등본', 'image/*,.pdf', '말일 포함 최근 등기부등본'));
+    docs.push(doc('orgPermit', '사단법인 설립허가증', 'image/*,.pdf', '주무관청에서 발급한 법인 설립허가증 사본'));
+    docs.push(doc('articles', '정관', 'image/*,.pdf', '현재 적용 중인 정관 사본'));
+    docs.push(doc('repAppointment', '대표자 선임 확인서류', 'image/*,.pdf', '대표자 선임 사실을 확인할 수 있는 총회·이사회 의사록 등'));
+    docs.push(doc('corpSeal', '법인인감증명서', 'image/*,.pdf', '최근 3개월 이내 발급분'));
   }
-  if(EXTRA_DOCS[businessType]){ docs.splice(4, 0, EXTRA_DOCS[businessType]); }
+
+  // 2. 정산정보
+  docs.push(doc('bankbook', '통장사본', 'image/*,.pdf', '입금 계좌 통장 첫 페이지'));
+
+  // 3. 대표자 확인
+  docs.push(doc(
+    'idCard',
+    '대표자 신분증',
+    'image/*',
+    bizType === 'nonprofit' ? '현재 대표자 본인 확인용 신분증 사진' : '주민등록증 또는 운전면허증 사진'
+  ));
+
+  // 4. 매장 확인
+  docs.push(doc('interiorPhoto', '매장 내부 사진', 'image/*', '매장 내부 전경'));
+  docs.push(doc('insideOutsidePhoto', '내부에서 외부가 보이는 사진', 'image/*', '출입구 방향으로 촬영'));
+
+  // 법인 추가 확인서류
+  if (bizType === 'corporate') {
+    docs.push(doc('shareholder', '주주명부', 'image/*,.pdf', '최신 주주명부 사본'));
+  }
+
+  // 5. 업종별 추가서류
+  if(EXTRA_DOCS[businessType]){
+    docs.push(EXTRA_DOCS[businessType]);
+  }
+
+  // 6. 간판/주소 확인
   if(hasSign === 'yes') {
-    docs.push({ key:'exteriorPhoto', label:'외부 사진 (간판 포함)', accept:'image/*', hint:'간판이 잘 보이도록 촬영', required:true });
+    docs.push(doc('exteriorPhoto', '외부 사진 (간판 포함)', 'image/*', '간판이 잘 보이도록 촬영'));
   } else {
-    docs.push({ key:'addressPlate', label:'도로명주소판 사진', accept:'image/*', hint:'건물에 부착된 도로명주소판 근접 촬영', required:true });
-    docs.push({ key:'addressBuildingPhoto', label:'도로명주소 포함 건물 사진', accept:'image/*', hint:'도로명주소와 건물이 함께 나오게 촬영', required:true });
+    docs.push(doc('addressPlate', '도로명주소판 사진', 'image/*', '건물에 부착된 도로명주소판 근접 촬영'));
+    docs.push(doc('addressBuildingPhoto', '도로명주소 포함 건물 사진', 'image/*', '도로명주소와 건물이 함께 나오게 촬영'));
   }
+
   return docs;
 }
+
 
 // POS / Terminal 모델 목록
 const POS_MODELS = [
