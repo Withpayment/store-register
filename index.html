@@ -522,7 +522,21 @@ const PAYMENT_NAVER_UNREGISTERED_DOCS = [
   { key:'interiorPhoto', label:'매장 내부 사진', accept:'image/*', hint:'매장 내부 전경', required:true },
   { key:'exteriorPhotoNaver', label:'매장 외부 사진', accept:'image/*', hint:'매장 외부 전경(간판 포함)', required:true }
 ];
-
+// [토스페이 전용] 법인 / 비영리법인 추가서류 (토스 안내 기준, 모두 발급일 3개월 이내)
+const TOSS_CORP_DOCS = [
+  { key:'corpSeal',    label:'법인인감증명서',   accept:'image/*,.pdf', hint:'3개월 이내 발급분', required:true },
+  { key:'corpReg',     label:'법인등기부등본',   accept:'image/*,.pdf', hint:'3개월 이내 발급, 현재 유효사항이 모두 반영된 것', required:true },
+  { key:'shareholder', label:'실소유자 확인서류', accept:'image/*,.pdf', hint:'주주명부 / 사원명부 / 실제소유자 확인서 중 1개 (3개월 이내)', required:true },
+  { key:'usageSeal',   label:'사용인감계',       accept:'image/*,.pdf', hint:'사용인감을 사용하시는 경우에만 첨부', required:false }
+];
+const TOSS_NONPROFIT_DOCS = [
+  { key:'corpSeal',    label:'법인인감증명서',   accept:'image/*,.pdf', hint:'3개월 이내 발급분', required:true },
+  { key:'corpReg',     label:'법인등기부등본',   accept:'image/*,.pdf', hint:'3개월 이내 발급, 현재 유효사항이 모두 반영된 것', required:true },
+  { key:'articles',    label:'정관 또는 회칙',   accept:'image/*,.pdf', hint:'설립목적이 표시된 서류 (출력일자 + 인감 날인, 3개월 이내)', required:true },
+  { key:'shareholder', label:'실소유자 확인서류', accept:'image/*,.pdf', hint:'해당되는 경우 주주명부 / 사원명부 / 실제소유자 확인서', required:false },
+  { key:'usageSeal',   label:'사용인감계',       accept:'image/*,.pdf', hint:'사용인감을 사용하시는 경우에만 첨부', required:false }
+];
+  
 function parseQueryParams() {
   const params = new URLSearchParams(window.location.search);
   return {
@@ -609,13 +623,17 @@ function getRequiredDocs(businessType, bizType, hasSign){
     }));
   }
 
-  if (state.isPaymentMode) {
-    let docs = [...PAYMENT_COMMON_DOCS];
-    if (state.paymentService === 'naver' && state.paymentNaverPlace === 'unregistered') {
-      docs = docs.concat(PAYMENT_NAVER_UNREGISTERED_DOCS);
-    }
-    return docs;
+if (state.isPaymentMode) {
+  let docs = [...PAYMENT_COMMON_DOCS];
+  if (state.paymentService === 'toss') {
+    if (state.fields.bizType === 'corporate') docs = docs.concat(TOSS_CORP_DOCS);
+    else if (state.fields.bizType === 'nonprofit') docs = docs.concat(TOSS_NONPROFIT_DOCS);
   }
+  if (state.paymentService === 'naver' && state.paymentNaverPlace === 'unregistered') {
+    docs = docs.concat(PAYMENT_NAVER_UNREGISTERED_DOCS);
+  }
+  return docs;
+}
 
   // 서류는 실제 접수 흐름에 맞춰
   // ① 사업자 확인 → ② 정산정보 → ③ 대표자 확인 → ④ 매장 확인 → ⑤ 추가서류
@@ -1034,7 +1052,7 @@ function renderForm(){
 
     <div class="field">
       <label>상호명(매장명) <span class="req">*</span></label>
-      <input type="text" id="pay_storeName" placeholder="예: 카페 온기" value="${escapeHtml(f2.storeName)}" oninput="state.fields.storeName = this.value; App.render()">
+      <input type="text" id="pay_storeName" placeholder="예: 카페 온기" value="${escapeHtml(f2.storeName)}" oninput="state.fields.storeName = this.value">
     </div>
 
     <div class="grid2">
@@ -1052,7 +1070,17 @@ function renderForm(){
       <label>메일주소 <span class="req">*</span></label>
       <input type="email" id="pay_email" placeholder="example@email.com" value="${f2.email}" oninput="state.fields.email = this.value">
     </div>
-
+${state.paymentService === 'toss' ? `
+<div class="field">
+  <label>사업자 구분 <span class="req">*</span></label>
+  <div class="radio-group" style="flex-wrap:wrap;">
+    <label class="radio-label"><input type="radio" name="f_bizType" value="personal" ${f2.bizType==='personal'?'checked':''} onchange="App.changeFormState()"> 개인사업자</label>
+    <label class="radio-label"><input type="radio" name="f_bizType" value="corporate" ${f2.bizType==='corporate'?'checked':''} onchange="App.changeFormState()"> 법인사업자</label>
+    <label class="radio-label"><input type="radio" name="f_bizType" value="nonprofit" ${f2.bizType==='nonprofit'?'checked':''} onchange="App.changeFormState()"> 비영리법인 / 임의단체</label>
+  </div>
+</div>
+${f2.bizType !== 'personal' ? `<div style="margin:-6px 0 18px; padding:10px 12px; border-radius:8px; background:#EEF7FF; color:#1769AA; font-size:12px; line-height:1.55;">💡 법인 서류는 모두 <b>발급일 3개월 이내</b>여야 하며, 복사본이나 재촬영본이 아닌 <b>원본을 직접 촬영</b>해서 제출해 주세요.</div>` : ''}
+` : ''}
     <div class="opt-group-label" style="margin-top:26px;">필수 서류 (${filledRequiredCount}/${requiredDocsCount}) <span class="req">*</span></div>
     <div class="doc-grid">
       ${currentDocs.map(d => renderDropzone(d)).join('')}
@@ -2547,18 +2575,26 @@ async submitPaymentApplication(){
   const folderStoreName = `${storeName}-${serviceSuffix}`;
 
   try {
-    const payload = {
-      id: id,
-      createdAt: createdAt,
-      storeName: folderStoreName,
-      storePhone: storePhone,
-      ownerPhone: ownerPhone,
-      email: email,
-      service: state.paymentService === 'naver' ? 'naver' : 'toss',
-      naverPlace: state.paymentNaverPlace,
-      filesData: buildFilesPayload(state.files)
-    };
+  const allowedKeys = currentDocs.map(d => d.key);
+  const filteredFiles = {};
+  allowedKeys.forEach(k => { if (state.files[k]) filteredFiles[k] = state.files[k]; });
 
+  const bizTypeLabel = (state.paymentService === 'toss')
+    ? (state.fields.bizType === 'corporate' ? '법인' : state.fields.bizType === 'nonprofit' ? '비영리법인' : '개인')
+    : '개인';
+
+  const payload = {
+    id: id,
+    createdAt: createdAt,
+    storeName: folderStoreName,
+    storePhone: storePhone,
+    ownerPhone: ownerPhone,
+    email: email,
+    bizType: bizTypeLabel,
+    service: state.paymentService === 'naver' ? 'naver' : 'toss',
+    naverPlace: state.paymentNaverPlace,
+    filesData: buildFilesPayload(filteredFiles)
+  };
     const response = await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
