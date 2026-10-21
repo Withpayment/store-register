@@ -682,7 +682,7 @@ if (state.isPaymentMode) {
       'image/*',
       bizType === 'nonprofit' ? '현재 대표자 본인 확인용 신분증 사진' : '주민등록증 또는 운전면허증 사진'
     ));
-
+  }
   // 4. 매장 확인
   docs.push(doc('interiorPhoto', '매장 내부 사진', 'image/*', '매장 내부 전경'));
   docs.push(doc('insideOutsidePhoto', '내부에서 외부가 보이는 사진', 'image/*', '출입구 방향으로 촬영'));
