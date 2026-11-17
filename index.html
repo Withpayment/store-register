@@ -765,9 +765,9 @@ const SALE_CATALOG = {
 function defaultSelection(){
   return {
     rental: {
-      posSet:{ qty:0, option:'naver', posModel:'', posModelOther:'' },
-      posSetTerminal:{ qty:0, option:'naver', posModel:'', posModelOther:'', terminalModel:'', terminalModelOther:'' },
-      cardTerminal:{ qty:0, option:'naver', terminalModel:'', terminalModelOther:'' },
+      posSet:{ qty:0, option:'naver', optionOther:'', posModel:'', posModelOther:'' },
+      posSetTerminal:{ qty:0, option:'naver', optionOther:'', posModel:'', posModelOther:'', terminalModel:'', terminalModelOther:'' },
+      cardTerminal:{ qty:0, option:'naver', optionOther:'', terminalModel:'', terminalModelOther:'' },
       tableOrderNormal:{ qty:0 },
       tableOrderPrepay:{ qty:0 }
     },
@@ -1627,10 +1627,15 @@ function buildIndemnityRows(sel){
     const s = sel.rental[key];
     if(!s || s.qty <= 0) continue;
     let unit, optionLabel = '';
-    if(item.hasOption){
-      unit = item.indemnityByOption[s.option];
-      optionLabel = s.option === 'naver' ? '네이버커넥트' : '토스프론트';
-    } else {
+if(item.hasOption){
+  unit = item.indemnityByOption[s.option] ?? item.indemnityByOption.toss;
+
+  optionLabel = s.option === 'naver'
+    ? '네이버커넥트'
+    : s.option === 'toss'
+      ? '토스프론트'
+      : (s.optionOther || '기타 리더기');
+} else {
       unit = item.indemnity;
     }
 // 모델 정보 추가 (선택)
@@ -1740,12 +1745,21 @@ function renderStepper(category, key){
 }
 
 function renderOptionPicker(category, key){
+function renderOptionPicker(category, key){
   const s = state.selection[category][key];
   return `
   <div class="eq-options">
     <label><input type="radio" name="opt_${category}_${key}" value="naver" ${s.option==='naver'?'checked':''} onchange="App.setOption('${category}','${key}','naver')"> 네이버커넥트</label>
     <label><input type="radio" name="opt_${category}_${key}" value="toss" ${s.option==='toss'?'checked':''} onchange="App.setOption('${category}','${key}','toss')"> 토스프론트</label>
-  </div>`;
+    <label><input type="radio" name="opt_${category}_${key}" value="other" ${s.option==='other'?'checked':''} onchange="App.setOption('${category}','${key}','other')"> 기타 (직접입력)</label>
+  </div>
+  ${s.option === 'other' ? `
+    <input type="text"
+      placeholder="리더기 이름 직접 입력"
+      value="${escapeHtml(s.optionOther || '')}"
+      oninput="App.setOptionOther('${category}','${key}',this.value)"
+      style="width:100%;padding:8px;margin-top:8px;border-radius:8px;border:1.5px solid var(--line);">
+  ` : ''}`;
 }
 function renderModelPicker(category, key, mode){
   // mode: 'pos' | 'terminal'
@@ -3129,6 +3143,9 @@ async submitPaymentApplication(){
   setOption(category, key, option){
     state.selection[category][key].option = option;
     render();
+  },
+    setOptionOther(category, key, value){
+    state.selection[category][key].optionOther = value;
   },
 
   setPeriod(val){
