@@ -1980,9 +1980,14 @@ if (item.hasOption) {
     toss: '토스 프론트'
   };
 
-  primaryModelOption = s.option === 'other'
+  const currentOptionLabel = s.option === 'other'
     ? (s.optionOther || '').trim() || '기타'
     : (optionLabels[s.option] || '-');
+
+  // 기타를 선택한 항목이 있으면 뒤에 선택된 장비가 토스/네이버로 덮어쓰지 않도록 우선 표시
+  if (primaryModelOption === '-' || s.option === 'other') {
+    primaryModelOption = currentOptionLabel;
+  }
 }
 
     // POS가 포함된 품목: 선택한 모델명이 있으면 그걸, 없으면 품목명을 사용
