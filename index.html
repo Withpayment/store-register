@@ -1974,9 +1974,16 @@ function renderContract(){
     const s = sel.rental[key];
     if(!s || s.qty <= 0) continue;
 
-    if(item.hasOption){
-      primaryModelOption = s.option === 'naver' ? '네이버 커넥트' : '토스 프론트';
-    }
+if (item.hasOption) {
+  const optionLabels = {
+    naver: '네이버 커넥트',
+    toss: '토스 프론트'
+  };
+
+  primaryModelOption = s.option === 'other'
+    ? (s.optionOther || '').trim() || '기타'
+    : (optionLabels[s.option] || '-');
+}
 
     // POS가 포함된 품목: 선택한 모델명이 있으면 그걸, 없으면 품목명을 사용
     if(key === 'posSet' || key === 'posSetTerminal'){
@@ -2030,7 +2037,7 @@ function renderContract(){
           <th>임대료</th>
           <td><b>${fmt(monthlyTotalVat)}원/월</b> <span style="font-weight:400; font-size:9.5px; color:#5B6B7A;">(VAT포함)</span></td>
           <th>모델/옵션</th>
-          <td>${primaryModelOption}</td>
+          <td>${escapeHtml(primaryModelOption)}</td>
           <th>POS</th>
           <td>${posName}</td>
         </tr>
