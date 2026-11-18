@@ -1696,60 +1696,47 @@ function hasSaleSelection(sel){
   return fixedQty || customQty;
 }
 
-function hasSaleSelection(sel){
-  if(!sel.sale) return false;
-
-  const fixedQty = Object.keys(SALE_CATALOG).some(
-    k => sel.sale[k] && sel.sale[k].qty > 0
-  );
-  const customQty = Array.isArray(sel.sale.custom) && sel.sale.custom.some(
-    row => row && row.qty > 0 && (row.isFree || row.priceEntered)
-  );
-
-  return fixedQty || customQty;
+function hasAnySelection(sel){
+  const rentalQty = Object.values(sel.rental).some(s=>s.qty>0);
+  const addonQty = Object.values(sel.addons).some(s=>s.qty>0);
+  return rentalQty || addonQty || hasSaleSelection(sel);
 }
 
+// [판매 품목] 선택된 키오스크 등 일시불 구매 품목 + 기타(직접입력) 품목의
+// 공급가액/부가세/합계 행을 만든다.
 function buildSaleRows(sel){
   const rows = [];
   if(!sel.sale) return rows;
-
   for(const key in SALE_CATALOG){
     const item = SALE_CATALOG[key];
     const s = sel.sale[key];
     if(!s || s.qty <= 0) continue;
-
     const supply = item.price * s.qty;
     const vat = Math.round(supply * 0.1);
     rows.push({
       name: item.label,
       qty: s.qty,
       unitPrice: item.price,
-      supply,
-      vat,
+      supply: supply,
+      vat: vat,
       total: supply + vat
     });
   }
-
   if(Array.isArray(sel.sale.custom)){
     sel.sale.custom.forEach(row => {
-      if(!row || !(row.qty > 0) || (!row.isFree && !row.priceEntered)) return;
-
-      const unitPrice = row.isFree ? 0 : (Number(row.unitPrice) || 0);
-      const supply = unitPrice * row.qty;
+      if(!row || !(row.qty > 0) || !(row.unitPrice > 0)) return;
+      const supply = row.unitPrice * row.qty;
       const vat = Math.round(supply * 0.1);
-
-rows.push({
-  name: '기타 판매 제품',
-  qty: row.qty,
-  unitPrice: 0,
-  supply: 0,
-  vat: 0,
-  total: 0,
-  isFree: true
+      rows.push({
+        name: (row.name && row.name.trim()) ? row.name.trim() : '기타 판매 제품',
+        qty: row.qty,
+        unitPrice: row.unitPrice,
+        supply: supply,
+        vat: vat,
+        total: supply + vat
       });
     });
   }
-
   return rows;
 }
 
@@ -1854,46 +1841,16 @@ function renderEquipmentSelect(){
   }).join('');
 
   const customSale = sel.sale.custom || [];
-const customSaleHtml = customSale.map((row, idx) => `
-  <div class="eq-item ${(row.qty > 0 && (row.isFree || row.priceEntered)) ? 'active' : ''}">
-    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-      <input type="text"
-        id="custom_sale_name_${idx}"
-        placeholder="제품명 (예: 키오스크 거치대)"
-        value="${escapeHtml(row.name || '')}"
-        oninput="App.setCustomSaleField(${idx}, 'name', this.value)"
-        style="flex:2; min-width:140px; padding:9px 10px; border-radius:8px; border:1.5px solid var(--line); font-size:13.5px; font-family:'Pretendard';">
-
-      <input type="number"
-        id="custom_sale_qty_${idx}"
-        min="1" max="99"
-        placeholder="수량"
-        value="${row.qty || ''}"
-        oninput="App.setCustomSaleField(${idx}, 'qty', this.value)"
-        style="width:64px; padding:9px 10px; border-radius:8px; border:1.5px solid var(--line); font-size:13.5px; font-family:'Pretendard';">
-
-      <input type="text"
-        id="custom_sale_price_${idx}"
-        inputmode="numeric"
-        placeholder="단가(원, VAT별도)"
-        value="${row.isFree ? '0' : (row.priceEntered ? fmt(row.unitPrice) : '')}"
-        oninput="this.value = formatMoneyInput(this.value); App.setCustomSaleField(${idx}, 'unitPrice', this.value)"
-        style="width:150px; padding:9px 10px; border-radius:8px; border:1.5px solid var(--line); font-size:13.5px; font-family:'Pretendard';">
-
-      <label style="display:flex; align-items:center; gap:5px; font-size:12px; white-space:nowrap;">
-        <input type="checkbox"
-          ${row.isFree ? 'checked' : ''}
-          onchange="App.setCustomSaleFree(${idx}, this.checked)">
-        무상 제공
-      </label>
-
-      <button type="button" onclick="App.removeCustomSaleItem(${idx})"
-        style="background:none; border:none; color:var(--red); font-size:12px; font-weight:600; cursor:pointer; padding:6px;">
-        삭제
-      </button>
+  const customSaleHtml = customSale.map((row, idx) => `
+    <div class="eq-item ${(row.qty>0 && row.unitPrice>0) ? 'active' : ''}">
+      <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <input type="text" id="custom_sale_name_${idx}" placeholder="제품명 (예: 키오스크 거치대)" value="${escapeHtml(row.name || '')}" oninput="App.setCustomSaleField(${idx}, 'name', this.value)" style="flex:2; min-width:140px; padding:9px 10px; border-radius:8px; border:1.5px solid var(--line); font-size:13.5px; font-family:'Pretendard';">
+        <input type="number" id="custom_sale_qty_${idx}" min="1" max="99" placeholder="수량" value="${row.qty || ''}" oninput="App.setCustomSaleField(${idx}, 'qty', this.value)" style="width:64px; padding:9px 10px; border-radius:8px; border:1.5px solid var(--line); font-size:13.5px; font-family:'Pretendard';">
+        <input type="text" id="custom_sale_price_${idx}" inputmode="numeric" placeholder="단가(원, VAT별도)" value="${row.unitPrice ? fmt(row.unitPrice) : ''}" oninput="this.value = formatMoneyInput(this.value); App.setCustomSaleField(${idx}, 'unitPrice', this.value)" style="width:150px; padding:9px 10px; border-radius:8px; border:1.5px solid var(--line); font-size:13.5px; font-family:'Pretendard';">
+        <button type="button" onclick="App.removeCustomSaleItem(${idx})" style="background:none;border:none;color:var(--red);font-size:12px;font-weight:600;cursor:pointer;padding:6px;">삭제</button>
+      </div>
     </div>
-  </div>
-`).join('');
+  `).join('');
 
   return `
   <div class="card">
@@ -2259,9 +2216,9 @@ style="
             <tr>
               <td class="al">${escapeHtml(r.name)}</td>
               <td>${r.qty}</td>
-              <td>${r.isFree ? '무상' : fmt(r.supply) + '원'}</td>
-              <td>${r.isFree ? '0원' : fmt(r.vat) + '원'}</td>
-              <td>${r.isFree ? '무상' : fmt(r.total) + '원'}</td>
+              <td>${fmt(r.supply)}원</td>
+              <td>${fmt(r.vat)}원</td>
+              <td>${fmt(r.total)}원</td>
             </tr>`).join('')}
           <tr><td colspan="2" style="font-weight:700;">합 계</td><td style="font-weight:700;">${fmt(saleSupplyTotal)}원</td><td style="font-weight:700;">${fmt(saleVatTotal)}원</td><td style="font-weight:700;">${fmt(saleGrandTotal)}원</td></tr>
         </tbody>
@@ -3170,47 +3127,49 @@ async submitPaymentApplication(){
     render();
   },
 
-addCustomSaleItem(){
-  if(!state.selection.sale.custom) state.selection.sale.custom = [];
-  state.selection.sale.custom.push({
-    name: '',
-    qty: 1,
-    unitPrice: 0,
-    priceEntered: false,
-    isFree: false
-  });
-  render();
-},
+  addCustomSaleItem(){
+    if(!state.selection.sale.custom) state.selection.sale.custom = [];
+    state.selection.sale.custom.push({
+      name:'',
+      qty:1,
+      unitPrice:0,
+      isFree:false
+    });
 
-setCustomSaleField(idx, field, value){
-  const row = state.selection.sale.custom && state.selection.sale.custom[idx];
-  if(!row) return;
+    render();
+  },
 
-  if(field === 'qty'){
-    row.qty = Math.max(0, Math.min(99, Number(value) || 0));
-  } else if(field === 'unitPrice'){
-    const digits = String(value).replace(/\D/g, '');
-    row.priceEntered = digits !== '';
-    row.unitPrice = digits === '' ? 0 : Number(digits);
-    row.isFree = false;
-  } else {
-    row.name = value;
-    return;
-  }
+  removeCustomSaleItem(idx){
+    if(!state.selection.sale.custom) return;
+    state.selection.sale.custom.splice(idx, 1);
+    render();
+  },
 
-  clearTimeout(App._customSaleDebounceTimer);
-  App._customSaleDebounceTimer = setTimeout(render, 150);
-},
-
+  setCustomSaleField(idx, field, value){
+    const row = state.selection.sale.custom && state.selection.sale.custom[idx];
+    if(!row) return;
+    if(field === 'qty'){
+      row.qty = Math.max(0, Math.min(99, Number(value) || 0));
+    } else if(field === 'unitPrice'){
+      const digits = String(value).replace(/\D/g, '');
+      row.unitPrice = digits ? Number(digits) : 0;
+      row.isFree = row.unitPrice === 0 && digits !== '';  
+    } else {
+      row.name = value;
+      return; // 제품명은 합계 계산에 영향이 없어서 다시 그릴 필요 없음
+    }
+    // [최적화] 수량/단가는 "구매 합계"에 바로 반영돼야 하지만, 타이핑마다 매번
+    // 전체를 다시 그리기보단 살짝(150ms) 모았다가 한 번만 그린다 (admin 검색창과 동일한 패턴).
+    // 이제 입력칸에 고유 id가 있으므로 render()가 포커스와 커서 위치를 정확히 복원해준다.
+    clearTimeout(App._customSaleDebounceTimer);
+    App._customSaleDebounceTimer = setTimeout(render, 150);
+  },
 setCustomSaleFree(idx, isFree){
   const row = state.selection.sale.custom && state.selection.sale.custom[idx];
   if(!row) return;
 
   row.isFree = isFree;
-  if(isFree){
-    row.unitPrice = 0;
-    row.priceEntered = true;
-  }
+  if(isFree) row.unitPrice = 0;
 
   clearTimeout(App._customSaleDebounceTimer);
   App._customSaleDebounceTimer = setTimeout(render, 150);
