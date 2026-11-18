@@ -1686,7 +1686,13 @@ rows.push({
 function hasSaleSelection(sel){
   if(!sel.sale) return false;
   const fixedQty = Object.keys(SALE_CATALOG).some(k => sel.sale[k] && sel.sale[k].qty > 0);
-  const customQty = Array.isArray(sel.sale.custom) && sel.sale.custom.some(r => r && r.qty > 0 && r.unitPrice > 0);
+  const customQty = Array.isArray(sel.sale.custom) &&
+    sel.sale.custom.some(r =>
+    r &&
+    r.qty > 0 &&
+    (r.isFree || (typeof r.unitPrice === 'number' && r.unitPrice >= 0)) &&
+    r.name && r.name.trim()
+  );
   return fixedQty || customQty;
 }
 
@@ -3123,7 +3129,13 @@ async submitPaymentApplication(){
 
   addCustomSaleItem(){
     if(!state.selection.sale.custom) state.selection.sale.custom = [];
-    state.selection.sale.custom.push({ name:'', qty:1, unitPrice:0 });
+    state.selection.sale.custom.push({
+      name:'',
+      qty:1,
+      unitPrice:0,
+      isFree:false
+    });
+
     render();
   },
 
@@ -3139,7 +3151,9 @@ async submitPaymentApplication(){
     if(field === 'qty'){
       row.qty = Math.max(0, Math.min(99, Number(value) || 0));
     } else if(field === 'unitPrice'){
-      row.unitPrice = Number(String(value).replace(/\D/g,'')) || 0;
+      const digits = String(value).replace(/\D/g, '');
+      row.unitPrice = digits ? Number(digits) : 0;
+      row.isFree = row.unitPrice === 0 && digits !== '';  
     } else {
       row.name = value;
       return; // 제품명은 합계 계산에 영향이 없어서 다시 그릴 필요 없음
@@ -3150,7 +3164,16 @@ async submitPaymentApplication(){
     clearTimeout(App._customSaleDebounceTimer);
     App._customSaleDebounceTimer = setTimeout(render, 150);
   },
+setCustomSaleFree(idx, isFree){
+  const row = state.selection.sale.custom && state.selection.sale.custom[idx];
+  if(!row) return;
 
+  row.isFree = isFree;
+  if(isFree) row.unitPrice = 0;
+
+  clearTimeout(App._customSaleDebounceTimer);
+  App._customSaleDebounceTimer = setTimeout(render, 150);
+},
   setOption(category, key, option){
     state.selection[category][key].option = option;
     render();
