@@ -420,6 +420,9 @@ body{
 .admin-v2-tools{display:flex;gap:6px;flex-wrap:wrap}.admin-v2-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;margin:16px 0}.admin-stat{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:12px;text-align:left;color:var(--ink);cursor:pointer}.admin-stat.active{border-color:var(--teal);box-shadow:inset 0 0 0 1px var(--teal)}.admin-stat small,.merchant-row small{display:block;color:var(--ink-soft);margin-top:4px;font-size:12px}.admin-stat strong{display:block;font-size:24px;margin-top:5px}.admin-v2-list{padding:0;overflow:hidden}.merchant-row{display:grid;grid-template-columns:2fr 1.4fr 1fr 14px;gap:12px;width:100%;border:0;border-bottom:1px solid var(--line);background:var(--paper);text-align:left;padding:15px;color:var(--ink);cursor:pointer;font:inherit}.merchant-row:hover{background:#F3FAFA}.workflow-status{font-size:12px;color:var(--teal-deep)}.merchant-overlay{position:fixed;inset:0;background:rgba(16,35,61,.35);z-index:40;display:flex;justify-content:flex-end}.merchant-panel{width:min(100%,560px);background:var(--paper);padding:20px;overflow:auto;box-shadow:var(--shadow)}.merchant-panel-head{display:flex;align-items:start;justify-content:space-between;gap:12px}.merchant-panel select{width:100%;margin:8px 0;min-height:40px}.merchant-info{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0}.merchant-info div{padding:10px;background:var(--bg);border-radius:8px;overflow-wrap:anywhere}.merchant-info small{display:block;color:var(--ink-soft);margin-bottom:4px}.merchant-files>div{display:flex;align-items:center;justify-content:space-between;gap:8px;border-bottom:1px solid var(--line);padding:10px 0;overflow-wrap:anywhere}.merchant-preview img{max-width:100%;height:auto;display:block;margin:12px 0}.merchant-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:18px 0}@media(max-width:600px){.admin-v2-top{flex-wrap:wrap}.merchant-row{grid-template-columns:1.6fr 1fr 12px}.merchant-row-owner{display:none}.admin-v2-stats{grid-template-columns:repeat(3,1fr)}}
 .contract-preset{border:1px solid var(--line);border-radius:12px;padding:14px;margin:16px 0;background:var(--bg)}.contract-preset-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}.contract-preset-grid .btn{min-height:40px}
 .intake-review{padding:16px;border:1px solid var(--line);border-radius:12px;margin:16px 0}.review-line{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--line);overflow-wrap:anywhere}.review-line b{text-align:right}.review-confirm{display:flex;align-items:center;gap:10px;padding:16px 0}.intake-error{color:var(--red);font-size:14px;line-height:1.5}.intake-steps span{min-width:0;padding:12px 4px}.btn:disabled{opacity:.5;cursor:not-allowed}
+.contract-page .corp-seal-anchor{position:relative!important;display:inline-block!important;vertical-align:middle!important;isolation:isolate;white-space:nowrap;width:34px;height:20px;line-height:20px;text-align:center;overflow:visible!important}
+.contract-page .corp-seal-anchor>.corp-seal-image{position:absolute!important;display:block!important;left:50%!important;top:50%!important;right:auto!important;bottom:auto!important;transform:translate(-50%,-50%)!important;width:76px!important;height:76px!important;max-width:none!important;max-height:none!important;object-fit:contain;mix-blend-mode:multiply;z-index:2;pointer-events:none;margin:0!important}
+@media print{.corp-seal-anchor,.corp-seal-image{-webkit-print-color-adjust:exact;print-color-adjust:exact}.contract-page .corp-seal-anchor{break-inside:avoid}}
 </style>
 </head>
 <body>
@@ -1085,11 +1088,12 @@ function renderIntakeBatch(docs){
     <input type="file" id="intake_batch_file" accept="image/*,.pdf" multiple hidden onchange="App.addIntakeBatch(this.files)">
     <button type="button" class="btn btn-secondary" onclick="document.getElementById('intake_batch_file').click()" ${state.intakeAnalyzing?'disabled':''}>+ 여러 사진 / PDF 선택</button>
     ${items.length?`<div role="status" aria-live="polite" class="section-sub" style="margin:12px 0">분석 ${items.filter(x=>x.status!=='pending'&&x.status!=='working').length}/${items.length} · 분류 결과를 확인한 후 아래 버튼을 눌러 반영하세요.</div>`:''}
+    ${state.intakeAnalyzing?`<button type="button" class="btn btn-secondary" onclick="App.skipIntakeAnalysis()">남은 분석 건너뛰기 (직접 선택)</button>`:''}
     ${items.map(it=>`<div class="intake-batch-row">
       ${it.isImage?`<img class="dz-thumb" src="${it.dataUrl}" alt="첨부 사진">`:'<span class="dz-thumb">PDF</span>'}
       <div style="min-width:0;flex:1"><div class="dz-filename">${escapeHtml(it.name)}</div>
       <small>${it.status==='working'?'분석 중':it.status==='pending'?'대기':it.status==='suggested'?'자동 분류 제안 · 확인 필요':it.status==='error'?'분석 실패 · 직접 선택 가능':'직접 분류 필요'}</small>
-      <select aria-label="서류 종류" onchange="App.setIntakeBatchType('${it.id}',this.value)" ${state.intakeAnalyzing?'disabled':''}>
+      <select aria-label="서류 종류" onchange="App.setIntakeBatchType('${it.id}',this.value)">
         <option value="">서류 종류 선택</option>
         ${docs.filter(d=>it.isImage||d.accept.includes('.pdf')).map(d=>`<option value="${d.key}" ${it.docKey===d.key?'selected':''}>${escapeHtml(d.label)}</option>`).join('')}
       </select></div>
@@ -1568,10 +1572,11 @@ function renderBulkModal(){
       </div>
 
       <div style="font-size:12px; color:var(--ink-soft); margin-bottom:12px;">
-        총 ${total}장 · 미지정 ${unassigned}장 (미지정 사진은 등록에서 제외됩니다)
+        총 ${total}장 · 미지정 ${unassigned}장 (모두 분류하거나 삭제해야 등록 가능)
         ${waiting > 0 ? `· <b style="color:#6C63FF;">분석 중 ${waiting}장</b>` : ''}
       </div>
 
+      ${waiting?`<button class="btn btn-secondary" style="margin-bottom:8px" onclick="App.bulkSkipAnalysis()">남은 분석 건너뛰기 · 직접 선택</button>`:''}
       <div style="display:flex; gap:8px;">
         <button class="btn btn-secondary" style="width:35%;" onclick="App.closeBulkModal()">취소</button>
         <button class="btn btn-primary" style="width:65%;" onclick="App.bulkSubmit()">${waiting > 0 ? '분석 완료 후 등록 가능' : '등록하기'}</button>
@@ -2097,20 +2102,7 @@ if (item.hasOption) {
           <th>"갑"</th>
           <td colspan="5" class="al" style="font-weight:700;">
             <span style="position:relative; z-index:2;">(주)위드페이먼트 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 대표 : 고 영 배</span>
-            <span style="position:relative; display:inline-block; vertical-align:middle; padding:0 4px;">
-(인)<img src="${CORP_SEAL_IMG}" ${CORP_SEAL_IMG?'':'hidden'} alt="법인인감"
-style="
-  position:absolute;
-  left:50%;
-  top:50%;
-  width:76px;
-  height:76px;
-  object-fit:contain;
-  transform:translate(-50%,-50%);
-  pointer-events:none;
-  z-index:10;
-">
-            </span>
+            <span class="corp-seal-anchor">(인)${CORP_SEAL_IMG?`<img class="corp-seal-image" src="${CORP_SEAL_IMG}" alt="법인인감">`:``}</span>
             <div style="font-weight:400; color:#5B6B7A; margin-top:2px;">광주광역시 서구 유덕로 114</div>
           </td>
         </tr>
@@ -2205,19 +2197,7 @@ style="
           <th>"갑"(매도인)</th>
           <td colspan="3" class="al" style="font-weight:700;">
             <span style="position:relative; z-index:2;">(주)위드페이먼트 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 대표 : 고 영 배</span>
-            <span style="position:relative; display:inline-block; vertical-align:middle; padding:0 4px;">
-              (인)<img src="${CORP_SEAL_IMG}" ${CORP_SEAL_IMG?'':'hidden'} alt="법인인감"
-style="
-  position:absolute;
-  left:50%;
-  top:50%;
-  width:76px;
-  height:76px;
-  object-fit:contain;
-  transform:translate(-50%,-50%);
-  pointer-events:none;
-  z-index:10;
-">            </span>
+            <span class="corp-seal-anchor">(인)${CORP_SEAL_IMG?`<img class="corp-seal-image" src="${CORP_SEAL_IMG}" alt="법인인감">`:``}</span>
             <div style="font-weight:400; color:#5B6B7A; margin-top:2px;">광주광역시 서구 유덕로 114</div>
           </td>
         </tr>
@@ -2455,6 +2435,17 @@ function compressImage(file, maxDim=1600, quality=0.85){
   });
 }
 
+// Filename suggestions are not verification. Ambiguous names always remain manual.
+function suggestDocFromName(name,docs){
+  const n=String(name||'').normalize('NFKC').replace(/\.[^.]+$/,'').replace(/[\s_()\-]/g,'').toLowerCase();
+  const rules=[['bizLicense',/사업자등록증|사업자등록증명/],['bankbook',/통장사본|통장표지/],['idCard',/신분증|주민등록증|운전면허증|외국인등록증/],['passport',/여권/],['corpSeal',/법인인감증명/],['corpStampPhoto',/법인도장|인감날인/],['corpReg',/법인등기|등기사항전부증명/],['shareholder',/주주명부/],['articles',/정관/],['insideOutsidePhoto',/내부에서외부|내부외부사진/],['interiorPhoto',/매장내부|실내전경/],['exteriorPhoto',/간판사진|매장외부|외부전경/],['addressPlate',/도로명주소판/],['addressBuildingPhoto',/도로명주소포함건물/],['permitLicense',/영업신고증|학원설립운영등록증/]];
+  const hits=rules.filter(([key,rx])=>rx.test(n)&&docs.some(d=>d.key===key));
+  return hits.length===1?hits[0][0]:'';
+}
+async function classifyWithTimeout(payload,ms=20000){
+  const ctl=new AbortController(), timer=setTimeout(()=>ctl.abort(),ms);
+  try{const r=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload),signal:ctl.signal});if(!r.ok)throw Error('HTTP '+r.status);return await r.json();}finally{clearTimeout(timer);}
+}
 function readAsDataURL(file){
   return new Promise((resolve, reject)=>{
     const reader = new FileReader();
@@ -2623,6 +2614,7 @@ const App = {
     if(!files.length)return;
     if(state.intakeBatch.length+files.length>20){toast('한 번에 최대 20개까지 선택해 주세요.');return;}
     state.intakeAnalyzing=true;
+    state.intakeSkip=false;
     render();
     try {
       for(const file of files){
@@ -2630,33 +2622,35 @@ const App = {
         if(file.size>15*1024*1024||(!isImage&&file.type!=='application/pdf')){toast('지원하지 않는 파일 또는 15MB 초과: '+file.name);continue;}
         try{
           const dataUrl=isImage?await compressImage(file):await readAsDataURL(file);
-          state.intakeBatch.push({id:crypto.randomUUID(),name:file.name,dataUrl,isImage,status:'pending',docKey:''});
+          const docKey=suggestDocFromName(file.name,currentIntakeDocs().filter(d=>isImage||d.accept.includes('.pdf')));state.intakeBatch.push({id:crypto.randomUUID(),name:file.name,dataUrl,isImage,status:docKey?'suggested':'pending',docKey});
         }catch(e){toast('파일 읽기 실패: '+file.name);}
       }
       render();
+      if(!state.intakeBatch.some(x=>x.status==='pending'))return;
       if(!state.intakeScanToken){
         try{
-          const res=await (await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'beginIntakeScan'})})).json();
+          const res=await classifyWithTimeout({action:'beginIntakeScan'},10000);
           if(res.status==='success')state.intakeScanToken=res.scanToken;
         }catch(e){}
       }
       for(const it of state.intakeBatch.filter(x=>x.status==='pending')){
+        if(state.intakeSkip||it.status!=='pending'){if(it.status==='pending')it.status='manual';continue;}
         it.status='working';render();
         try{
           if(!state.intakeScanToken)throw Error('scan unavailable');
-          const res=await (await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'classifyIntakeImage',scanToken:state.intakeScanToken,dataUrl:it.dataUrl})})).json();
+          const res=await classifyWithTimeout({action:'classifyIntakeImage',scanToken:state.intakeScanToken,dataUrl:it.dataUrl});
           if(res.status!=='success'){if(res.status==='expired')state.intakeScanToken=null;throw Error('scan failed');}
           const d=currentIntakeDocs().find(d=>d.key===res.docKey && (it.isImage||d.accept.includes('.pdf')));
-          it.docKey=d?d.key:'';
-          it.status=d?'suggested':'manual';
-        }catch(e){it.status='error';}
+          if(it.status==='working'){it.docKey=d?d.key:'';it.status=d?'suggested':'manual';}
+        }catch(e){if(it.status==='working')it.status='error';}
         render();
       }
     }finally{state.intakeAnalyzing=false;render();}
   },
+  skipIntakeAnalysis(){state.intakeSkip=true;for(const it of state.intakeBatch)if(['pending','working'].includes(it.status))it.status='manual';render();},
   setIntakeBatchType(id,key){
     const it=state.intakeBatch.find(x=>x.id===id);
-    if(!it||state.intakeAnalyzing)return;
+    if(!it)return;
     it.docKey=key;it.status='manual';
     render();
   },
@@ -3454,22 +3448,28 @@ App.closeBulkModal = function(){ state.showBulkModal = false; render(); };
 
 App.bulkAddFiles = async function(fileList){
   const files = Array.from(fileList || []);
-  if(!files.length) return;
+  if(!files.length||state.bulkReading||state.submitting) return;
+  if(state.bulkItems.length+files.length>20){toast('최대 20개까지 등록할 수 있습니다.');return;}
+  state.bulkReading=true;
   toast('사진 처리 중...');
   for(const file of files){
     if(file.size > 15*1024*1024){ toast('15MB 초과: ' + file.name); continue; }
     const isImage = file.type.startsWith('image/');
+    if(!isImage&&file.type!=='application/pdf'){toast('지원하지 않는 파일: '+file.name);continue;}
     try{
       const dataUrl = isImage ? await compressImage(file) : await readAsDataURL(file);
+      const docKey=suggestDocFromName(file.name,ORIGINAL_REQUEST_DOC_LIST);
+      if(state.bulkItems.some(i=>i.dataUrl===dataUrl))continue;
       state.bulkItems.push({
         id: 'b' + Date.now() + Math.floor(Math.random()*1000),
         name: file.name, dataUrl, isImage,
-        docKey: '', auto: false, status: 'pending'
+        docKey, auto: !!docKey, status: docKey?'done':'pending'
       });
     }catch(e){ toast('처리 실패: ' + file.name); }
   }
+  state.bulkReading=false;
   render();
-  App.bulkRunClassify();   // 자동 분류 시작
+  App.bulkRunClassify();
 };
 
 // 대기 중인 사진을 한 장씩 서버 OCR로 분류 (서버 OCR이 느려서 순차 처리)
@@ -3484,10 +3484,8 @@ App.bulkRunClassify = async function(){
       it.status = 'working';
       render();
       try{
-        const res = await (await fetch(API_URL, {
-          method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
-          body: JSON.stringify({ action:'classifyImages', token: state.adminToken, name: it.name, dataUrl: it.dataUrl })
-        })).json();
+        const res=await classifyWithTimeout({action:'classifyImages',token:state.adminToken,name:it.name,dataUrl:it.dataUrl});
+        if(it.status!=='working'||!state.bulkItems.includes(it))continue;
 
         if(res.status === 'unauthorized'){ App.handleUnauthorized(); state.showBulkModal = false; break; }
         if(res.status === 'success'){
@@ -3500,7 +3498,7 @@ App.bulkRunClassify = async function(){
           it.status = 'error';
         }
       }catch(e){
-        it.status = 'error';
+        if(it.status==='working')it.status = 'error';
       }
       render();
     }
@@ -3512,22 +3510,24 @@ App.bulkRunClassify = async function(){
 
 App.bulkSetType = function(id, key){
   const it = state.bulkItems.find(i => i.id === id);
-  if(it){ it.docKey = key; it.auto = false; }
+  if(it){ it.docKey = key; it.auto = false; it.status='manual'; }
   render();
 };
+App.bulkSkipAnalysis=function(){for(const it of state.bulkItems)if(['pending','working'].includes(it.status))it.status='none';render();};
 App.bulkRemove = function(id){
   state.bulkItems = state.bulkItems.filter(i => i.id !== id);
   render();
 };
 
 App.bulkSubmit = async function(){
-  if(state.submitting) return;
+  if(state.submitting||state.bulkReading) return;
   if(!state.adminToken){App.handleUnauthorized();return;}
   const f = state.bulkForm;
   if(state.bulkItems.some(i => i.status === 'pending' || i.status === 'working')){
     toast('사진 분석이 끝난 뒤에 등록할 수 있어요'); return;
   }
   if(!f.storeName.trim()){ toast('상호명을 입력해 주세요'); return; }
+  if(state.bulkItems.some(i=>!i.docKey)){toast('미지정 사진을 분류하거나 삭제해 주세요. 누락된 사진은 자동 제외하지 않습니다.');return;}
   const assigned = state.bulkItems.filter(i => i.docKey);
   if(assigned.length === 0){ toast('서류 종류가 지정된 사진이 없습니다'); return; }
 
