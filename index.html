@@ -903,6 +903,8 @@ function syncFields(){
 
   // 결제서비스 가맹신청 폼
   if(state.isPaymentMode) {
+    state.fields.storePhone = formatKoreanPhone(document.getElementById('pay_storePhone')?.value ?? state.fields.storePhone);
+    state.fields.ownerPhone = formatKoreanPhone(document.getElementById('pay_ownerPhone')?.value ?? state.fields.ownerPhone);
     state.fields.storeName = document.getElementById('pay_storeName')?.value ?? state.fields.storeName;
     state.fields.email = document.getElementById('pay_email')?.value ?? state.fields.email;
   }
@@ -1203,9 +1205,10 @@ ${f2.bizType !== 'personal' ? `<div style="margin:-6px 0 18px; padding:10px 12px
   if(savedTemp) {
     try {
       const parsed = JSON.parse(savedTemp);
+      if(!parsed.expiresAt||Date.now()>parsed.expiresAt){localStorage.removeItem(TEMP_SAVE_KEY);throw Error('expired');}
       tempInfoHtml = `
       <div class="temp-save-box">
-        <div class="temp-save-info">💾 <b>이전에 작성 중인 내용이 있습니다.</b> (${parsed.savedAt || '저장됨'})</div>
+        <div class="temp-save-info">💾 <b>이전에 작성 중인 내용이 있습니다.</b> (${escapeHtml(parsed.savedAt || '저장됨')})</div>
         <div class="temp-save-btns">
           <button class="btn btn-secondary btn-sm" onclick="App.loadTempData()">불러오기</button>
           <button class="btn btn-secondary btn-sm" style="color:var(--red);" onclick="App.clearTempData()">삭제</button>
@@ -2804,9 +2807,9 @@ async submitPaymentApplication(){
   // 상호명은 state.fields.storeName으로 들어옵니다 (관리자가 생성한 링크로 들어오면 미리 채워짐)
   syncFields();
   const storeName = state.fields.storeName || '';
-  const storePhone = formatKoreanPhone(document.getElementById('pay_storePhone')?.value || '');
-  const ownerPhone = formatKoreanPhone(document.getElementById('pay_ownerPhone')?.value || '');
-  const email = document.getElementById('pay_email')?.value || '';
+  const storePhone = state.fields.storePhone;
+  const ownerPhone = state.fields.ownerPhone;
+  const email = state.fields.email;
 
   // UI에서 받는 항목(상호명, 매장전화번호, 대표명의 폰번호, 이메일) 모두 필수로 검사
   const err=intakeError({storeName,storePhone,ownerPhone,email});
@@ -2821,7 +2824,7 @@ async submitPaymentApplication(){
     return;
   }
 
-  const submitBtn = document.querySelector('section:not([hidden]) .btn-primary') || document.querySelector('.btn-primary');
+  const submitBtn = document.getElementById('intake_submit') || document.querySelector('.btn-primary');
   if(submitBtn){ submitBtn.disabled = true; submitBtn.textContent = '제출 중...'; }
   showSubmitOverlay();
 
@@ -2841,6 +2844,7 @@ async submitPaymentApplication(){
     : '개인';
 
   const payload = {
+    action:'submitApplication',
     id: id,
     createdAt: createdAt,
     storeName: folderStoreName,
@@ -3091,7 +3095,7 @@ async submitPaymentApplication(){
       toast(missing[0].label + ' 서류를 첨부해 주세요'); return;
     }
 
-    const submitBtn = document.querySelector('section:not([hidden]) .btn-primary') || document.querySelector('.btn-primary');
+    const submitBtn = document.getElementById('intake_submit') || document.querySelector('.btn-primary');
     if(submitBtn){ submitBtn.disabled = true; submitBtn.textContent = '제출 중...'; }
     showSubmitOverlay();
 
@@ -3144,7 +3148,7 @@ async submitPaymentApplication(){
     if(missing.length > 0){
       toast(missing[0].label + ' 등 필수 서류를 첨부해 주세요'); return;
     }
-    const submitBtn = document.querySelector('section:not([hidden]) .btn-primary') || document.querySelector('.btn-primary');
+    const submitBtn = document.getElementById('intake_submit') || document.querySelector('.btn-primary');
     if(submitBtn){ submitBtn.disabled = true; submitBtn.textContent = '제출 중...'; }
     showSubmitOverlay();
 
@@ -3155,6 +3159,10 @@ async submitPaymentApplication(){
       const payload = {
         id: id,
         createdAt: createdAt,
+        action:'submitApplication',
+        businessType:f.businessType,
+        hasSign:f.hasSign,
+        isForeigner:f.isForeigner==='yes'?'yes':'no',
         storeName: f.storeName,
         ownerName: f.ownerName,
         bizNo: f.bizNo,
@@ -3501,6 +3509,7 @@ App.bulkRemove = function(id){
 
 App.bulkSubmit = async function(){
   if(state.submitting) return;
+  if(!state.adminToken){App.handleUnauthorized();return;}
   const f = state.bulkForm;
   if(state.bulkItems.some(i => i.status === 'pending' || i.status === 'working')){
     toast('사진 분석이 끝난 뒤에 등록할 수 있어요'); return;
@@ -3518,6 +3527,7 @@ App.bulkSubmit = async function(){
   try{
     const id = state.pendingReceiptId || (state.pendingReceiptId = 'F-' + crypto.randomUUID());
     const payload = {
+      action:'submitAdminBulk', token:state.adminToken,
       id, createdAt: new Date().toISOString(),
       storeName: f.storeName.trim(), ownerName:'', bizNo:'',
       storePhone: f.storePhone, ownerPhone: f.ownerPhone, email: f.email,
@@ -3529,6 +3539,7 @@ App.bulkSubmit = async function(){
     })).json();
 
     hideSubmitOverlay();
+    if(res.status==='unauthorized'){App.handleUnauthorized();return;}
     if(res.status !== 'success'){ toast(res.message || '등록에 실패했습니다.'); return; }
     state.pendingReceiptId = null;
     state.showBulkModal = false;
