@@ -1424,8 +1424,8 @@ function renderMerchantDetail(m){
   return `<div class="merchant-overlay"><div class="merchant-panel" role="dialog" aria-label="가맹점 상세정보">
     <div class="merchant-panel-head"><div><div class="section-title">${escapeHtml(m.storeName)}</div><div class="section-sub">${escapeHtml(m.id)}</div></div><button class="btn btn-secondary btn-sm" onclick="App.closeMerchantDetail()">닫기</button></div>
     <label>업무 상태</label><select id="workflow_status" onchange="App.updateWorkflow('${id}',this.value)">${Object.entries(WORKFLOW_LABELS).map(([k,v])=>`<option value="${k}" ${adminStatus(m)===k?'selected':''}>${v}</option>`).join('')}</select>
-    <div class="merchant-info">${[['대표자',m.ownerName],['사업자번호',m.bizNumber],['매장전화',m.storePhone],['대표전화',m.ownerPhone],['이메일',m.email],['대표자 OCR 비교',m.ownerNameMatch],['사업자등록증 OCR',m.ownerNameFromBiz],['신분증 OCR',m.ownerNameFromId]].map(([k,v])=>`<div><small>${k}</small><b>${escapeHtml(v||'미확인')}</b></div>`).join('')}</div>
-    ${editing?`<div class="field"><label>상호명</label><input id="edit_storeName_${id}" value="${escapeHtml(state.editForm.storeName)}"></div><div class="field"><label>대표자명</label><input id="edit_ownerName_${id}" value="${escapeHtml(state.editForm.ownerName)}"></div><div class="field"><label>사업자번호</label><input id="edit_bizNo_${id}" value="${escapeHtml(state.editForm.bizNo)}"></div><div class="btn-row"><button class="btn btn-primary" onclick="App.saveEditMerchant('${id}')">저장</button><button class="btn btn-secondary" onclick="App.cancelEditMerchant()">취소</button></div>`:`<button class="btn btn-secondary" onclick="App.startEditMerchant('${id}')">기본정보 수정</button>`}
+    <div class="merchant-info">${[['대표자',m.ownerName],['사업자번호',m.bizNumber],['매장전화',m.storePhone],['대표전화',m.ownerPhone],['이메일',m.email],['예금주명',m.depositor],['예금주 출처',m.depositorSource==='manual'?'관리자 확인':m.depositorSource==='ocr'?'통장 OCR · 확인 필요':'미확인'],['대표자 OCR 비교',m.ownerNameMatch],['사업자등록증 OCR',m.ownerNameFromBiz],['신분증 OCR',m.ownerNameFromId]].map(([k,v])=>`<div><small>${k}</small><b>${escapeHtml(v||'미확인')}</b></div>`).join('')}</div>
+    ${editing?`<div class="field"><label>상호명</label><input id="edit_storeName_${id}" value="${escapeHtml(state.editForm.storeName)}"></div><div class="field"><label>대표자명</label><input id="edit_ownerName_${id}" value="${escapeHtml(state.editForm.ownerName)}"></div><div class="field"><label>사업자번호</label><input id="edit_bizNo_${id}" value="${escapeHtml(state.editForm.bizNo)}"></div><div class="field"><label>예금주명 (통장사본 기준)</label><input id="edit_depositor_${id}" value="${escapeHtml(state.editForm.depositor)}"></div><div class="btn-row"><button class="btn btn-primary" onclick="App.saveEditMerchant('${id}')">저장</button><button class="btn btn-secondary" onclick="App.cancelEditMerchant()">취소</button></div>`:`<button class="btn btn-secondary" onclick="App.startEditMerchant('${id}')">기본정보 수정</button>`}
     <div class="section-title" style="margin-top:20px">첨부서류</div>
     ${d.loading?'<p role="status">서류 목록 불러오는 중...</p>':d.error?`<p>${escapeHtml(d.error)}</p>`:`<div class="merchant-files">${(d.files||[]).map(f=>`<div><span>${escapeHtml(f.group||'원본')} · ${escapeHtml(f.name)}</span><button class="btn btn-secondary btn-sm" onclick="App.previewMerchantFile('${id}','${escapeAttr(f.id)}')">보기</button></div>`).join('')||'<p>서류 목록 없음</p>'}</div>`}
     ${d.preview?`<div class="merchant-preview"><button class="btn btn-secondary btn-sm" onclick="App.clearMerchantPreview()">미리보기 닫기</button>${d.preview.mime.startsWith('image/')?`<img src="${d.preview.dataUrl}" alt="첨부 서류 미리보기">`:`<a href="${d.preview.dataUrl}" download="document.pdf">PDF 열기 / 저장</a>`}</div>`:''}
@@ -1941,7 +1941,8 @@ function renderEquipmentSelect(){
       </div>
     </div>
     <div class="field" style="margin-bottom:18px;">
-      <label>예금주명 (기본: 대표자명 또는 상호명)</label>
+      <label>예금주명 (통장사본 기준)</label>
+      <div class="section-sub">${state.contractMerchant?.depositorSource==='ocr'?'통장 OCR 결과입니다. 실제 예금주와 일치하는지 확인해 주세요.':state.contractMerchant?.depositorSource==='manual'?'관리자가 확인한 예금주명입니다.':'통장 예금주를 확인해 직접 입력해 주세요.'}</div>
       <input type="text" id="setup_cmsDepositor" placeholder="예: 홍길동 (또는 주식회사 위드)" value="${escapeHtml(state.cmsDepositor)}" oninput="App.setExtraField('cmsDepositor', this.value)">
     </div>
 
@@ -2061,7 +2062,7 @@ if (item.hasOption) {
   const bizNoVal = state.contractBizNo || m.bizNo || m.bizNumber || '';
   const birth6Val = state.contractBirth6 || m.birthDate || '';
   const addressVal = state.contractAddress || m.address || m.storeAddress || '';
-  const depositorVal = state.cmsDepositor || m.ownerName || '';
+  const depositorVal = String(state.cmsDepositor || '').trim();
   const bankNameVal = state.cmsBankName || '';
   const accountNoVal = state.cmsAccountNo || '';
 
@@ -2556,7 +2557,7 @@ const App = {
     }
     if (extracted.ownerName) {
       if (!state.fields.ownerName) state.fields.ownerName = extracted.ownerName;
-      if (!state.cmsDepositor) state.cmsDepositor = extracted.ownerName;
+      // 대표자명과 예금주는 서로 다른 정보이므로 추정하지 않는다.
     }
     if (extracted.birthDate) {
       state.contractBirth6 = extracted.birthDate;
@@ -2994,6 +2995,8 @@ async submitPaymentApplication(){
           if(ex.address) m.address = ex.address;
           if(ex.bankName) m.bankName = ex.bankName;
           if(ex.accountNumber) m.accountNumber = ex.accountNumber;
+          if(ex.depositor!==undefined)m.depositor=ex.depositor;
+          if(ex.depositorSource!==undefined)m.depositorSource=ex.depositorSource;
           if(ex.birthDate) m.birthDate = ex.birthDate;
         }
         toast(result.ocrEmpty
@@ -3017,7 +3020,8 @@ async submitPaymentApplication(){
     state.editForm = {
       storeName: m.storeName || '',
       ownerName: m.ownerName || '',
-      bizNo: m.bizNo || m.bizNumber || ''
+      bizNo: m.bizNo || m.bizNumber || '',
+      depositor:m.depositor||''
     };
     render();
   },
@@ -3035,6 +3039,8 @@ async submitPaymentApplication(){
     const storeName = (storeNameInput ? storeNameInput.value : state.editForm.storeName).trim();
     const ownerName = (ownerNameInput ? ownerNameInput.value : state.editForm.ownerName).trim();
     const bizNo = (bizNoInput ? bizNoInput.value : state.editForm.bizNo).trim();
+    const depositor=(document.getElementById('edit_depositor_'+id)?.value??state.editForm.depositor??'').trim();
+    const depositorChanged=depositor!==String(state.editForm.depositor||'').trim();
 
     if(!storeName){
       toast('상호명을 입력해 주세요.');
@@ -3056,7 +3062,8 @@ async submitPaymentApplication(){
           token: state.adminToken,
           storeName: storeName,
           ownerName: ownerName,
-          bizNo: bizNo
+          bizNo: bizNo,
+          ...(depositorChanged?{depositor}: {})
         })
       });
       const result = await response.json();
@@ -3068,6 +3075,7 @@ async submitPaymentApplication(){
           m.ownerName = ownerName;
           m.bizNumber = bizNo;
           m.bizNo = bizNo;
+          if(depositorChanged){m.depositor=depositor;m.depositorSource='manual';}
         }
         state.editingMerchantId = null;
         toast('저장되었습니다.');
