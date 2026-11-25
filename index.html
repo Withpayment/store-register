@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
 <title>가맹점 서류 접수 및 계약서</title>
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
 <style>
@@ -408,6 +408,9 @@ body{
 }
 @media(max-width:820px){.photo-guide-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:520px){.photo-guide-grid{grid-template-columns:1fr}}
+.intake-steps{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:18px 0 24px}
+.intake-steps span{padding:12px;text-align:center;border-radius:8px;background:var(--bg);color:var(--ink-soft);font-size:13px;font-weight:600}
+.intake-steps .active{background:var(--teal-deep);color:white}
 </style>
 </head>
 <body>
@@ -803,6 +806,7 @@ let state = {
   bulkClassifying: false,
   fields: { storeName: urlParams.type === 'payment' ? urlParams.storeName : '', ownerName:'', bizNo:'', businessType:'general', bizType:'personal', storePhone:'', ownerPhone:'', email:'', hasSign:'yes' },
   files: {},
+  intakeStep: 1,
   openShotGuideKey: null,
   uploadChoiceKey: null,
   uploadChoiceAccept: '',
@@ -846,15 +850,25 @@ function formatMoneyInput(value) {
   return Number(digits).toLocaleString('ko-KR');
 }
 
+function intakeError(f){
+  if(!String(f.storeName||'').trim()) return '상호명을 입력해 주세요.';
+  if(!/^(?:02\d{7,8}|0[1-9]\d{7,9})$/.test(String(f.storePhone||'').replace(/\D/g,''))) return '매장전화번호를 확인해 주세요.';
+  if(!/^01[016789]\d{7,8}$/.test(String(f.ownerPhone||'').replace(/\D/g,''))) return '대표자 휴대전화번호를 확인해 주세요.';
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(f.email||'').trim())) return '이메일 주소를 확인해 주세요.';
+  return '';
+}
+function missingIntakeDocs(docs){
+  return docs.filter(d=>d.required && (!state.files[d.key] || state.files[d.key].length < (d.key==='idCard' && !state.isPaymentMode && !state.isSupplementMode && state.fields.isForeigner==='yes' ? 2 : 1)));
+}
 function syncFields(){
   if(state.isSupplementMode) return;
   
   // 일반 접수 폼
-  state.fields.storeName = document.getElementById('f_storeName')?.value || state.fields.storeName;
-  state.fields.businessType = document.getElementById('f_businessType')?.value || state.fields.businessType;
-  state.fields.storePhone = formatKoreanPhone(document.getElementById('f_storePhone')?.value || state.fields.storePhone);
-  state.fields.ownerPhone = formatKoreanPhone(document.getElementById('f_ownerPhone')?.value || state.fields.ownerPhone);
-  state.fields.email = document.getElementById('f_email')?.value || state.fields.email;
+  state.fields.storeName = document.getElementById('f_storeName')?.value ?? state.fields.storeName;
+  state.fields.businessType = document.getElementById('f_businessType')?.value ?? state.fields.businessType;
+  state.fields.storePhone = formatKoreanPhone(document.getElementById('f_storePhone')?.value ?? state.fields.storePhone);
+  state.fields.ownerPhone = formatKoreanPhone(document.getElementById('f_ownerPhone')?.value ?? state.fields.ownerPhone);
+  state.fields.email = document.getElementById('f_email')?.value ?? state.fields.email;
   
   const bizRadio = document.querySelector('input[name="f_bizType"]:checked');
   if(bizRadio) state.fields.bizType = bizRadio.value;
@@ -866,8 +880,8 @@ function syncFields(){
 
   // 결제서비스 가맹신청 폼
   if(state.isPaymentMode) {
-    state.fields.storeName = document.getElementById('pay_storeName')?.value || state.fields.storeName;
-    state.fields.email = document.getElementById('pay_email')?.value || state.fields.email;
+    state.fields.storeName = document.getElementById('pay_storeName')?.value ?? state.fields.storeName;
+    state.fields.email = document.getElementById('pay_email')?.value ?? state.fields.email;
   }
 }
 
@@ -1028,11 +1042,14 @@ function renderPhotoGuide(){
 }
 
 
+function intakeStepper(){
+  return '<nav class="intake-steps" aria-label="접수 진행 단계">'+['기본정보','서류첨부'].map((label,i)=>'<span class="'+(state.intakeStep===i+1?'active':'')+'" '+(state.intakeStep===i+1?'aria-current="step"':'')+'>'+(i+1)+'. '+label+'</span>').join('')+'</nav>';
+}
 function renderForm(){
   const f = state.fields;
   const currentDocs = getRequiredDocs(f.businessType, f.bizType, f.hasSign);
   const requiredDocsCount = currentDocs.filter(d => d.required).length;
-  const filledRequiredCount = currentDocs.filter(d => d.required && state.files[d.key] && state.files[d.key].length > 0).length;
+  const filledRequiredCount = requiredDocsCount - missingIntakeDocs(currentDocs).length;
 
   if (state.isSupplementMode) {
     return `
@@ -1064,6 +1081,8 @@ function renderForm(){
   <div class="card">
     <div class="section-title">${serviceLabel} 가맹 서류 제출</div>
     <div class="section-sub">가맹점 정보와 필수 서류를 입력해 주세요.</div>
+    ${intakeStepper()}
+    <section ${state.intakeStep!==1?'hidden':''}>
 
     <div class="field">
       <label>상호명(매장명) <span class="req">*</span></label>
@@ -1083,7 +1102,7 @@ function renderForm(){
 
     <div class="field">
       <label>메일주소 <span class="req">*</span></label>
-      <input type="email" id="pay_email" placeholder="example@email.com" value="${f2.email}" oninput="state.fields.email = this.value">
+      <input type="email" id="pay_email" placeholder="example@email.com" value="${escapeHtml(f2.email)}" oninput="state.fields.email = this.value">
     </div>
 ${state.paymentService === 'toss' ? `
 <div class="field">
@@ -1096,14 +1115,17 @@ ${state.paymentService === 'toss' ? `
 </div>
 ${f2.bizType !== 'personal' ? `<div style="margin:-6px 0 18px; padding:10px 12px; border-radius:8px; background:#EEF7FF; color:#1769AA; font-size:12px; line-height:1.55;">💡 법인 서류는 모두 <b>발급일 3개월 이내</b>여야 하며, 복사본이나 재촬영본이 아닌 <b>원본을 직접 촬영</b>해서 제출해 주세요.</div>` : ''}
 ` : ''}
+    </section>
+    <section ${state.intakeStep!==2?'hidden':''}>
     <div class="opt-group-label" style="margin-top:26px;">필수 서류 (${filledRequiredCount}/${requiredDocsCount}) <span class="req">*</span></div>
     <div class="doc-grid">
       ${currentDocs.map(d => renderDropzone(d)).join('')}
     </div>
 
     <div class="btn-row">
-      <button class="btn btn-primary" onclick="App.submitPaymentApplication()">${serviceLabel} 가맹 서류 제출하기</button>
-    </div>
+      <button class="btn btn-secondary" onclick="App.setIntakeStep(1)">이전</button><button class="btn btn-primary" onclick="App.submitPaymentApplication()">${serviceLabel} 가맹 서류 제출하기</button>
+    </div></section>
+    ${state.intakeStep===1?'<button class="btn btn-primary" onclick="App.setIntakeStep(2)">다음 · 서류첨부</button>':''}
   </div>`;
 }
 
@@ -1127,6 +1149,8 @@ ${f2.bizType !== 'personal' ? `<div style="margin:-6px 0 18px; padding:10px 12px
   <div class="card">
     <div class="section-title">가맹점 정보 및 서류 제출</div>
     <div class="section-sub">사업자 형태, 업종 및 간판 유무에 따라 필요한 서류 항목이 자동으로 변경됩니다.</div>
+    ${intakeStepper()}
+    <section ${state.intakeStep!==1?'hidden':''}>
 
     ${tempInfoHtml}
 
@@ -1148,7 +1172,7 @@ ${f2.bizType !== 'personal' ? `<div style="margin:-6px 0 18px; padding:10px 12px
     </div>
     <div class="field">
       <label>메일주소 <span class="req">*</span></label>
-      <input type="email" id="f_email" placeholder="example@email.com" value="${f.email}">
+      <input type="email" id="f_email" placeholder="example@email.com" value="${escapeHtml(f.email)}">
     </div>
 
     <hr style="border:0; border-top:1px dashed var(--line); margin:24px 0;">
@@ -1187,15 +1211,18 @@ ${f2.bizType !== 'personal' ? `<div style="margin:-6px 0 18px; padding:10px 12px
     </div>
     ${f.isForeigner==='yes' ? `<div style="margin:-8px 0 18px; padding:10px 12px; border-radius:8px; background:#FFF7E6; color:#8A5A00; font-size:12px; line-height:1.55;">💡 외국인 대표자는 <b>외국인등록증 앞·뒷면</b>(체류자격 확인용)과 <b>여권 사본</b>을 제출해 주세요.</div>` : ''}
 
+    </section>
+    <section ${state.intakeStep!==2?'hidden':''}>
     <div class="opt-group-label" style="margin-top:26px;">필수 서류 (${filledRequiredCount}/${requiredDocsCount}) <span class="req">*</span></div>
     <div class="doc-grid">
       ${currentDocs.map(d => renderDropzone(d)).join('')}
     </div>
 
     <div class="btn-row">
-      <button class="btn btn-secondary" style="width:35%;" onclick="App.saveTempData()">임시저장</button>
-      <button class="btn btn-primary" style="width:65%;" onclick="App.submit()">접수 제출하기</button>
-    </div>
+      <button class="btn btn-secondary" style="width:35%;" onclick="App.saveTempData()">입력정보 임시저장</button>
+      <button class="btn btn-secondary" onclick="App.setIntakeStep(1)">이전</button><button class="btn btn-primary" onclick="App.submit()">접수 제출하기</button>
+    </div></section>
+    ${state.intakeStep===1?'<button class="btn btn-primary" onclick="App.setIntakeStep(2)">다음 · 서류첨부</button>':''}
   </div>`;
 }
 
@@ -1227,7 +1254,7 @@ function renderDropzone(d){
       ${filesArr.map((f, idx) => `
         <div class="dz-preview">
           ${f.isImage ? `<img class="dz-thumb" src="${f.dataUrl}">` : `<div class="dz-thumb" style="display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--ink-soft);">FILE</div>`}
-          <div class="dz-filename">${f.name}</div>
+          <div class="dz-filename">${escapeHtml(f.name)}</div>
           <button class="dz-remove" onclick="App.removeFile('${d.key}', ${idx})">삭제</button>
         </div>
       `).join('')}
@@ -1271,7 +1298,7 @@ function renderSuccess(){
   <div class="success-wrap">
     <div class="success-badge">✓</div>
     <h2>${state.isSupplementMode ? '보완서류 제출이 완료되었습니다' : '접수가 완료되었습니다'}</h2>
-    <p>${state.isSupplementMode ? '보완 요청 서류가 정상적으로 접수되었습니다.<br>검토 후 신속히 처리해 드리겠습니다.' : `${state.fields.storeName} 가맹점 정보와 서류가 안전하게 접수되었습니다.<br>확인 후 빠르게 연락드리겠습니다.`}</p>
+    <p>${state.isSupplementMode ? '보완 요청 서류가 정상적으로 접수되었습니다.<br>검토 후 신속히 처리해 드리겠습니다.' : `${escapeHtml(state.fields.storeName)} 가맹점 정보와 서류가 안전하게 접수되었습니다.<br>확인 후 빠르게 연락드리겠습니다.`}</p>
     <div class="receipt-num">접수번호 ${escapeHtml(state.receiptId)}</div>
     <div>
       <button class="btn btn-primary" onclick="App.resetAll()" style="width:auto;padding:12px 24px;">홈으로 돌아가기</button>
@@ -1319,7 +1346,7 @@ function renderAdmin(){
     </div>
   </div>
 
-  <input class="admin-search" id="admin_search_input" placeholder="🔍  상호명, 대표자명, 전화번호 또는 이메일로 검색" value="${state.adminSearch}" oninput="App.setAdminSearch(this.value)">
+  <input class="admin-search" id="admin_search_input" placeholder="🔍  상호명, 대표자명, 전화번호 또는 이메일로 검색" value="${escapeHtml(state.adminSearch)}" oninput="App.setAdminSearch(this.value)">
   <div style="font-size:12px; color:var(--ink-soft); margin:-10px 0 14px 4px;">
     총 <b style="color:var(--ink);">${list.length}</b>건
     <span style="margin-left:10px;">대표자명 <b style="color:#2F8F5B;">일치</b> / <b style="color:#C0392B;">불일치</b>는 사업자등록증과 신분증 OCR 비교 결과입니다.</span>
@@ -2462,6 +2489,16 @@ const App = {
     }
   },
 
+  setIntakeStep(next){
+    syncFields();
+    if(next===2){
+      const err=intakeError(state.fields);
+      if(err){toast(err);return;}
+    }
+    state.intakeStep=next;
+    render();
+    window.scrollTo(0,0);
+  },
   changeFormState(){
     syncFields();
     render();
@@ -2567,7 +2604,7 @@ const App = {
   async handleFile(key, fileList){
     if(!fileList || fileList.length === 0) return;
     syncFields();
-    const currentDocs = getRequiredDocs(state.fields.businessType, state.fields.bizType, state.hasSign);
+    const currentDocs = getRequiredDocs(state.fields.businessType, state.fields.bizType, state.fields.hasSign);
     const docDef = currentDocs.find(d=>d.key===key);
     const files = Array.from(fileList);
 
@@ -2693,14 +2730,12 @@ async submitPaymentApplication(){
   const email = document.getElementById('pay_email')?.value || '';
 
   // UI에서 받는 항목(상호명, 매장전화번호, 대표명의 폰번호, 이메일) 모두 필수로 검사
-  if(!storeName || !storePhone || !ownerPhone || !email){
-    toast('상호명, 매장전화번호, 대표명의 폰번호, 메일주소를 입력해 주세요'); 
-    return;
-  }
+  const err=intakeError({storeName,storePhone,ownerPhone,email});
+  if(err){toast(err);return;}
 
   // required 서류 검사 (기존 로직 유지)
   const currentDocs = getRequiredDocs();
-  const missing = currentDocs.filter(d => d.required && (!state.files[d.key] || state.files[d.key].length === 0));
+  const missing = missingIntakeDocs(currentDocs);
   if(missing.length > 0){
     const labels = missing.map(m => m.label).join(', ');
     toast('다음 서류가 누락되었습니다: ' + labels);
@@ -2745,6 +2780,7 @@ async submitPaymentApplication(){
     });
 
     const res = await response.json();
+    if(!response.ok || res?.status !== "success") throw new Error("접수 저장 실패");
 
     if (res && res.extracted) {
       this.applyExtractedData(res.extracted);
@@ -2983,11 +3019,10 @@ async submitPaymentApplication(){
   async submit(){
     syncFields();
     const f = state.fields;
-    if(!f.storeName || !f.storePhone || !f.ownerPhone || !f.email){
-      toast('필수 정보를 모두 입력해 주세요'); return;
-    }
+    const err=intakeError(f);
+    if(err){toast(err);return;}
     const currentDocs = getRequiredDocs(f.businessType, f.bizType, f.hasSign);
-    const missing = currentDocs.filter(d => d.required && (!state.files[d.key] || state.files[d.key].length === 0));
+    const missing = missingIntakeDocs(currentDocs);
     if(missing.length > 0){
       toast(missing[0].label + ' 등 필수 서류를 첨부해 주세요'); return;
     }
@@ -3009,7 +3044,7 @@ async submitPaymentApplication(){
         ownerPhone: f.ownerPhone,
         email: f.email,
         bizType: f.bizType === 'corporate' ? '법인' : (f.bizType === 'nonprofit' ? '사단법인' : (f.bizType === 'foundation' ? '재단법인' : '개인')),
-        filesData: buildFilesPayload(state.files)
+        filesData: buildFilesPayload(Object.fromEntries(currentDocs.filter(d=>state.files[d.key]).map(d=>[d.key,state.files[d.key]])))
       };
 
       const response = await fetch(API_URL, {
@@ -3019,6 +3054,7 @@ async submitPaymentApplication(){
       });
       
       const res = await response.json();
+    if(!response.ok || res?.status !== "success") throw new Error("접수 저장 실패");
 
       if (res && res.extracted) {
         this.applyExtractedData(res.extracted);
