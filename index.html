@@ -1694,11 +1694,10 @@ function hasSaleSelection(sel){
   return fixedQty || customQty;
 }
 
-function hasAnySelection(sel){
-  const rentalQty = Object.values(sel.rental).some(s=>s.qty>0);
-  const addonQty = Object.values(sel.addons).some(s=>s.qty>0);
-  return rentalQty || addonQty || hasSaleSelection(sel);
+function hasRentalSelection(sel){
+  return ['rental','addons'].some(group=>Object.values(sel[group]||{}).some(item=>item.qty>0));
 }
+function hasAnySelection(sel){return hasRentalSelection(sel)||hasSaleSelection(sel);}
 
 // [판매 품목] 선택된 키오스크 등 일시불 구매 품목 + 기타(직접입력) 품목의
 // 공급가액/부가세/합계 행을 만든다.
@@ -1823,9 +1822,11 @@ function contractReviewWarnings(st){
   if(!/^\d{10}$/.test(String(st.contractBizNo||'').replace(/\D/g,'')))warnings.push('사업자등록번호 (10자리)');
   if(!String(st.contractAddress||'').trim())warnings.push('사업장 주소');
   if(!/^\d{6}$/.test(String(st.contractBirth6||'')))warnings.push('생년월일 6자리');
-  if(!String(st.cmsBankName||'').trim())warnings.push('CMS 은행명');
-  if(!String(st.cmsAccountNo||'').trim())warnings.push('CMS 계좌번호');
-  if(!String(st.cmsDepositor||'').trim())warnings.push('CMS 예금주');
+  if(hasRentalSelection(st.selection)){
+    if(!String(st.cmsBankName||'').trim())warnings.push('CMS 은행명');
+    if(!String(st.cmsAccountNo||'').trim())warnings.push('CMS 계좌번호');
+    if(!String(st.cmsDepositor||'').trim())warnings.push('CMS 예금주');
+  }
   if(m.ownerNameMatch==='불일치')warnings.push('대표자명 OCR 불일치');
   return warnings;
 }
@@ -2002,7 +2003,7 @@ function renderEquipmentSelect(){
 
     <div class="btn-row">
       <button class="btn btn-secondary" onclick="App.backToAdminFromEquip()">취소</button>
-      <button class="btn btn-primary" onclick="App.goContract()">계약서 및 CMS 동의서 생성</button>
+      <button class="btn btn-primary" onclick="App.goContract()">${hasRentalSelection(sel)?'계약서 및 CMS 동의서 생성':hasSaleSelection(sel)?'물품판매계약서 생성':'계약서 생성'}</button>
     </div>
   </div>`;
 }
@@ -2113,9 +2114,13 @@ if (item.hasOption) {
     ? ['(보관용)', '(고객용)']
     : Array.from({length: contractCopies}, (_, i) => `(${i+1}부)`);
 
+  const hasRental=hasRentalSelection(sel);
+  const hasSale=saleRows.length>0;
+  const outputLabel=[hasRental?`임대계약서 ${contractCopies}부`:'',hasSale?`물품판매계약서 ${contractCopies}부`:'',hasRental?'동의서 1부':''].filter(Boolean).join('·');
   const rawHtml = `
   <div style="max-width:820px;margin:10px auto;">
     
+    ${hasRental?`
     <!--RENTAL_PAGE_START--><div class="contract-page">
       <div class="contract-top-title">임대서비스계약서 <span style="font-size:12px; font-weight:400; color:#888;">__COPY_LABEL__</span></div>
 
@@ -2219,8 +2224,9 @@ if (item.hasOption) {
 
       
     </div><!--RENTAL_PAGE_END-->
+    `:''}
 
-    ${saleRows.length > 0 ? `
+    ${hasSale ? `
     <!--SALE_PAGE_START--><div class="contract-page">
       <div class="contract-top-title">물품판매계약서 <span style="font-size:12px; font-weight:400; color:#888;">__COPY_LABEL__</span></div>
 
@@ -2302,7 +2308,7 @@ if (item.hasOption) {
     </div><!--SALE_PAGE_END-->
     ` : ''}
 
-    <div class="cms-page page-no-break">
+    ${hasRental?`<div class="cms-page page-no-break">
       <h1>CMS 출금이체 신청(동의)서</h1>
 
       <h2>□ 수납기관정보</h2>
@@ -2424,7 +2430,7 @@ if (item.hasOption) {
       <div class="footer-note">
         * 인감 또는 서명은 해당 예금계좌(통장) 사용인감 또는 서명을 날인하여야 합니다.
       </div>
-    </div>
+    </div>`:''}
 
     <div class="no-print" style="flex-wrap:wrap; align-items:center;">
       <button class="btn btn-secondary" style="width:auto;" onclick="App.backToEquip()">← 장비 및 기간 설정 수정</button>
@@ -2434,16 +2440,18 @@ if (item.hasOption) {
           ${[1,2,3,4,5].map(n => `<option value="${n}" ${contractCopies===n?'selected':''}>${n}부${n===2?' (보관용+고객용)':''}</option>`).join('')}
         </select>
       </div>
-      <button class="btn btn-primary" onclick="App.printContract()">인쇄 / PDF 저장 (${saleRows.length > 0 ? `임대계약서 ${contractCopies}부·물품판매계약서 ${contractCopies}부·동의서 1부` : `계약서 ${contractCopies}부·동의서 1부`})</button>
+      <button class="btn btn-primary" onclick="App.printContract()">인쇄 / PDF 저장 (${outputLabel})</button>
       <button class="btn btn-secondary" style="width:auto;" onclick="App.finishContract()">완료 (목록으로)</button>
     </div>
   </div>`;
 
   // [출력 매수] 임대계약서/물품판매계약서 페이지를 선택한 부수만큼 반복 출력하고,
-  // 각 사본에 (보관용)/(고객용) 또는 (N부) 라벨을 붙인다. CMS 동의서는 항상 1부만 출력.
+  // CMS 동의서는 임대가 있는 경우만 1부 출력한다.
   let finalHtml = expandPageCopies_(rawHtml, 'RENTAL_PAGE', copyLabels);
-  if (saleRows.length > 0) {
-    finalHtml = expandPageCopies_(finalHtml, 'SALE_PAGE', copyLabels);
+  finalHtml = expandPageCopies_(finalHtml, 'SALE_PAGE', copyLabels);
+  if(!hasRental&&hasSale){
+    const last=finalHtml.lastIndexOf('<div class="contract-page">');
+    if(last>=0)finalHtml=finalHtml.slice(0,last)+finalHtml.slice(last).replace('<div class="contract-page">','<div class="contract-page page-no-break">');
   }
   return finalHtml;
 }
@@ -3434,7 +3442,7 @@ setCustomSaleFree(idx, isFree){
     if(!state.adminToken){this.handleUnauthorized();return;}
     const error=contractSelectionError(state.selection);
     if(error){toast(error);return;}
-    if(!/^\d{4}-\d{2}-\d{2}$/.test(state.installDate)||!Number.isFinite(Date.parse(state.installDate))||!Number.isInteger(state.contractPeriodYears)||state.contractPeriodYears<1||state.contractPeriodYears>5){toast('설치일과 계약기간을 확인해 주세요.');return;}
+    if(hasRentalSelection(state.selection)&&(!/^\d{4}-\d{2}-\d{2}$/.test(state.installDate)||!Number.isFinite(Date.parse(state.installDate))||!Number.isInteger(state.contractPeriodYears)||state.contractPeriodYears<1||state.contractPeriodYears>5)){toast('설치일과 계약기간을 확인해 주세요.');return;}
     const warnings=contractReviewWarnings(state);
     if(warnings.length&&!confirm('다음 항목을 확인해야 합니다.\n- '+warnings.join('\n- ')+'\n\n미확인 항목이 있는 상태로 계약서 미리보기를 열까요?'))return;
     try{
