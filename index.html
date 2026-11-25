@@ -423,6 +423,9 @@ body{
 .contract-page .corp-seal-anchor{position:relative!important;display:inline-block!important;vertical-align:middle!important;isolation:isolate;white-space:nowrap;width:34px;height:20px;line-height:20px;text-align:center;overflow:visible!important}
 .contract-page .corp-seal-anchor>.corp-seal-image{position:absolute!important;display:block!important;left:50%!important;top:50%!important;right:auto!important;bottom:auto!important;transform:translate(-50%,-50%)!important;width:76px!important;height:76px!important;max-width:none!important;max-height:none!important;object-fit:contain;mix-blend-mode:multiply;z-index:2;pointer-events:none;margin:0!important}
 @media print{.corp-seal-anchor,.corp-seal-image{-webkit-print-color-adjust:exact;print-color-adjust:exact}.contract-page .corp-seal-anchor{break-inside:avoid}}
+.selected-equipment{padding:14px;border:1px solid var(--teal);border-radius:12px;margin:0 0 18px;background:var(--paper)}.selected-equipment .eq-item{margin-bottom:10px}
+.merchant-preview-overlay{position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;padding:16px}.merchant-preview-box{width:min(100%,900px);max-height:92vh;overflow:auto;background:var(--paper);border-radius:12px;padding:16px}.merchant-preview-head{display:flex;align-items:center;justify-content:space-between;gap:8px;overflow-wrap:anywhere}.merchant-preview-box img{display:block;max-width:100%;max-height:72vh;object-fit:contain;margin:12px auto}.merchant-preview-box a{display:block;margin-top:12px}
+.contract-page .corp-seal-image{background:transparent!important;mix-blend-mode:normal!important}
 </style>
 </head>
 <body>
@@ -1428,7 +1431,9 @@ function renderMerchantDetail(m){
     ${editing?`<div class="field"><label>상호명</label><input id="edit_storeName_${id}" value="${escapeHtml(state.editForm.storeName)}"></div><div class="field"><label>대표자명</label><input id="edit_ownerName_${id}" value="${escapeHtml(state.editForm.ownerName)}"></div><div class="field"><label>사업자번호</label><input id="edit_bizNo_${id}" value="${escapeHtml(state.editForm.bizNo)}"></div><div class="field"><label>예금주명 (통장사본 기준)</label><input id="edit_depositor_${id}" value="${escapeHtml(state.editForm.depositor)}"></div><div class="btn-row"><button class="btn btn-primary" onclick="App.saveEditMerchant('${id}')">저장</button><button class="btn btn-secondary" onclick="App.cancelEditMerchant()">취소</button></div>`:`<button class="btn btn-secondary" onclick="App.startEditMerchant('${id}')">기본정보 수정</button>`}
     <div class="section-title" style="margin-top:20px">첨부서류</div>
     ${d.loading?'<p role="status">서류 목록 불러오는 중...</p>':d.error?`<p>${escapeHtml(d.error)}</p>`:`<div class="merchant-files">${(d.files||[]).map(f=>`<div><span>${escapeHtml(f.group||'원본')} · ${escapeHtml(f.name)}</span><button class="btn btn-secondary btn-sm" onclick="App.previewMerchantFile('${id}','${escapeAttr(f.id)}')">보기</button></div>`).join('')||'<p>서류 목록 없음</p>'}</div>`}
-    ${d.preview?`<div class="merchant-preview"><button class="btn btn-secondary btn-sm" onclick="App.clearMerchantPreview()">미리보기 닫기</button>${d.preview.mime.startsWith('image/')?`<img src="${d.preview.dataUrl}" alt="첨부 서류 미리보기">`:`<a href="${d.preview.dataUrl}" download="document.pdf">PDF 열기 / 저장</a>`}</div>`:''}
+    ${d.preview?`<div class="merchant-preview-overlay" role="dialog" aria-modal="true" aria-label="첨부서류 미리보기"><div class="merchant-preview-box"><div class="merchant-preview-head"><b>${escapeHtml(d.preview.name)}</b><button class="btn btn-secondary btn-sm" onclick="App.clearMerchantPreview()">닫기</button></div>
+    ${d.preview.loading?'<p role="status">서류 불러오는 중...</p>':d.preview.error?`<p role="alert">${escapeHtml(d.preview.error)}</p>`:d.preview.dataUrl?(d.preview.mime.startsWith('image/')?`<img src="${d.preview.dataUrl}" alt="첨부 서류 미리보기">`:`<a class="btn btn-secondary" href="${d.preview.dataUrl}" download="document.pdf">PDF 저장하여 열기</a>`):'<p>표시할 데이터가 없습니다.</p>'}
+    ${/^[A-Za-z0-9_-]{10,}$/.test(d.preview.fileId)?`<a href="https://drive.google.com/file/d/${d.preview.fileId}/view" target="_blank" rel="noopener noreferrer">Drive에서 원본 열기 (접근 권한 필요)</a>`:''}</div></div>`:''}
     ${/^https:\/\/drive\.google\.com\/drive\//.test(m.files||'')?`<a href="${escapeHtml(m.files)}" target="_blank" rel="noopener noreferrer">Drive 폴더 열기</a>`:''}
     <div class="merchant-actions"><button class="btn btn-secondary" onclick="App.reOcrRow('${id}')">OCR 재검토</button><button class="btn btn-secondary" onclick="App.openSupplementModal('${id}')">보완 요청</button><button class="btn btn-primary" onclick="App.closeMerchantDetail();App.goEquipmentSelect('${id}')">계약서 작성</button><button class="btn btn-secondary" style="color:var(--red)" onclick="App.completeAndDelete('${id}','${escapeAttr(m.storeName)}')">처리완료 · 서류 정리</button></div>
   </div></div>`;
@@ -1824,6 +1829,31 @@ function contractReviewWarnings(st){
   if(m.ownerNameMatch==='불일치')warnings.push('대표자명 OCR 불일치');
   return warnings;
 }
+function removeSealWhitePixels(pixels){
+  for(let i=0;i<pixels.length;i+=4){
+    const r=pixels[i],g=pixels[i+1],b=pixels[i+2],a=pixels[i+3];
+    const ink=255-Math.min(r,g,b);
+    if(ink<=12){pixels[i+3]=0;continue;}
+    // Unmatte against white, retaining original contours and ink colours.
+    const opacity=ink/255;
+    pixels[i]=Math.round((r-255+ink)/opacity);
+    pixels[i+1]=Math.round((g-255+ink)/opacity);
+    pixels[i+2]=Math.round((b-255+ink)/opacity);
+    pixels[i+3]=Math.round(a*opacity);
+  }
+  return pixels;
+}
+async function transparentContractSeal(dataUrl){
+  const img=new Image();img.src=dataUrl;await img.decode();
+  if(!img.naturalWidth||!img.naturalHeight||img.naturalWidth*img.naturalHeight>16000000)throw Error('인감 이미지 크기를 확인해 주세요.');
+  const canvas=document.createElement('canvas');canvas.width=img.naturalWidth;canvas.height=img.naturalHeight;
+  const ctx=canvas.getContext('2d');ctx.drawImage(img,0,0);
+  const pixels=ctx.getImageData(0,0,canvas.width,canvas.height);
+  // A genuinely transparent source does not need white-matte removal.
+  let hasTransparency=false;for(let i=3;i<pixels.data.length;i+=4)if(pixels.data[i]===0){hasTransparency=true;break;}
+  if(!hasTransparency){removeSealWhitePixels(pixels.data);ctx.putImageData(pixels,0,0);}
+  return canvas.toDataURL('image/png');
+}
 function renderEquipmentSelect(){
   const m = state.contractMerchant;
   const sel = state.selection;
@@ -1832,7 +1862,7 @@ function renderEquipmentSelect(){
   const saleSupplyTotal = saleRows.reduce((sum,r)=> sum + r.supply, 0);
   const saleTotal = saleRows.reduce((sum,r)=> sum + r.total, 0);
 
-  const rentalItemsHtml = Object.values(RENTAL_CATALOG).map(item=>{
+  const rentalCards = Object.values(RENTAL_CATALOG).map(item=>{
     const s = sel.rental[item.key];
     return `
     <div class="eq-item ${s.qty>0?'active':''}">
@@ -1848,7 +1878,10 @@ function renderEquipmentSelect(){
       ${s.qty > 0 && (item.key === 'posSetTerminal') ? (renderModelPicker('rental', item.key, 'pos') + renderModelPicker('rental', item.key, 'terminal')) : ''}
       ${s.qty > 0 && (item.key === 'cardTerminal') ? renderModelPicker('rental', item.key, 'terminal') : ''}
     </div>`;
-  }).join('');
+  });
+  const rentalCatalog=Object.values(RENTAL_CATALOG);
+  const rentalItemsHtml=rentalCards.filter((_,i)=>sel.rental[rentalCatalog[i].key].qty===0).join('');
+  const selectedRentalHtml=rentalCards.filter((_,i)=>sel.rental[rentalCatalog[i].key].qty>0).join('');
 
   const addonsHtml = Object.values(RENTAL_ADDONS).map(item=>{
     return `
@@ -1863,7 +1896,7 @@ function renderEquipmentSelect(){
     </div>`;
   }).join('');
 
-  const saleItemsHtml = Object.values(SALE_CATALOG).map(item=>{
+  const saleCards = Object.values(SALE_CATALOG).map(item=>{
     const s = sel.sale[item.key];
     return `
     <div class="eq-item ${s.qty>0?'active':''}">
@@ -1875,7 +1908,10 @@ function renderEquipmentSelect(){
         ${renderStepper('sale', item.key)}
       </div>
     </div>`;
-  }).join('');
+  });
+  const saleCatalog=Object.values(SALE_CATALOG);
+  const saleItemsHtml=saleCards.filter((_,i)=>sel.sale[saleCatalog[i].key].qty===0).join('');
+  const selectedSaleHtml=saleCards.filter((_,i)=>sel.sale[saleCatalog[i].key].qty>0).join('');
 
   const customSale = sel.sale.custom || [];
   const customSaleHtml = customSale.map((row, idx) => `
@@ -1900,7 +1936,8 @@ function renderEquipmentSelect(){
     <div class="section-title">장비 임대/구매 선택 및 CMS 자동이체 연동 ${m ? '- ' + escapeHtml(m.storeName) : ''}</div>
     <div class="section-sub">계약기간, 장비 및 CMS 출금계좌 정보를 설정하세요. 접수 데이터 및 통장사본 정보가 자동 매핑됩니다.</div>
 
-    <div class="contract-preset"><div class="opt-group-label">자주 사용하는 장비 구성</div><p class="section-sub">누를 때마다 기존 구성에 해당 장비 1대가 추가됩니다. 임대·판매를 함께 선택할 수 있습니다.</p><div class="contract-preset-grid">${Object.entries(CONTRACT_PRESETS).map(([k,p])=>`<button type="button" class="btn btn-secondary btn-sm" onclick="App.applyContractPreset('${k}')">${p.label}</button>`).join('')}</div></div>
+    <div class="contract-preset"><div class="opt-group-label">자주 사용하는 장비 구성</div><p class="section-sub">누르면 1대가 추가되고 바로 아래에서 리더기·모델·수량을 설정할 수 있습니다. 임대·판매 함께 선택 가능.</p><div class="contract-preset-grid">${Object.entries(CONTRACT_PRESETS).map(([k,p])=>`<button type="button" class="btn btn-secondary btn-sm" onclick="App.applyContractPreset('${k}')">${p.label}</button>`).join('')}</div></div>
+    ${selectedRentalHtml||selectedSaleHtml?`<div class="selected-equipment"><div class="opt-group-label">선택한 장비 · 상세 설정</div>${selectedRentalHtml?`<div class="section-sub">임대</div>${selectedRentalHtml}`:''}${selectedSaleHtml?`<div class="section-sub">판매</div>${selectedSaleHtml}`:''}</div>`:''}
     <div class="grid2" style="margin-bottom:18px;">
       <div class="field">
         <label>설치일자</label>
@@ -1947,12 +1984,12 @@ function renderEquipmentSelect(){
     </div>
 
     <div class="opt-group-label" style="margin-top:18px;">임대 장비 선택</div>
-    ${rentalItemsHtml}
+    ${rentalItemsHtml||'<p class="section-sub">선택한 장비는 상단 상세 설정에 표시됩니다.</p>'}
     <div class="opt-group-label" style="margin-top:18px;">추가옵션</div>
     ${addonsHtml}
 
     <div class="opt-group-label" style="margin-top:18px;">🛒 구매(판매) 장비 선택 <span class="optional">(일시불, 선택 시 물품판매계약서가 함께 생성됩니다)</span></div>
-    ${saleItemsHtml}
+    ${saleItemsHtml||'<p class="section-sub">선택한 판매 장비는 상단에 표시됩니다.</p>'}
     ${customSaleHtml}
     <button type="button" class="btn btn-secondary btn-sm" style="width:auto;" onclick="App.addCustomSaleItem()">+ 기타 판매 제품 추가 (직접입력)</button>
 
@@ -2892,7 +2929,7 @@ async submitPaymentApplication(){
   adminNavigate(delta){state.adminPage+=delta;render();},
   closeMerchantDetail(){state.adminSelected=null;state.adminDetail=null;state.editingMerchantId=null;render();},
   async merchantRequest(action,extra){
-    const res=await (await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action,token:state.adminToken,...extra})})).json();
+    const res=await classifyWithTimeout({action,token:state.adminToken,...extra},45000);
     if(res.status==='unauthorized'){this.handleUnauthorized();throw Error('세션 만료');}
     if(res.status!=='success')throw Error(res.message||'요청 실패');
     return res;
@@ -2905,11 +2942,17 @@ async submitPaymentApplication(){
   },
   async previewMerchantFile(id,fileId){
     const detail=state.adminDetail;if(!detail)return;
-    try{const res=await this.merchantRequest('previewMerchantFile',{id,fileId});
-      if(state.adminDetail!==detail)return;
-      if(!/^data:(?:image\/(?:jpeg|png|gif|webp)|application\/pdf);base64,[A-Za-z0-9+/]+={0,2}$/.test(res.dataUrl))throw Error('지원되지 않는 형식');
-      detail.preview=res;render();
-    }catch(e){toast(e.message);}
+    const file=detail.files.find(f=>String(f.id)===String(fileId));if(!file)return;
+    const request={fileId:String(fileId),name:file.name||'첨부서류',loading:true};detail.preview=request;render();
+    try{
+      const res=await this.merchantRequest('previewMerchantFile',{id,fileId});
+      if(state.adminDetail!==detail||detail.preview!==request)return;
+      const url=res.dataUrl||res.file?.dataUrl||res.preview?.dataUrl;
+      const match=typeof url==='string'&&url.match(/^data:(image\/(?:jpeg|png|gif|webp)|application\/pdf);base64,([A-Za-z0-9+/]+={0,2})$/);
+      if(!match)throw Error('서버에서 지원하는 파일 데이터가 반환되지 않았습니다.');
+      request.mime=match[1];request.dataUrl=url;
+    }catch(e){request.error=e.name==='AbortError'?'서류 응답 시간이 초과되었습니다.':(e.message||'서류 불러오기 실패');}
+    finally{request.loading=false;if(state.adminDetail===detail&&detail.preview===request)render();}
   },
   clearMerchantPreview(){if(state.adminDetail)delete state.adminDetail.preview;render();},
   async updateWorkflow(id,status){
@@ -3397,7 +3440,9 @@ setCustomSaleFree(idx, isFree){
     try{
       const result=await this.merchantRequest('getContractSeal',{});
       if(!/^data:image\/(?:png|jpeg);base64,[A-Za-z0-9+/]+={0,2}$/.test(result.dataUrl))throw Error('인감 이미지 설정을 확인해 주세요.');
-      CORP_SEAL_IMG=result.dataUrl;
+      const seal=await transparentContractSeal(result.dataUrl);
+      if(state.view!=='equipmentSelect'||!state.adminToken)return;
+      CORP_SEAL_IMG=seal;
     }catch(e){if(state.view!=='equipmentSelect')return;if(!confirm('법인인감을 불러오지 못했습니다. 인감 없이 미리보기를 열까요?'))return;CORP_SEAL_IMG='';}
     state.view = 'contract';
     render();
