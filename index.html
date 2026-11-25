@@ -2,6 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
+<meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
 <title>가맹점 서류 접수 및 계약서</title>
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
@@ -546,6 +547,7 @@ function parseQueryParams() {
   return {
     type: params.get('type'),
     receiptId: params.get('id'),
+    supplementToken: params.get('grant') || '',
     docs: params.get('docs') ? params.get('docs').split(',') : [],
     service: params.get('service'),
     naverPlace: params.get('naverPlace'),
@@ -807,6 +809,8 @@ let state = {
   fields: { storeName: urlParams.type === 'payment' ? urlParams.storeName : '', ownerName:'', bizNo:'', businessType:'general', bizType:'personal', storePhone:'', ownerPhone:'', email:'', hasSign:'yes' },
   files: {},
   intakeStep: 1,
+  pendingReceiptId: null,
+  submitting: false,
   openShotGuideKey: null,
   uploadChoiceKey: null,
   uploadChoiceAccept: '',
@@ -906,6 +910,7 @@ const SUBMIT_OVERLAY_STAGES = [
 ];
 
 function showSubmitOverlay(){
+  state.submitting=true;
   const overlay = document.getElementById('submit-overlay');
   const msgEl = document.getElementById('submit-overlay-msg');
   const elapsedEl = document.getElementById('submit-overlay-elapsed');
@@ -934,6 +939,7 @@ function showSubmitOverlay(){
 }
 
 function hideSubmitOverlay(){
+  state.submitting=false;
   const overlay = document.getElementById('submit-overlay');
   overlay.classList.remove('show');
   clearInterval(window.__submitOverlayTimer);
@@ -2664,23 +2670,22 @@ const App = {
     render();
   },
 
-  generateSupplementLink(){
-    if(state.selectedModalDocs.length === 0){
-      toast('보완이 필요한 서류를 1개 이상 선택해 주세요');
-      return;
-    }
-    const baseUrl = window.location.origin + window.location.pathname;
-    const docsStr = state.selectedModalDocs.join(',');
-    const mId = state.activeModalMerchant ? state.activeModalMerchant.id : '';
-    const fullUrl = `${baseUrl}?type=supplement&id=${encodeURIComponent(mId)}&docs=${encodeURIComponent(docsStr)}`;
-
-    navigator.clipboard.writeText(fullUrl).then(() => {
-      toast('보완요청 맞춤 링크가 클립보드에 복사되었습니다!');
+  async generateSupplementLink(){
+    if(!state.adminToken){this.handleUnauthorized();return;}
+    const docs=[...state.selectedModalDocs];
+    const id=state.activeModalMerchant?.id;
+    if(!docs.length||!id){toast('보완서류를 선택해 주세요.');return;}
+    try {
+      const response=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'issueSupplementGrant',token:state.adminToken,id,docs})});
+      const result=await response.json();
+      if(result.status==='unauthorized'){this.handleUnauthorized();return;}
+      if(result.status!=='success'||!result.supplementToken){toast(result.message||'보완 링크 발급 실패');return;}
+      const query=new URLSearchParams({type:'supplement',id,docs:docs.join(','),grant:result.supplementToken});
+      const fullUrl=window.location.origin+window.location.pathname+'?'+query.toString();
+      try{await navigator.clipboard.writeText(fullUrl);toast('7일간 유효한 1회용 보완 링크를 복사했습니다.');}
+      catch(e){prompt('보완 링크를 복사해 전달하세요:',fullUrl);}
       this.closeSupplementModal();
-    }).catch(() => {
-      prompt('아래 링크를 복사하여 고객에게 전달하세요:', fullUrl);
-      this.closeSupplementModal();
-    });
+    }catch(e){toast('보완 링크 발급 중 오류가 발생했습니다.');}
   },
 
   openNewAppModal(){
@@ -2723,6 +2728,7 @@ generateNewAppLink(){
 },
 
 async submitPaymentApplication(){
+    if(state.submitting) return;
   // 상호명은 state.fields.storeName으로 들어옵니다 (관리자가 생성한 링크로 들어오면 미리 채워짐)
   const storeName = state.fields.storeName || '';
   const storePhone = formatKoreanPhone(document.getElementById('pay_storePhone')?.value || '');
@@ -2742,11 +2748,11 @@ async submitPaymentApplication(){
     return;
   }
 
-  const submitBtn = document.querySelector('.btn-primary');
+  const submitBtn = document.querySelector('section:not([hidden]) .btn-primary') || document.querySelector('.btn-primary');
   if(submitBtn){ submitBtn.disabled = true; submitBtn.textContent = '제출 중...'; }
   showSubmitOverlay();
 
-  const id = 'F' + new Date().toISOString().replace(/[-:.TZ]/g,'').slice(0,14) + '-' + Math.floor(Math.random()*900+100);
+  const id = state.pendingReceiptId || (state.pendingReceiptId = 'F-' + crypto.randomUUID());
   const createdAt = new Date().toISOString();
   // [폴더 규칙] 관리자가 지정한 가맹점명 뒤에 서비스명을 붙여서 저장한다 → "가맹점명-토스" / "가맹점명-네이버"
   const serviceSuffix = state.paymentService === 'naver' ? '네이버' : '토스';
@@ -2789,6 +2795,7 @@ async submitPaymentApplication(){
     this.clearTempData();
 
     state.receiptId = id;
+    state.pendingReceiptId = null;
     state.files = {};
     state.view = 'success';
     hideSubmitOverlay();
@@ -2833,7 +2840,7 @@ async submitPaymentApplication(){
 
   async completeAndDelete(id, storeName) {
     if(!state.adminToken){ this.handleUnauthorized(); return; }
-    if(!confirm(`[${storeName}] 가맹점 서류 확인 및 접수 처리를 완료하셨습니까?\n확인을 누르면 시트 내역과 드라이브의 모든 사진 파일이 개인정보 보호를 위해 영구 삭제됩니다.`)) {
+    if(!confirm(`[${storeName}] 가맹점 서류 확인 및 접수 처리를 완료하셨습니까?\n확인을 누르면 시트 내역과 해당 드라이브 폴더가 휴지통으로 이동합니다. 영구 파기는 별도로 확인해야 합니다.`)) {
       return;
     }
 
@@ -2847,12 +2854,12 @@ async submitPaymentApplication(){
       const result = await response.json();
 
       if(result.status === 'success') {
-        toast('처리가 완료되어 해당 정보와 파일이 안전하게 삭제되었습니다.');
+        toast('처리 완료: 시트 기록 삭제 및 폴더 휴지통 이동.');
         App.loadGoogleData();
       } else if(result.status === 'unauthorized') {
         this.handleUnauthorized();
       } else {
-        toast('삭제 처리에 실패했습니다.');
+        toast(result.message || '삭제 처리에 실패했습니다.');
       }
     } catch(e) {
       toast('서버 통신 오류가 발생했습니다.');
@@ -2972,20 +2979,23 @@ async submitPaymentApplication(){
   },
 
   async submitSupplement(){
+    if(state.submitting) return;
+    if(!urlParams.supplementToken || !state.receiptId || !state.supplementDocKeys.length){toast('유효한 보완 링크를 관리자에게 요청해 주세요.');return;}
     const currentDocs = getRequiredDocs();
     const missing = currentDocs.filter(d => !state.files[d.key] || state.files[d.key].length === 0);
     if(missing.length > 0){
       toast(missing[0].label + ' 서류를 첨부해 주세요'); return;
     }
 
-    const submitBtn = document.querySelector('.btn-primary');
+    const submitBtn = document.querySelector('section:not([hidden]) .btn-primary') || document.querySelector('.btn-primary');
     if(submitBtn){ submitBtn.disabled = true; submitBtn.textContent = '제출 중...'; }
     showSubmitOverlay();
 
     try {
       const payload = {
         action: 'submitSupplement',
-        id: state.receiptId || ('SUPP-' + Date.now()),
+        supplementToken: urlParams.supplementToken,
+        id: state.receiptId,
         createdAt: new Date().toISOString(),
         filesData: buildFilesPayload(state.files)
       };
@@ -3017,6 +3027,7 @@ async submitPaymentApplication(){
   },
 
   async submit(){
+    if(state.submitting) return;
     syncFields();
     const f = state.fields;
     const err=intakeError(f);
@@ -3026,11 +3037,11 @@ async submitPaymentApplication(){
     if(missing.length > 0){
       toast(missing[0].label + ' 등 필수 서류를 첨부해 주세요'); return;
     }
-    const submitBtn = document.querySelector('.btn-primary');
+    const submitBtn = document.querySelector('section:not([hidden]) .btn-primary') || document.querySelector('.btn-primary');
     if(submitBtn){ submitBtn.disabled = true; submitBtn.textContent = '제출 중...'; }
     showSubmitOverlay();
 
-    const id = 'F' + new Date().toISOString().replace(/[-:.TZ]/g,'').slice(0,14) + '-' + Math.floor(Math.random()*900+100);
+    const id = state.pendingReceiptId || (state.pendingReceiptId = 'F-' + crypto.randomUUID());
     const createdAt = new Date().toISOString();
 
     try {
@@ -3063,6 +3074,7 @@ async submitPaymentApplication(){
       this.clearTempData();
 
       state.receiptId = id;
+    state.pendingReceiptId = null;
       state.files = {};
       state.fields = { storeName:'', ownerName:'', bizNo:'', businessType:'general', bizType:'personal', storePhone:'', ownerPhone:'', email:'', hasSign:'yes', isForeigner:'no' };
       state.view = 'success';
@@ -3366,6 +3378,7 @@ App.bulkRemove = function(id){
 };
 
 App.bulkSubmit = async function(){
+  if(state.submitting) return;
   const f = state.bulkForm;
   if(state.bulkItems.some(i => i.status === 'pending' || i.status === 'working')){
     toast('사진 분석이 끝난 뒤에 등록할 수 있어요'); return;
@@ -3381,7 +3394,7 @@ App.bulkSubmit = async function(){
 
   showSubmitOverlay();
   try{
-    const id = 'F' + new Date().toISOString().replace(/[-:.TZ]/g,'').slice(0,14) + '-' + Math.floor(Math.random()*900+100);
+    const id = state.pendingReceiptId || (state.pendingReceiptId = 'F-' + crypto.randomUUID());
     const payload = {
       id, createdAt: new Date().toISOString(),
       storeName: f.storeName.trim(), ownerName:'', bizNo:'',
@@ -3395,6 +3408,7 @@ App.bulkSubmit = async function(){
 
     hideSubmitOverlay();
     if(res.status !== 'success'){ toast(res.message || '등록에 실패했습니다.'); return; }
+    state.pendingReceiptId = null;
     state.showBulkModal = false;
     toast('등록 완료! 목록을 새로고침합니다.');
     App.loadGoogleData();
