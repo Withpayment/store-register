@@ -436,7 +436,7 @@ body{
 </div>
 
 <script>
-const API_URL = "https://script.google.com/macros/s/AKfycby80a3Qq2E-nOMZ2t75eyPeL3P9l3UcmMofmc3hHwiB_lterC17i2375TCZjT-urySI6g/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbx_fFTB5SSEqwX-WM1wKsh-yE4yGYARA_HJxZ13mynaMx2f5N-GmyU0n-GMkcOxK49J/exec";
 const TEMP_SAVE_KEY = "merchant_form_temp_data";
 let CORP_SEAL_IMG = '';
 
@@ -3394,7 +3394,7 @@ setCustomSaleFree(idx, isFree){
     if(warnings.length&&!confirm('다음 항목을 확인해야 합니다.\n- '+warnings.join('\n- ')+'\n\n미확인 항목이 있는 상태로 계약서 미리보기를 열까요?'))return;
     try{
       const result=await this.merchantRequest('getContractSeal',{});
-      if(!/^data:image\/png;base64,[A-Za-z0-9+/]+={0,2}$/.test(result.dataUrl))throw Error('인감 이미지 설정을 확인해 주세요.');
+      if(!/^data:image\/(?:png|jpeg);base64,[A-Za-z0-9+/]+={0,2}$/.test(result.dataUrl))throw Error('인감 이미지 설정을 확인해 주세요.');
       CORP_SEAL_IMG=result.dataUrl;
     }catch(e){if(state.view!=='equipmentSelect')return;if(!confirm('법인인감을 불러오지 못했습니다. 인감 없이 미리보기를 열까요?'))return;CORP_SEAL_IMG='';}
     state.view = 'contract';
@@ -3587,5 +3587,6 @@ document.addEventListener('input', function(e){
 
 render();
 </script>
+<div style="position:fixed;bottom:0;right:0;z-index:99999;background:#854d0e;color:white;padding:3px 8px;font-size:11px;pointer-events:none" class="no-print">V2 TEST · 운영용 아님</div>
 </body>
 </html>
