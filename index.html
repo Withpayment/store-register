@@ -412,6 +412,11 @@ body{
 .intake-steps{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:18px 0 24px}
 .intake-steps span{padding:12px;text-align:center;border-radius:8px;background:var(--bg);color:var(--ink-soft);font-size:13px;font-weight:600}
 .intake-steps .active{background:var(--teal-deep);color:white}
+.intake-batch{padding:16px;border:1px solid var(--line);border-radius:12px;margin:16px 0;background:#F8FBFB}
+.intake-batch-row{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--line)}
+.intake-batch-row select{width:100%;margin-top:6px;min-height:40px}
+.intake-batch-row small{color:var(--ink-soft)}
+.intake-batch .btn{min-height:44px}
 </style>
 </head>
 <body>
@@ -619,7 +624,7 @@ function renderShotGuideSVG(type){
 const urlParams = parseQueryParams();
 
 function getRequiredDocs(businessType, bizType, hasSign){
-  if (state.isSupplementMode && state.supplementDocKeys.length > 0) {
+  if (state.isSupplementMode) {
     const allSupplementSelectable = [...ORIGINAL_REQUEST_DOC_LIST, ...SUPPLEMENT_DOC_LIST];
     return allSupplementSelectable.filter(d => state.supplementDocKeys.includes(d.key)).map(d => ({
       key: d.key,
@@ -809,6 +814,9 @@ let state = {
   fields: { storeName: urlParams.type === 'payment' ? urlParams.storeName : '', ownerName:'', bizNo:'', businessType:'general', bizType:'personal', storePhone:'', ownerPhone:'', email:'', hasSign:'yes' },
   files: {},
   intakeStep: 1,
+  intakeBatch: [],
+  intakeAnalyzing: false,
+  intakeScanToken: null,
   pendingReceiptId: null,
   submitting: false,
   openShotGuideKey: null,
@@ -836,6 +844,7 @@ let state = {
 
 function formatKoreanPhone(value) {
   let digits = String(value == null ? '' : value).replace(/\D/g, '');
+  if(/^1[568]\d{6}$/.test(digits))return digits.slice(0,4)+'-'+digits.slice(4);
   if (digits && digits.charAt(0) !== '0') digits = '0' + digits;
   if (digits.length <= 3) return digits;
   if (digits.indexOf('02') === 0) {
@@ -856,7 +865,7 @@ function formatMoneyInput(value) {
 
 function intakeError(f){
   if(!String(f.storeName||'').trim()) return '상호명을 입력해 주세요.';
-  if(!/^(?:02\d{7,8}|0[1-9]\d{7,9})$/.test(String(f.storePhone||'').replace(/\D/g,''))) return '매장전화번호를 확인해 주세요.';
+  if(!/^(?:02\d{7,8}|0[1-9]\d{7,9}|1[568]\d{6})$/.test(String(f.storePhone||'').replace(/\D/g,''))) return '매장전화번호를 확인해 주세요.';
   if(!/^01[016789]\d{7,8}$/.test(String(f.ownerPhone||'').replace(/\D/g,''))) return '대표자 휴대전화번호를 확인해 주세요.';
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(f.email||'').trim())) return '이메일 주소를 확인해 주세요.';
   return '';
@@ -1051,6 +1060,33 @@ function renderPhotoGuide(){
 function intakeStepper(){
   return '<nav class="intake-steps" aria-label="접수 진행 단계">'+['기본정보','서류첨부'].map((label,i)=>'<span class="'+(state.intakeStep===i+1?'active':'')+'" '+(state.intakeStep===i+1?'aria-current="step"':'')+'>'+(i+1)+'. '+label+'</span>').join('')+'</nav>';
 }
+function currentIntakeDocs(){
+  const f=state.fields;
+  return getRequiredDocs(f.businessType,f.bizType,f.hasSign);
+}
+function renderIntakeBatch(docs){
+  if(state.isSupplementMode) return '';
+  const items=state.intakeBatch;
+  return `<div class="intake-batch">
+    <div class="section-title">서류 한 번에 첨부</div>
+    <p class="section-sub">선택한 파일을 OCR로 분류합니다. 매장 사진이나 인식이 어려운 서류는 직접 종류를 지정해 주세요. 자동 분류는 제출 승인이나 진위 확인이 아닙니다.</p>
+    <input type="file" id="intake_batch_file" accept="image/*,.pdf" multiple hidden onchange="App.addIntakeBatch(this.files)">
+    <button type="button" class="btn btn-secondary" onclick="document.getElementById('intake_batch_file').click()" ${state.intakeAnalyzing?'disabled':''}>+ 여러 사진 / PDF 선택</button>
+    ${items.length?`<div role="status" aria-live="polite" class="section-sub" style="margin:12px 0">분석 ${items.filter(x=>x.status!=='pending'&&x.status!=='working').length}/${items.length} · 분류 결과를 확인한 후 아래 버튼을 눌러 반영하세요.</div>`:''}
+    ${items.map(it=>`<div class="intake-batch-row">
+      ${it.isImage?`<img class="dz-thumb" src="${it.dataUrl}" alt="첨부 사진">`:'<span class="dz-thumb">PDF</span>'}
+      <div style="min-width:0;flex:1"><div class="dz-filename">${escapeHtml(it.name)}</div>
+      <small>${it.status==='working'?'분석 중':it.status==='pending'?'대기':it.status==='suggested'?'자동 분류 제안 · 확인 필요':it.status==='error'?'분석 실패 · 직접 선택 가능':'직접 분류 필요'}</small>
+      <select aria-label="서류 종류" onchange="App.setIntakeBatchType('${it.id}',this.value)" ${state.intakeAnalyzing?'disabled':''}>
+        <option value="">서류 종류 선택</option>
+        ${docs.filter(d=>it.isImage||d.accept.includes('.pdf')).map(d=>`<option value="${d.key}" ${it.docKey===d.key?'selected':''}>${escapeHtml(d.label)}</option>`).join('')}
+      </select></div>
+      <button type="button" class="btn btn-secondary btn-sm" onclick="App.removeIntakeBatch('${it.id}')" ${state.intakeAnalyzing?'disabled':''}>삭제</button>
+    </div>`).join('')}
+    ${items.length?`<button type="button" class="btn btn-primary" onclick="App.applyIntakeBatch()" ${state.intakeAnalyzing?'disabled':''}>확인한 분류 결과 반영</button>`:''}
+    <div class="section-sub" style="margin-top:12px">자동 분류는 선택 기능입니다. 아래 필수서류 목록에서 직접 첨부할 수도 있습니다.</div>
+  </div>`;
+}
 function renderForm(){
   const f = state.fields;
   const currentDocs = getRequiredDocs(f.businessType, f.bizType, f.hasSign);
@@ -1123,6 +1159,7 @@ ${f2.bizType !== 'personal' ? `<div style="margin:-6px 0 18px; padding:10px 12px
 ` : ''}
     </section>
     <section ${state.intakeStep!==2?'hidden':''}>
+    ${renderIntakeBatch(currentDocs)}
     <div class="opt-group-label" style="margin-top:26px;">필수 서류 (${filledRequiredCount}/${requiredDocsCount}) <span class="req">*</span></div>
     <div class="doc-grid">
       ${currentDocs.map(d => renderDropzone(d)).join('')}
@@ -1219,6 +1256,7 @@ ${f2.bizType !== 'personal' ? `<div style="margin:-6px 0 18px; padding:10px 12px
 
     </section>
     <section ${state.intakeStep!==2?'hidden':''}>
+    ${renderIntakeBatch(currentDocs)}
     <div class="opt-group-label" style="margin-top:26px;">필수 서류 (${filledRequiredCount}/${requiredDocsCount}) <span class="req">*</span></div>
     <div class="doc-grid">
       ${currentDocs.map(d => renderDropzone(d)).join('')}
@@ -2496,6 +2534,7 @@ const App = {
   },
 
   setIntakeStep(next){
+    if(state.intakeAnalyzing||state.submitting){toast("파일 처리 중입니다.");return;}
     syncFields();
     if(next===2){
       const err=intakeError(state.fields);
@@ -2607,6 +2646,64 @@ const App = {
     input.click();
   },
 
+  async addIntakeBatch(fileList){
+    if(state.intakeAnalyzing||state.submitting||state.isSupplementMode) return;
+    const files=Array.from(fileList||[]);
+    if(!files.length)return;
+    if(state.intakeBatch.length+files.length>20){toast('한 번에 최대 20개까지 선택해 주세요.');return;}
+    state.intakeAnalyzing=true;
+    render();
+    try {
+      for(const file of files){
+        const isImage=file.type.startsWith('image/');
+        if(file.size>15*1024*1024||(!isImage&&file.type!=='application/pdf')){toast('지원하지 않는 파일 또는 15MB 초과: '+file.name);continue;}
+        try{
+          const dataUrl=isImage?await compressImage(file):await readAsDataURL(file);
+          state.intakeBatch.push({id:crypto.randomUUID(),name:file.name,dataUrl,isImage,status:'pending',docKey:''});
+        }catch(e){toast('파일 읽기 실패: '+file.name);}
+      }
+      render();
+      if(!state.intakeScanToken){
+        try{
+          const res=await (await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'beginIntakeScan'})})).json();
+          if(res.status==='success')state.intakeScanToken=res.scanToken;
+        }catch(e){}
+      }
+      for(const it of state.intakeBatch.filter(x=>x.status==='pending')){
+        it.status='working';render();
+        try{
+          if(!state.intakeScanToken)throw Error('scan unavailable');
+          const res=await (await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'classifyIntakeImage',scanToken:state.intakeScanToken,dataUrl:it.dataUrl})})).json();
+          if(res.status!=='success'){if(res.status==='expired')state.intakeScanToken=null;throw Error('scan failed');}
+          const d=currentIntakeDocs().find(d=>d.key===res.docKey && (it.isImage||d.accept.includes('.pdf')));
+          it.docKey=d?d.key:'';
+          it.status=d?'suggested':'manual';
+        }catch(e){it.status='error';}
+        render();
+      }
+    }finally{state.intakeAnalyzing=false;render();}
+  },
+  setIntakeBatchType(id,key){
+    const it=state.intakeBatch.find(x=>x.id===id);
+    if(!it||state.intakeAnalyzing)return;
+    it.docKey=key;it.status='manual';
+    render();
+  },
+  removeIntakeBatch(id){
+    if(state.intakeAnalyzing)return;
+    state.intakeBatch=state.intakeBatch.filter(x=>x.id!==id);render();
+  },
+  applyIntakeBatch(){
+    if(state.intakeAnalyzing)return;
+    const docs=currentIntakeDocs();
+    const eligible=it=>docs.some(d=>d.key===it.docKey&&(it.isImage||d.accept.includes('.pdf')));
+    if(state.intakeBatch.some(it=>!eligible(it))){toast('모든 파일의 서류 종류를 선택하거나 불필요한 파일을 삭제해 주세요.');return;}
+    for(const it of state.intakeBatch){
+      const list=state.files[it.docKey]||(state.files[it.docKey]=[]);
+      if(!list.some(f=>f.dataUrl===it.dataUrl))list.push({name:it.name,dataUrl:it.dataUrl,isImage:it.isImage});
+    }
+    state.intakeBatch=[];render();toast('분류 결과가 필수서류 목록에 반영되었습니다.');
+  },
   async handleFile(key, fileList){
     if(!fileList || fileList.length === 0) return;
     syncFields();
@@ -2728,8 +2825,10 @@ generateNewAppLink(){
 },
 
 async submitPaymentApplication(){
-    if(state.submitting) return;
+    if(state.submitting||state.intakeAnalyzing) return;
+    if(state.intakeBatch.length){toast('일괄 첨부 파일을 먼저 확인해 반영하거나 삭제해 주세요.');return;}
   // 상호명은 state.fields.storeName으로 들어옵니다 (관리자가 생성한 링크로 들어오면 미리 채워짐)
+  syncFields();
   const storeName = state.fields.storeName || '';
   const storePhone = formatKoreanPhone(document.getElementById('pay_storePhone')?.value || '');
   const ownerPhone = formatKoreanPhone(document.getElementById('pay_ownerPhone')?.value || '');
@@ -3027,7 +3126,8 @@ async submitPaymentApplication(){
   },
 
   async submit(){
-    if(state.submitting) return;
+    if(state.submitting||state.intakeAnalyzing) return;
+    if(state.intakeBatch.length){toast('일괄 첨부 파일을 먼저 확인해 반영하거나 삭제해 주세요.');return;}
     syncFields();
     const f = state.fields;
     const err=intakeError(f);
@@ -3076,7 +3176,7 @@ async submitPaymentApplication(){
       state.receiptId = id;
     state.pendingReceiptId = null;
       state.files = {};
-      state.fields = { storeName:'', ownerName:'', bizNo:'', businessType:'general', bizType:'personal', storePhone:'', ownerPhone:'', email:'', hasSign:'yes', isForeigner:'no' };
+      state.fields = { storeName:f.storeName, ownerName:'', bizNo:'', businessType:'general', bizType:'personal', storePhone:'', ownerPhone:'', email:'', hasSign:'yes', isForeigner:'no' };
       state.view = 'success';
       hideSubmitOverlay();
       render();
