@@ -418,6 +418,7 @@ body{
 .intake-batch-row small{color:var(--ink-soft)}
 .intake-batch .btn{min-height:44px}
 .admin-v2-tools{display:flex;gap:6px;flex-wrap:wrap}.admin-v2-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;margin:16px 0}.admin-stat{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:12px;text-align:left;color:var(--ink);cursor:pointer}.admin-stat.active{border-color:var(--teal);box-shadow:inset 0 0 0 1px var(--teal)}.admin-stat small,.merchant-row small{display:block;color:var(--ink-soft);margin-top:4px;font-size:12px}.admin-stat strong{display:block;font-size:24px;margin-top:5px}.admin-v2-list{padding:0;overflow:hidden}.merchant-row{display:grid;grid-template-columns:2fr 1.4fr 1fr 14px;gap:12px;width:100%;border:0;border-bottom:1px solid var(--line);background:var(--paper);text-align:left;padding:15px;color:var(--ink);cursor:pointer;font:inherit}.merchant-row:hover{background:#F3FAFA}.workflow-status{font-size:12px;color:var(--teal-deep)}.merchant-overlay{position:fixed;inset:0;background:rgba(16,35,61,.35);z-index:40;display:flex;justify-content:flex-end}.merchant-panel{width:min(100%,560px);background:var(--paper);padding:20px;overflow:auto;box-shadow:var(--shadow)}.merchant-panel-head{display:flex;align-items:start;justify-content:space-between;gap:12px}.merchant-panel select{width:100%;margin:8px 0;min-height:40px}.merchant-info{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0}.merchant-info div{padding:10px;background:var(--bg);border-radius:8px;overflow-wrap:anywhere}.merchant-info small{display:block;color:var(--ink-soft);margin-bottom:4px}.merchant-files>div{display:flex;align-items:center;justify-content:space-between;gap:8px;border-bottom:1px solid var(--line);padding:10px 0;overflow-wrap:anywhere}.merchant-preview img{max-width:100%;height:auto;display:block;margin:12px 0}.merchant-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:18px 0}@media(max-width:600px){.admin-v2-top{flex-wrap:wrap}.merchant-row{grid-template-columns:1.6fr 1fr 12px}.merchant-row-owner{display:none}.admin-v2-stats{grid-template-columns:repeat(3,1fr)}}
+.contract-preset{border:1px solid var(--line);border-radius:12px;padding:14px;margin:16px 0;background:var(--bg)}.contract-preset-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}.contract-preset-grid .btn{min-height:40px}
 </style>
 </head>
 <body>
@@ -1751,6 +1752,49 @@ function renderModelPicker(category, key, mode){
     </div>
   `;
 }
+const CONTRACT_PRESETS={
+ terminal:{label:'카드단말기 단독',category:'rental',key:'cardTerminal'},
+ posPrinter:{label:'POS + 프린터',category:'rental',key:'posSet'},
+ posTerminal:{label:'POS + 카드단말기',category:'rental',key:'posSetTerminal'},
+ kioskT:{label:'키오스크T (아임유)',category:'sale',key:'kioskT_imu'},
+ kioskS:{label:'키오스크S (아임유)',category:'sale',key:'kioskS_imu'},
+ kioskSamsung:{label:'키오스크T (삼성)',category:'sale',key:'kioskT_samsung'}
+};
+function contractSelectionError(sel){
+  for(const group of ['rental','addons','sale']){
+    for(const [key,item] of Object.entries(sel[group]||{})){
+      if(key==='custom')continue;
+      if(!Number.isInteger(item.qty)||item.qty<0||item.qty>99)return '장비 수량은 0~99의 정수여야 합니다.';
+    }
+  }
+  for(const [i,row] of (sel.sale.custom||[]).entries()){
+    if(!row.name?.trim())return '기타 판매 제품 '+(i+1)+'의 제품명을 입력해 주세요.';
+    if(!Number.isInteger(row.qty)||row.qty<1||row.qty>99)return '기타 판매 제품의 수량을 확인해 주세요.';
+    if(!row.isFree&&(!Number.isSafeInteger(row.unitPrice)||row.unitPrice<=0||!Number.isSafeInteger(row.unitPrice*row.qty)))return '기타 판매 제품의 단가를 확인하거나 무상 제공을 선택해 주세요.';
+  }
+  if(!hasAnySelection(sel))return '임대 또는 구매 품목을 1개 이상 선택해 주세요.';
+  for(const item of Object.values(sel.rental)){
+    if(item.qty<=0)continue;
+    if(item.option==='other'&&!item.optionOther?.trim())return '기타 리더기 이름을 입력해 주세요.';
+    if(item.posModel==='other'&&!item.posModelOther?.trim())return '기타 POS 모델명을 입력해 주세요.';
+    if(item.terminalModel==='other'&&!item.terminalModelOther?.trim())return '기타 단말기 모델명을 입력해 주세요.';
+  }
+  return '';
+}
+function contractReviewWarnings(st){
+  const m=st.contractMerchant||{};
+  const warnings=[];
+  if(!String(m.storeName||'').trim())warnings.push('상호명');
+  if(!String(m.ownerName||'').trim())warnings.push('대표자명');
+  if(!/^\d{10}$/.test(String(st.contractBizNo||'').replace(/\D/g,'')))warnings.push('사업자등록번호 (10자리)');
+  if(!String(st.contractAddress||'').trim())warnings.push('사업장 주소');
+  if(!/^\d{6}$/.test(String(st.contractBirth6||'')))warnings.push('생년월일 6자리');
+  if(!String(st.cmsBankName||'').trim())warnings.push('CMS 은행명');
+  if(!String(st.cmsAccountNo||'').trim())warnings.push('CMS 계좌번호');
+  if(!String(st.cmsDepositor||'').trim())warnings.push('CMS 예금주');
+  if(m.ownerNameMatch==='불일치')warnings.push('대표자명 OCR 불일치');
+  return warnings;
+}
 function renderEquipmentSelect(){
   const m = state.contractMerchant;
   const sel = state.selection;
@@ -1827,6 +1871,7 @@ function renderEquipmentSelect(){
     <div class="section-title">장비 임대/구매 선택 및 CMS 자동이체 연동 ${m ? '- ' + escapeHtml(m.storeName) : ''}</div>
     <div class="section-sub">계약기간, 장비 및 CMS 출금계좌 정보를 설정하세요. 접수 데이터 및 통장사본 정보가 자동 매핑됩니다.</div>
 
+    <div class="contract-preset"><div class="opt-group-label">자주 사용하는 장비 구성</div><p class="section-sub">선택하면 해당 장비 1대를 기본으로 설정합니다. 모델·수량은 직접 확인하세요.</p><div class="contract-preset-grid">${Object.entries(CONTRACT_PRESETS).map(([k,p])=>`<button type="button" class="btn btn-secondary btn-sm" onclick="App.applyContractPreset('${k}')">${p.label}</button>`).join('')}</div></div>
     <div class="grid2" style="margin-bottom:18px;">
       <div class="field">
         <label>설치일자</label>
@@ -1882,8 +1927,10 @@ function renderEquipmentSelect(){
     <button type="button" class="btn btn-secondary btn-sm" style="width:auto;" onclick="App.addCustomSaleItem()">+ 기타 판매 제품 추가 (직접입력)</button>
 
     <div class="eq-summary">
-      <div class="eq-summary-row total"><span>임대료 합계 (월)</span><span>${fmt(monthlyTotal)}원 / 월</span></div>
-      ${saleRows.length > 0 ? `<div class="eq-summary-row total"><span>구매 합계 (일시불, VAT포함)</span><span>${fmt(saleTotal)}원</span></div>` : ''}
+      <div class="eq-summary-row"><span>월 임대료 공급가액</span><span>${fmt(monthlyTotal)}원</span></div>
+      <div class="eq-summary-row"><span>월 임대료 부가세</span><span>${fmt(Math.round(monthlyTotal*1.1)-monthlyTotal)}원</span></div>
+      <div class="eq-summary-row total"><span>월 임대료 (VAT포함)</span><span>${fmt(Math.round(monthlyTotal*1.1))}원 / 월</span></div>
+      ${saleRows.length > 0 ? `<div class="eq-summary-row"><span>구매 공급가액</span><span>${fmt(saleSupplyTotal)}원</span></div><div class="eq-summary-row"><span>구매 부가세</span><span>${fmt(saleTotal-saleSupplyTotal)}원</span></div><div class="eq-summary-row total"><span>구매 합계 (일시불, VAT포함)</span><span>${fmt(saleTotal)}원</span></div>` : ''}
     </div>
 
     <div class="btn-row">
@@ -2012,7 +2059,7 @@ if (item.hasOption) {
           <th style="width:10%">만료일</th>
           <td style="width:23%">${expiryStr}</td>
           <th style="width:12%">단말기</th>
-          <td style="width:22%">${terminalName}</td>
+          <td style="width:22%">${escapeHtml(terminalName)}</td>
         </tr>
         <tr>
           <th>임대료</th>
@@ -2020,7 +2067,7 @@ if (item.hasOption) {
           <th>모델/옵션</th>
           <td>${escapeHtml(primaryModelOption)}</td>
           <th>POS</th>
-          <td>${posName}</td>
+          <td>${escapeHtml(posName)}</td>
         </tr>
         <tr>
           <th>"갑"</th>
@@ -2345,7 +2392,7 @@ style="
           ${[1,2,3,4,5].map(n => `<option value="${n}" ${contractCopies===n?'selected':''}>${n}부${n===2?' (보관용+고객용)':''}</option>`).join('')}
         </select>
       </div>
-      <button class="btn btn-primary" onclick="window.print()">인쇄 / PDF 저장 (${saleRows.length > 0 ? `임대계약서 ${contractCopies}부·물품판매계약서 ${contractCopies}부·동의서 1부` : `계약서 ${contractCopies}부·동의서 1부`})</button>
+      <button class="btn btn-primary" onclick="App.printContract()">인쇄 / PDF 저장 (${saleRows.length > 0 ? `임대계약서 ${contractCopies}부·물품판매계약서 ${contractCopies}부·동의서 1부` : `계약서 ${contractCopies}부·동의서 1부`})</button>
       <button class="btn btn-secondary" style="width:auto;" onclick="App.finishContract()">완료 (목록으로)</button>
     </div>
   </div>`;
@@ -3192,12 +3239,12 @@ async submitPaymentApplication(){
     state.contractCopies = 2;
     state.installDate = new Date().toISOString().slice(0,10);
 
-    state.contractBizNo = m.bizNo || m.bizNumber || state.contractBizNo || '';
-    state.contractBirth6 = m.birthDate || state.contractBirth6 || '';
-    state.contractAddress = m.address || m.storeAddress || state.contractAddress || '';
-    state.cmsBankName = m.bankName || m.bank || state.cmsBankName || '';
-    state.cmsAccountNo = m.accountNo || m.accountNumber || m.account || state.cmsAccountNo || '';
-    state.cmsDepositor = m.depositor || m.ownerName || m.storeName || state.cmsDepositor || '';
+    state.contractBizNo = m.bizNo || m.bizNumber || '';
+    state.contractBirth6 = m.birthDate || '';
+    state.contractAddress = m.address || m.storeAddress || '';
+    state.cmsBankName = m.bankName || m.bank || '';
+    state.cmsAccountNo = m.accountNo || m.accountNumber || m.account || '';
+    state.cmsDepositor = m.depositor || '';
 
     state.view = 'equipmentSelect';
     render();
@@ -3283,15 +3330,27 @@ setCustomSaleFree(idx, isFree){
     state[fieldKey] = val;
   },
 
+  applyContractPreset(key){
+    const p=CONTRACT_PRESETS[key];if(!p)return;
+    if(hasAnySelection(state.selection)||state.selection.sale.custom.length){if(!confirm('현재 장비 선택을 초기화하고 이 구성으로 변경할까요?'))return;}
+    state.selection=defaultSelection();state.selection[p.category][p.key].qty=1;render();
+  },
   goContract(){
-    if(!hasAnySelection(state.selection)){
-      toast('임대 또는 구매 품목을 1개 이상 선택해 주세요');
-      return;
-    }
+    const error=contractSelectionError(state.selection);
+    if(error){toast(error);return;}
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(state.installDate)||!Number.isFinite(Date.parse(state.installDate))||!Number.isInteger(state.contractPeriodYears)||state.contractPeriodYears<1||state.contractPeriodYears>5){toast('설치일과 계약기간을 확인해 주세요.');return;}
+    const warnings=contractReviewWarnings(state);
+    if(warnings.length&&!confirm('다음 항목을 확인해야 합니다.\n- '+warnings.join('\n- ')+'\n\n미확인 항목이 있는 상태로 계약서 미리보기를 열까요?'))return;
     state.view = 'contract';
     render();
   },
 
+  printContract(){
+    const error=contractSelectionError(state.selection);if(error){toast(error);return;}
+    const warnings=contractReviewWarnings(state);
+    if(warnings.length&&!confirm('미확인 항목: '+warnings.join(', ')+'\n계약서 내용과 서류를 직접 확인한 후 출력하시겠습니까?'))return;
+    window.print();
+  },
   backToEquip(){ state.view = 'equipmentSelect'; render(); },
 
   backToAdminFromEquip(){
