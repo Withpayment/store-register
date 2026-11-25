@@ -417,6 +417,7 @@ body{
 .intake-batch-row select{width:100%;margin-top:6px;min-height:40px}
 .intake-batch-row small{color:var(--ink-soft)}
 .intake-batch .btn{min-height:44px}
+.admin-v2-tools{display:flex;gap:6px;flex-wrap:wrap}.admin-v2-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;margin:16px 0}.admin-stat{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:12px;text-align:left;color:var(--ink);cursor:pointer}.admin-stat.active{border-color:var(--teal);box-shadow:inset 0 0 0 1px var(--teal)}.admin-stat small,.merchant-row small{display:block;color:var(--ink-soft);margin-top:4px;font-size:12px}.admin-stat strong{display:block;font-size:24px;margin-top:5px}.admin-v2-list{padding:0;overflow:hidden}.merchant-row{display:grid;grid-template-columns:2fr 1.4fr 1fr 14px;gap:12px;width:100%;border:0;border-bottom:1px solid var(--line);background:var(--paper);text-align:left;padding:15px;color:var(--ink);cursor:pointer;font:inherit}.merchant-row:hover{background:#F3FAFA}.workflow-status{font-size:12px;color:var(--teal-deep)}.merchant-overlay{position:fixed;inset:0;background:rgba(16,35,61,.35);z-index:40;display:flex;justify-content:flex-end}.merchant-panel{width:min(100%,560px);background:var(--paper);padding:20px;overflow:auto;box-shadow:var(--shadow)}.merchant-panel-head{display:flex;align-items:start;justify-content:space-between;gap:12px}.merchant-panel select{width:100%;margin:8px 0;min-height:40px}.merchant-info{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0}.merchant-info div{padding:10px;background:var(--bg);border-radius:8px;overflow-wrap:anywhere}.merchant-info small{display:block;color:var(--ink-soft);margin-bottom:4px}.merchant-files>div{display:flex;align-items:center;justify-content:space-between;gap:8px;border-bottom:1px solid var(--line);padding:10px 0;overflow-wrap:anywhere}.merchant-preview img{max-width:100%;height:auto;display:block;margin:12px 0}.merchant-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:18px 0}@media(max-width:600px){.admin-v2-top{flex-wrap:wrap}.merchant-row{grid-template-columns:1.6fr 1fr 12px}.merchant-row-owner{display:none}.admin-v2-stats{grid-template-columns:repeat(3,1fr)}}
 </style>
 </head>
 <body>
@@ -827,6 +828,10 @@ let state = {
   adminToken: null,
   adminMerchants: [],
   adminSearch: '',
+  adminFilter: 'all',
+  adminSelected: null,
+  adminDetail: null,
+  adminPage: 1,
   editingMerchantId: null,
   editForm: { storeName: '', ownerName: '', bizNo: '' },
   contractMerchant: null,
@@ -1365,152 +1370,39 @@ function renderAdminLogin(){
   </div>`;
 }
 
+const WORKFLOW_LABELS={new:'신규접수',review:'서류검토',supplement:'보완대기',returned:'보완접수',contract:'계약대기',register:'등록진행'};
+function adminStatus(m){return Object.hasOwn(WORKFLOW_LABELS,m.workflowStatus)?m.workflowStatus:'new';}
 function renderAdmin(){
-  const list = (state.adminMerchants || []).filter(m => {
-    if(!state.adminSearch) return true;
-    const q = state.adminSearch.toLowerCase();
-    return (m.storeName||'').toLowerCase().includes(q) || (m.ownerName||'').toLowerCase().includes(q) || (m.storePhone||'').includes(q) || (m.ownerPhone||'').includes(q) || (m.email||'').toLowerCase().includes(q);
-  });
-
-  return `
-  <div class="topbar">
-    <div class="brand">
-      <div class="brand-mark">P</div>
-      <div>
-        <div class="brand-text">가맹점 접수 현황 (보안 관리)</div>
-        <div class="brand-sub">서류 처리 완료 시 체크하면 데이터가 자동 삭제됩니다.</div>
-      </div>
-    </div>
-    <div style="display:flex; gap:8px;">
-      <div class="admin-link" onclick="App.openNewAppModal()" style="background:#6C63FF; color:white; border:none; padding:7px 12px; border-radius:100px; cursor:pointer; font-size:12.5px;">가맹신청</div>
-      <div class="admin-link" onclick="App.openBulkModal()" style="background:#2F8F5B; color:white; border:none; padding:7px 12px; border-radius:100px; cursor:pointer; font-size:12.5px;">사진 일괄등록</div>
-      <div class="admin-link" onclick="App.loadGoogleData()" style="background:var(--teal); color:white; border:none; padding:7px 12px; border-radius:100px; cursor:pointer; font-size:12.5px;">새로고침</div>
-      <div class="admin-link" onclick="App.logoutAdmin()" style="border:1px solid var(--line); padding:7px 12px; border-radius:100px; background:var(--paper); cursor:pointer; font-size:12.5px;">로그아웃</div>
-      <div class="admin-link" onclick="App.goForm()" style="border:1px solid var(--line); padding:7px 12px; border-radius:100px; background:var(--paper); cursor:pointer; font-size:12.5px;">접수 화면 보기</div>
-    </div>
-  </div>
-
-  <input class="admin-search" id="admin_search_input" placeholder="🔍  상호명, 대표자명, 전화번호 또는 이메일로 검색" value="${escapeHtml(state.adminSearch)}" oninput="App.setAdminSearch(this.value)">
-  <div style="font-size:12px; color:var(--ink-soft); margin:-10px 0 14px 4px;">
-    총 <b style="color:var(--ink);">${list.length}</b>건
-    <span style="margin-left:10px;">대표자명 <b style="color:#2F8F5B;">일치</b> / <b style="color:#C0392B;">불일치</b>는 사업자등록증과 신분증 OCR 비교 결과입니다.</span>
-  </div>
-
-  <div class="card" style="padding: 0; overflow: hidden;">
-    <div class="admin-table-scroll">
-    <table class="admin-table">
-      <colgroup>
-        <col style="width:13%;">
-        <col style="width:10%;">
-        <col style="width:11%;">
-        <col style="width:6%;">
-        <col style="width:13%;">
-        <col style="width:14%;">
-        <col style="width:11%;">
-        <col style="width:9%;">
-        <col style="width:13%;">
-      </colgroup>
-      <thead>
-        <tr>
-          <th>상호명</th>
-          <th>대표자명</th>
-          <th>사업자번호</th>
-          <th>구분</th>
-          <th>연락처</th>
-          <th>이메일주소</th>
-          <th>접수일시</th>
-          <th>서류 폴더</th>
-          <th style="text-align:center;">관리 작업</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${list.length === 0 ? `
-          <tr><td colspan="9" style="text-align:center; padding: 48px; color: var(--ink-soft);">접수된 내역이 없습니다.</td></tr>
-        ` : list.map(m => {
-          let formattedDate = m.createdAt;
-          try { formattedDate = new Date(m.createdAt).toLocaleString('ko-KR'); } catch(e){}
-          
-          let folderBtnHtml = '폴더 없음';
-          if (m.files && m.files.startsWith('http')) {
-            folderBtnHtml = `<a href="${m.files}" target="_blank" style="background: var(--teal); color: white; padding: 5px 10px; border-radius: 6px; font-weight: 600; text-decoration: none; font-size: 11.5px; display: inline-block;">🔍 폴더 열기</a>`;
-          }
-
-          let bizTypeValue = String(m.bizType || '').trim();
-          let bizTypeText = (bizTypeValue === 'corporate' || bizTypeValue === '법인') ? '법인'
-            : (bizTypeValue === 'nonprofit' || bizTypeValue === '사단법인') ? '사단법인'
-            : (bizTypeValue === 'foundation' || bizTypeValue === '재단법인') ? '재단법인'
-            : '개인';
-          let bizTypeBadgeStyle = bizTypeText === '법인'
-            ? 'background:#E8F4FD;color:#0066CC;'
-            : bizTypeText === '사단법인'
-              ? 'background:#F3ECFF;color:#7040A0;'
-              : bizTypeText === '재단법인'
-                ? 'background:#FFF3E8;color:#A85A00;'
-              : 'background:#EAF6EF;color:#2F8F5B;';
-          const isEditing = state.editingMerchantId === m.id;
-
-          const ownerMatch = String(m.ownerNameMatch || '').trim();
-          const ownerMatchStyle = ownerMatch === '일치'
-            ? 'color:#2F8F5B;background:#EAF6EF;border-color:#BFE6CC;'
-            : ownerMatch === '불일치'
-              ? 'color:#C0392B;background:#FDECEC;border-color:#F3B7B2;'
-              : 'color:#7A5A00;background:#FFF7DB;border-color:#EAD89A;';
-          const ownerCheckHtml = ownerMatch
-            ? `<div title="사업자등록증: ${escapeAttr(m.ownerNameFromBiz || '인식 안됨')} / 신분증: ${escapeAttr(m.ownerNameFromId || '인식 안됨')}" style="display:inline-block;margin-left:5px;padding:2px 5px;border:1px solid;border-radius:4px;font-size:9.5px;line-height:1.2;${ownerMatchStyle}">${escapeHtml(ownerMatch)}</div>`
-            : '';
-
-          const storeNameCell = isEditing
-            ? `<input type="text" id="edit_storeName_${escapeAttr(m.id)}" value="${escapeHtml(state.editForm.storeName)}" style="width:120px; padding:5px 7px; border:1.5px solid var(--teal); border-radius:6px; font-size:12.5px; font-family:'Pretendard';">`
-            : `${escapeHtml(m.storeName || '-')}<button class="inline-edit-button" onclick="App.startEditMerchant('${escapeAttr(m.id)}')">수정</button>`;
-
-          const ownerNameCell = isEditing
-            ? `<input type="text" id="edit_ownerName_${escapeAttr(m.id)}" value="${escapeHtml(state.editForm.ownerName)}" style="width:90px; padding:5px 7px; border:1.5px solid var(--teal); border-radius:6px; font-size:12.5px; font-family:'Pretendard';">`
-            : `${escapeHtml(m.ownerName || '-')}${ownerCheckHtml}<button class="inline-edit-button" onclick="App.startEditMerchant('${escapeAttr(m.id)}')">수정</button>`;
-
-          const bizNoCell = isEditing
-            ? `<input type="text" id="edit_bizNo_${escapeAttr(m.id)}" value="${escapeHtml(state.editForm.bizNo)}" placeholder="123-45-67890" style="width:110px; padding:5px 7px; border:1.5px solid var(--teal); border-radius:6px; font-size:12px; font-family:'Pretendard';">`
-            : `${escapeHtml(m.bizNo || m.bizNumber || '-')}<button class="inline-edit-button" onclick="App.startEditMerchant('${escapeAttr(m.id)}')">수정</button>`;
-
-          const actionButtons = isEditing
-            ? `
-              <button onclick="App.saveEditMerchant('${escapeAttr(m.id)}')" style="background: var(--forest); color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 11.5px;">저장</button>
-              <button onclick="App.cancelEditMerchant()" style="background: var(--paper); color: var(--ink); border: 1.5px solid var(--line); padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 11.5px;">취소</button>
-            `
-            : `
-              <button onclick="App.reOcrRow('${escapeAttr(m.id)}')" style="background: #6C63FF; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 11.5px;">OCR</button>
-              <button onclick="App.openSupplementModal('${escapeAttr(m.id)}')" style="background: #E8A317; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 11.5px;">보완</button>
-              <button onclick="App.goEquipmentSelect('${escapeAttr(m.id)}')" style="background: var(--teal); color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 11.5px;">계약서</button>
-              <button onclick="App.completeAndDelete('${escapeAttr(m.id)}', '${escapeAttr(m.storeName)}')" style="background: var(--red); color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 11.5px;">삭제</button>
-            `;
-
-          const contactCell = `
-            <div class="contact-cell">
-              <div class="contact-row ${m.storePhone ? '' : 'empty'}"><span class="contact-tag">매장</span>${escapeHtml(m.storePhone || '미입력')}</div>
-              <div class="contact-row ${m.ownerPhone ? '' : 'empty'}"><span class="contact-tag">대표</span>${escapeHtml(m.ownerPhone || '미입력')}</div>
-            </div>`;
-
-          return `
-            <tr style="${isEditing ? 'background:#F1FBFA;' : ''}">
-              <td style="font-weight: 700;">${storeNameCell}</td>
-              <td class="no-wrap">${ownerNameCell}</td>
-              <td class="no-wrap mono-cell">${bizNoCell}</td>
-              <td><span style="${bizTypeBadgeStyle} padding:3px 8px; border-radius:4px; font-size:11.5px; font-weight:600; white-space:nowrap;">${bizTypeText}</span></td>
-              <td>${contactCell}</td>
-              <td style="font-size:12.5px; word-break:break-all;">${escapeHtml(m.email || '')}</td>
-              <td class="no-wrap" style="font-size: 12px; color: var(--ink-soft);">${formattedDate}</td>
-              <td class="no-wrap">${folderBtnHtml}</td>
-              <td>
-                ${isEditing
-                  ? `<div class="admin-edit-actions">${actionButtons}</div>`
-                  : `<div class="admin-actions">${actionButtons}</div>`}
-              </td>
-            </tr>
-          `;
-        }).join('')}
-      </tbody>
-    </table>
-    </div>
-  </div>`;
+  const all=state.adminMerchants||[];
+  const q=state.adminSearch.trim().toLowerCase();
+  const list=all.filter(m=>(state.adminFilter==='all'||adminStatus(m)===state.adminFilter)&&(!q||[m.storeName,m.ownerName,m.bizNumber,m.storePhone,m.ownerPhone,m.email,m.id].some(v=>String(v||'').toLowerCase().includes(q))));
+  const pages=Math.max(1,Math.ceil(list.length/25));
+  state.adminPage=Math.min(Math.max(1,state.adminPage),pages);
+  const selected=all.find(m=>m.id===state.adminSelected);
+  return `<div class="topbar admin-v2-top"><div class="brand"><div class="brand-mark">P</div><div><div class="brand-text">가맹점 업무관리</div><div class="brand-sub">접수 · 검토 · 보완 · 계약</div></div></div>
+  <div class="admin-v2-tools"><button class="btn btn-secondary btn-sm" onclick="App.openNewAppModal()">가맹신청</button><button class="btn btn-secondary btn-sm" onclick="App.openBulkModal()">일괄등록</button><button class="btn btn-secondary btn-sm" onclick="App.loadGoogleData()">새로고침</button><button class="btn btn-secondary btn-sm" onclick="App.logoutAdmin()">로그아웃</button><button class="btn btn-secondary btn-sm" onclick="App.goForm()">접수화면</button></div></div>
+  <div class="admin-v2-stats">${Object.entries({all:'전체',...WORKFLOW_LABELS}).map(([k,v])=>`<button class="admin-stat ${state.adminFilter===k?'active':''}" onclick="App.filterAdmin('${k}')"><small>${v}</small><strong>${k==='all'?all.length:all.filter(m=>adminStatus(m)===k).length}</strong></button>`).join('')}</div>
+  <input class="admin-search" id="admin_search_input" placeholder="상호명 · 대표자 · 사업자번호 · 연락처 검색" value="${escapeHtml(state.adminSearch)}" oninput="App.setAdminSearch(this.value)">
+  <div class="section-sub">검색 결과 ${list.length}건 · 페이지 ${state.adminPage}/${pages}</div>
+  <div class="card admin-v2-list">${list.slice((state.adminPage-1)*25,state.adminPage*25).map(m=>`<button class="merchant-row" onclick="App.openMerchantDetail('${escapeAttr(m.id)}')"><span><strong>${escapeHtml(m.storeName||'-')}</strong><small>${escapeHtml(m.bizType||'')} · ${escapeHtml(String(m.createdAt||'').slice(0,10))}</small></span><span class="merchant-row-owner">${escapeHtml(m.ownerName||'대표자 미확인')}<small>${escapeHtml(m.bizNumber||'사업자번호 미확인')}</small></span><span><b class="workflow-status">${WORKFLOW_LABELS[adminStatus(m)]}</b><small>${escapeHtml(m.ownerNameMatch||'OCR 미확인')}</small></span><span aria-hidden="true">›</span></button>`).join('')||'<p style="padding:20px;text-align:center">해당 접수 건이 없습니다.</p>'}</div>
+  <div class="btn-row"><button class="btn btn-secondary" onclick="App.adminNavigate(-1)" ${state.adminPage===1?'disabled':''}>이전</button><button class="btn btn-secondary" onclick="App.adminNavigate(1)" ${state.adminPage>=pages?'disabled':''}>다음</button></div>
+  ${selected?renderMerchantDetail(selected):''}`;
+}
+function renderMerchantDetail(m){
+  const d=state.adminDetail||{};
+  const editing=state.editingMerchantId===m.id;
+  const id=escapeAttr(m.id);
+  return `<div class="merchant-overlay"><div class="merchant-panel" role="dialog" aria-label="가맹점 상세정보">
+    <div class="merchant-panel-head"><div><div class="section-title">${escapeHtml(m.storeName)}</div><div class="section-sub">${escapeHtml(m.id)}</div></div><button class="btn btn-secondary btn-sm" onclick="App.closeMerchantDetail()">닫기</button></div>
+    <label>업무 상태</label><select id="workflow_status" onchange="App.updateWorkflow('${id}',this.value)">${Object.entries(WORKFLOW_LABELS).map(([k,v])=>`<option value="${k}" ${adminStatus(m)===k?'selected':''}>${v}</option>`).join('')}</select>
+    <div class="merchant-info">${[['대표자',m.ownerName],['사업자번호',m.bizNumber],['매장전화',m.storePhone],['대표전화',m.ownerPhone],['이메일',m.email],['대표자 OCR 비교',m.ownerNameMatch],['사업자등록증 OCR',m.ownerNameFromBiz],['신분증 OCR',m.ownerNameFromId]].map(([k,v])=>`<div><small>${k}</small><b>${escapeHtml(v||'미확인')}</b></div>`).join('')}</div>
+    ${editing?`<div class="field"><label>상호명</label><input id="edit_storeName_${id}" value="${escapeHtml(state.editForm.storeName)}"></div><div class="field"><label>대표자명</label><input id="edit_ownerName_${id}" value="${escapeHtml(state.editForm.ownerName)}"></div><div class="field"><label>사업자번호</label><input id="edit_bizNo_${id}" value="${escapeHtml(state.editForm.bizNo)}"></div><div class="btn-row"><button class="btn btn-primary" onclick="App.saveEditMerchant('${id}')">저장</button><button class="btn btn-secondary" onclick="App.cancelEditMerchant()">취소</button></div>`:`<button class="btn btn-secondary" onclick="App.startEditMerchant('${id}')">기본정보 수정</button>`}
+    <div class="section-title" style="margin-top:20px">첨부서류</div>
+    ${d.loading?'<p role="status">서류 목록 불러오는 중...</p>':d.error?`<p>${escapeHtml(d.error)}</p>`:`<div class="merchant-files">${(d.files||[]).map(f=>`<div><span>${escapeHtml(f.group||'원본')} · ${escapeHtml(f.name)}</span><button class="btn btn-secondary btn-sm" onclick="App.previewMerchantFile('${id}','${escapeAttr(f.id)}')">보기</button></div>`).join('')||'<p>서류 목록 없음</p>'}</div>`}
+    ${d.preview?`<div class="merchant-preview"><button class="btn btn-secondary btn-sm" onclick="App.clearMerchantPreview()">미리보기 닫기</button>${d.preview.mime.startsWith('image/')?`<img src="${d.preview.dataUrl}" alt="첨부 서류 미리보기">`:`<a href="${d.preview.dataUrl}" download="document.pdf">PDF 열기 / 저장</a>`}</div>`:''}
+    ${/^https:\/\/drive\.google\.com\/drive\//.test(m.files||'')?`<a href="${escapeHtml(m.files)}" target="_blank" rel="noopener noreferrer">Drive 폴더 열기</a>`:''}
+    <div class="merchant-actions"><button class="btn btn-secondary" onclick="App.reOcrRow('${id}')">OCR 재검토</button><button class="btn btn-secondary" onclick="App.openSupplementModal('${id}')">보완 요청</button><button class="btn btn-primary" onclick="App.closeMerchantDetail();App.goEquipmentSelect('${id}')">계약서 작성</button><button class="btn btn-secondary" style="color:var(--red)" onclick="App.completeAndDelete('${id}','${escapeAttr(m.storeName)}')">처리완료 · 서류 정리</button></div>
+  </div></div>`;
 }
 
 function renderSupplementModal() {
@@ -2907,11 +2799,41 @@ async submitPaymentApplication(){
 },
   handleUnauthorized(){
     state.adminToken = null;
+    state.adminSelected=null;state.adminDetail=null;state.adminMerchants=[];
     state.view = 'adminLogin';
     render();
     toast('세션이 만료되었습니다. 다시 로그인해 주세요.');
   },
 
+  filterAdmin(k){state.adminFilter=k;state.adminPage=1;render();},
+  adminNavigate(delta){state.adminPage+=delta;render();},
+  closeMerchantDetail(){state.adminSelected=null;state.adminDetail=null;state.editingMerchantId=null;render();},
+  async merchantRequest(action,extra){
+    const res=await (await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action,token:state.adminToken,...extra})})).json();
+    if(res.status==='unauthorized'){this.handleUnauthorized();throw Error('세션 만료');}
+    if(res.status!=='success')throw Error(res.message||'요청 실패');
+    return res;
+  },
+  async openMerchantDetail(id){
+    state.adminSelected=id;const detail={loading:true,files:[]};state.adminDetail=detail;render();
+    try{const res=await this.merchantRequest('listMerchantFiles',{id});detail.files=res.files||[];}
+    catch(e){detail.error=e.message;}
+    finally{detail.loading=false;if(state.adminDetail===detail)render();}
+  },
+  async previewMerchantFile(id,fileId){
+    const detail=state.adminDetail;if(!detail)return;
+    try{const res=await this.merchantRequest('previewMerchantFile',{id,fileId});
+      if(state.adminDetail!==detail)return;
+      if(!/^data:(?:image\/(?:jpeg|png|gif|webp)|application\/pdf);base64,[A-Za-z0-9+/]+={0,2}$/.test(res.dataUrl))throw Error('지원되지 않는 형식');
+      detail.preview=res;render();
+    }catch(e){toast(e.message);}
+  },
+  clearMerchantPreview(){if(state.adminDetail)delete state.adminDetail.preview;render();},
+  async updateWorkflow(id,status){
+    try{await this.merchantRequest('updateWorkflow',{id,workflowStatus:status});const m=state.adminMerchants.find(x=>x.id===id);if(m)m.workflowStatus=status;toast('업무 상태 저장 완료');}
+    catch(e){toast(e.message);}
+    render();
+  },
   async loadGoogleData() {
     if(!state.adminToken){ this.handleUnauthorized(); return; }
     toast('구글 시트에서 최신 데이터를 불러오는 중...');
@@ -2953,6 +2875,7 @@ async submitPaymentApplication(){
       const result = await response.json();
 
       if(result.status === 'success') {
+        this.closeMerchantDetail();
         toast('처리 완료: 시트 기록 삭제 및 폴더 휴지통 이동.');
         App.loadGoogleData();
       } else if(result.status === 'unauthorized') {
@@ -3207,6 +3130,7 @@ async submitPaymentApplication(){
     state.adminToken = null;
     state.adminUnlocked = false;
     state.adminMerchants = [];
+    state.adminSelected=null;state.adminDetail=null;
     state.view = 'adminLogin';
     location.hash = 'admin';
     render();
@@ -3246,6 +3170,7 @@ async submitPaymentApplication(){
   },
 
   setAdminSearch(v){
+    state.adminPage=1;
     // [최적화] 목록이 길어질수록 매 글자마다 테이블 전체를 다시 그리는 비용이 커지므로,
     // 타이핑이 끊긴 후 살짝(120ms) 기다렸다가 한 번만 렌더링한다. 포커스는 render()에서
     // 자동으로 복원되므로 검색은 여전히 실시간처럼 느껴지되, 불필요한 재렌더 횟수만 줄어든다.
