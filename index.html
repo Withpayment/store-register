@@ -1407,16 +1407,16 @@ function adminStatus(m){return Object.hasOwn(WORKFLOW_LABELS,m.workflowStatus)?m
 function renderAdmin(){
   const all=state.adminMerchants||[];
   const q=state.adminSearch.trim().toLowerCase();
-  const list=all.filter(m=>(state.adminFilter==='all'||adminStatus(m)===state.adminFilter)&&(!q||[m.storeName,m.ownerName,m.bizNumber,m.storePhone,m.ownerPhone,m.email,m.id].some(v=>String(v||'').toLowerCase().includes(q))));
+  const list=all.filter(m=>(!q||[m.storeName,m.ownerName,m.bizNumber,m.storePhone,m.ownerPhone,m.email,m.id].some(v=>String(v||'').toLowerCase().includes(q))));
   const pages=Math.max(1,Math.ceil(list.length/25));
   state.adminPage=Math.min(Math.max(1,state.adminPage),pages);
   const selected=all.find(m=>m.id===state.adminSelected);
   return `<div class="topbar admin-v2-top"><div class="brand"><div class="brand-mark">P</div><div><div class="brand-text">가맹점 업무관리</div><div class="brand-sub">접수 · 검토 · 보완 · 계약</div></div></div>
   <div class="admin-v2-tools"><button class="btn btn-secondary btn-sm" onclick="App.openNewAppModal()">가맹신청</button><button class="btn btn-secondary btn-sm" onclick="App.openBulkModal()">일괄등록</button><button class="btn btn-secondary btn-sm" onclick="App.loadGoogleData()">새로고침</button><button class="btn btn-secondary btn-sm" onclick="App.logoutAdmin()">로그아웃</button><button class="btn btn-secondary btn-sm" onclick="App.goForm()">접수화면</button></div></div>
-  <div class="admin-v2-stats">${Object.entries({all:'전체',...WORKFLOW_LABELS}).map(([k,v])=>`<button class="admin-stat ${state.adminFilter===k?'active':''}" onclick="App.filterAdmin('${k}')"><small>${v}</small><strong>${k==='all'?all.length:all.filter(m=>adminStatus(m)===k).length}</strong></button>`).join('')}</div>
+  <div class="section-sub" style="margin:16px 0">전체 접수 <b>${all.length}건</b></div>
   <input class="admin-search" id="admin_search_input" placeholder="상호명 · 대표자 · 사업자번호 · 연락처 검색" value="${escapeHtml(state.adminSearch)}" oninput="App.setAdminSearch(this.value)">
   <div class="section-sub">검색 결과 ${list.length}건 · 페이지 ${state.adminPage}/${pages}</div>
-  <div class="card admin-v2-list">${list.slice((state.adminPage-1)*25,state.adminPage*25).map(m=>`<button class="merchant-row" onclick="App.openMerchantDetail('${escapeAttr(m.id)}')"><span><strong>${escapeHtml(m.storeName||'-')}</strong><small>${escapeHtml(m.bizType||'')} · ${escapeHtml(String(m.createdAt||'').slice(0,10))}</small></span><span class="merchant-row-owner">${escapeHtml(m.ownerName||'대표자 미확인')}<small>${escapeHtml(m.bizNumber||'사업자번호 미확인')}</small></span><span><b class="workflow-status">${WORKFLOW_LABELS[adminStatus(m)]}</b><small>${escapeHtml(m.ownerNameMatch||'OCR 미확인')}</small></span><span aria-hidden="true">›</span></button>`).join('')||'<p style="padding:20px;text-align:center">해당 접수 건이 없습니다.</p>'}</div>
+  <div class="card admin-v2-list">${list.slice((state.adminPage-1)*25,state.adminPage*25).map(m=>`<button class="merchant-row" onclick="App.openMerchantDetail('${escapeAttr(m.id)}')"><span><strong>${escapeHtml(m.storeName||'-')}</strong><small>${escapeHtml(m.bizType||'')} · ${escapeHtml(String(m.createdAt||'').slice(0,10))}</small></span><span class="merchant-row-owner">${escapeHtml(m.ownerName||'대표자 미확인')}<small>${escapeHtml(m.bizNumber||'사업자번호 미확인')}</small></span><span><small>${escapeHtml(m.ownerNameMatch||'OCR 미확인')}</small></span><span aria-hidden="true">›</span></button>`).join('')||'<p style="padding:20px;text-align:center">해당 접수 건이 없습니다.</p>'}</div>
   <div class="btn-row"><button class="btn btn-secondary" onclick="App.adminNavigate(-1)" ${state.adminPage===1?'disabled':''}>이전</button><button class="btn btn-secondary" onclick="App.adminNavigate(1)" ${state.adminPage>=pages?'disabled':''}>다음</button></div>
   ${selected?renderMerchantDetail(selected):''}`;
 }
@@ -1426,9 +1426,9 @@ function renderMerchantDetail(m){
   const id=escapeAttr(m.id);
   return `<div class="merchant-overlay"><div class="merchant-panel" role="dialog" aria-label="가맹점 상세정보">
     <div class="merchant-panel-head"><div><div class="section-title">${escapeHtml(m.storeName)}</div><div class="section-sub">${escapeHtml(m.id)}</div></div><button class="btn btn-secondary btn-sm" onclick="App.closeMerchantDetail()">닫기</button></div>
-    <label>업무 상태</label><select id="workflow_status" onchange="App.updateWorkflow('${id}',this.value)">${Object.entries(WORKFLOW_LABELS).map(([k,v])=>`<option value="${k}" ${adminStatus(m)===k?'selected':''}>${v}</option>`).join('')}</select>
-    <div class="merchant-info">${[['대표자',m.ownerName],['사업자번호',m.bizNumber],['매장전화',m.storePhone],['대표전화',m.ownerPhone],['이메일',m.email],['예금주명',m.depositor],['예금주 출처',m.depositorSource==='manual'?'관리자 확인':m.depositorSource==='ocr'?'통장 OCR · 확인 필요':'미확인'],['대표자 OCR 비교',m.ownerNameMatch],['사업자등록증 OCR',m.ownerNameFromBiz],['신분증 OCR',m.ownerNameFromId]].map(([k,v])=>`<div><small>${k}</small><b>${escapeHtml(v||'미확인')}</b></div>`).join('')}</div>
-    ${editing?`<div class="field"><label>상호명</label><input id="edit_storeName_${id}" value="${escapeHtml(state.editForm.storeName)}"></div><div class="field"><label>대표자명</label><input id="edit_ownerName_${id}" value="${escapeHtml(state.editForm.ownerName)}"></div><div class="field"><label>사업자번호</label><input id="edit_bizNo_${id}" value="${escapeHtml(state.editForm.bizNo)}"></div><div class="field"><label>예금주명 (통장사본 기준)</label><input id="edit_depositor_${id}" value="${escapeHtml(state.editForm.depositor)}"></div><div class="btn-row"><button class="btn btn-primary" onclick="App.saveEditMerchant('${id}')">저장</button><button class="btn btn-secondary" onclick="App.cancelEditMerchant()">취소</button></div>`:`<button class="btn btn-secondary" onclick="App.startEditMerchant('${id}')">기본정보 수정</button>`}
+
+    <div class="merchant-info">${[['대표자',m.ownerName],['사업자등록번호',m.bizNumber],['사업자등록증 상호',m.storeNameFromBiz],['매장전화',m.storePhone],['대표전화',m.ownerPhone],['이메일',m.email],['예금주명',m.depositor],['예금주 출처',m.depositorSource==='manual'?'관리자 확인':m.depositorSource==='ocr'?'통장 OCR · 확인 필요':'미확인'],['대표자 OCR 비교',m.ownerNameMatch],['사업자등록증 OCR',m.ownerNameFromBiz],['신분증 OCR',m.ownerNameFromId]].map(([k,v])=>`<div><small>${k}</small><b>${escapeHtml(v||'미확인')}</b></div>`).join('')}</div>
+    ${editing?`<div class="field"><label>상호명</label><input id="edit_storeName_${id}" value="${escapeHtml(state.editForm.storeName)}"></div><div class="field"><label>대표자명</label><input id="edit_ownerName_${id}" value="${escapeHtml(state.editForm.ownerName)}"></div><div class="field"><label>사업자번호</label><input id="edit_bizNo_${id}" value="${escapeHtml(state.editForm.bizNo)}"></div><div class="field"><label>예금주명 (통장사본 기준)</label><input id="edit_depositor_${id}" value="${escapeHtml(state.editForm.depositor)}"></div><div class="btn-row"><button class="btn btn-primary" onclick="App.saveEditMerchant('${id}')">저장</button><button class="btn btn-secondary" onclick="App.cancelEditMerchant()">취소</button></div>`:`<button class="btn btn-secondary" onclick="App.startEditMerchant('${id}')">상호명 · 대표자명 · 사업자등록번호 수정</button>`}
     <div class="section-title" style="margin-top:20px">첨부서류</div>
     ${d.loading?'<p role="status">서류 목록 불러오는 중...</p>':d.error?`<p>${escapeHtml(d.error)}</p>`:`<div class="merchant-files">${(d.files||[]).map(f=>`<div><span>${escapeHtml(f.group||'원본')} · ${escapeHtml(f.name)}</span><button class="btn btn-secondary btn-sm" onclick="App.previewMerchantFile('${id}','${escapeAttr(f.id)}')">보기</button></div>`).join('')||'<p>서류 목록 없음</p>'}</div>`}
     ${d.preview?`<div class="merchant-preview-overlay" role="dialog" aria-modal="true" aria-label="첨부서류 미리보기"><div class="merchant-preview-box"><div class="merchant-preview-head"><b>${escapeHtml(d.preview.name)}</b><button class="btn btn-secondary btn-sm" onclick="App.clearMerchantPreview()">닫기</button></div>
@@ -3037,8 +3037,8 @@ async submitPaymentApplication(){
         const m = (state.adminMerchants || []).find(x => x.id === id);
         const ex = result.extracted || {};
         if(m){
-          if(ex.bizNumber) m.bizNumber = ex.bizNumber;
-          if(ex.ownerName) m.ownerName = ex.ownerName;
+          if(ex.bizNumber!==undefined){m.bizNumber=ex.bizNumber;m.bizNo=ex.bizNumber;}
+          if(ex.ownerName!==undefined) m.ownerName = ex.ownerName;
           if(ex.ownerNameFromBiz !== undefined) m.ownerNameFromBiz = ex.ownerNameFromBiz;
           if(ex.ownerNameFromId !== undefined) m.ownerNameFromId = ex.ownerNameFromId;
           if(ex.ownerNameMatch !== undefined) m.ownerNameMatch = ex.ownerNameMatch;
@@ -3097,10 +3097,8 @@ async submitPaymentApplication(){
       toast('상호명을 입력해 주세요.');
       return;
     }
-    if(!ownerName){
-      toast('대표자명을 입력해 주세요.');
-      return;
-    }
+    if(bizNo&&!/^\d{10}$/.test(bizNo.replace(/-/g,''))){toast('사업자등록번호 10자리를 확인해 주세요.');return;}
+    const changedFields=Object.entries({storeName,ownerName,bizNo}).filter(([k,v])=>v!==String(state.editForm[k]||'').trim()).map(([k])=>k);
 
     toast('저장 중...');
     try {
@@ -3113,7 +3111,7 @@ async submitPaymentApplication(){
           token: state.adminToken,
           storeName: storeName,
           ownerName: ownerName,
-          bizNo: bizNo,
+          bizNo: bizNo, changedFields,
           ...(depositorChanged?{depositor}: {})
         })
       });
@@ -3122,10 +3120,10 @@ async submitPaymentApplication(){
       if(result.status === 'success'){
         const m = (state.adminMerchants || []).find(x => x.id === id);
         if(m){
-          m.storeName = storeName;
-          m.ownerName = ownerName;
-          m.bizNumber = bizNo;
-          m.bizNo = bizNo;
+          if(changedFields.includes('storeName'))m.storeName=storeName;
+          if(changedFields.includes('ownerName'))m.ownerName=ownerName;
+          if(changedFields.includes('bizNo')){m.bizNumber=bizNo;m.bizNo=bizNo;}
+          m.manualFields=[...new Set([...(m.manualFields||[]),...changedFields])];
           if(depositorChanged){m.depositor=depositor;m.depositorSource='manual';}
         }
         state.editingMerchantId = null;
