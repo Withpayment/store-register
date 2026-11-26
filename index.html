@@ -430,6 +430,7 @@ body{
 .intake-batch.drag-active{outline:2px solid var(--teal);background:#dff5ef!important}.intake-batch[data-intake-drop]{min-height:100px}
 .intake-large-thumb{width:140px!important;height:130px!important;flex:0 0 140px!important;object-fit:contain!important;cursor:zoom-in}.intake-photo-dialog{border:0;border-radius:12px;padding:12px;max-width:94vw;max-height:92vh;overflow:auto}.intake-photo-dialog::backdrop{background:rgba(0,0,0,.75)}.intake-photo-dialog img{display:block;max-width:85vw;max-height:76vh;object-fit:contain;margin:10px auto}.intake-photo-dialog button{width:auto;margin-left:auto;display:block}@media(max-width:500px){.intake-large-thumb{width:110px!important;height:110px!important;flex:0 0 110px!important}}
 .ocr-status{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;white-space:nowrap;border-radius:6px;padding:4px 7px;background:#eef1f4;color:#475569}.ocr-pending{background:#fff4dc;color:#92400e}.ocr-working{background:#e6efff;color:#1d4ed8}.ocr-done{background:#e6f5ee;color:#166534}.ocr-needs_review{background:#fff0e9;color:#9a3412}.ocr-detail{margin-top:12px;padding:10px;border:1px solid var(--line);border-radius:8px}.ocr-detail p{margin:6px 0 0}.ocr-spin{width:10px;height:10px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:ocrspin .9s linear infinite}@keyframes ocrspin{to{transform:rotate(360deg)}}@media(max-width:600px){.merchant-row .ocr-status{font-size:10px;white-space:normal}}
+.merchant-contact-strip{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr minmax(0,1.5fr);gap:8px 14px;padding-top:9px;border-top:1px dashed var(--line);min-width:0}.merchant-contact-item{display:block;min-width:0}.merchant-row .merchant-contact-item small{margin:0 0 3px;font-size:11px}.merchant-contact-value{display:block;font-size:13px;font-weight:600;overflow-wrap:anywhere;user-select:text;cursor:text}.merchant-row>span{min-width:0}@media(max-width:600px){.merchant-contact-strip{grid-template-columns:1fr 1fr;gap:7px 10px}.merchant-contact-item:last-child{grid-column:1/-1}.merchant-contact-value{font-size:12px}}
 </style>
 </head>
 <body>
@@ -1424,6 +1425,10 @@ function renderOcrStatus(m,detail=false){
 function canAutoRefreshAdmin(){
   return state.view==='admin'&&!!state.adminToken&&!document.hidden&&!state.adminSelected&&!state.editingMerchantId&&!state.showBulkModal&&!state.showNewAppModal&&!state.activeModalMerchant&&!state.submitting&&!state.adminRefreshing&&!state.ocrManualBusy;
 }
+function renderMerchantContacts(m){
+  const fields=[['매장전화',m.storePhone],['대표자 연락처',m.ownerPhone],['이메일',m.email]];
+  return '<span class="merchant-contact-strip">'+fields.map(([label,value])=>'<span class="merchant-contact-item"><small>'+label+'</small><span class="merchant-contact-value">'+escapeHtml(String(value??'').trim()||'미등록')+'</span></span>').join('')+'</span>';
+}
 function renderAdmin(){
   const all=state.adminMerchants||[];
   const q=state.adminSearch.trim().toLowerCase();
@@ -1434,9 +1439,9 @@ function renderAdmin(){
   return `<div class="topbar admin-v2-top"><div class="brand"><div class="brand-mark">P</div><div><div class="brand-text">가맹점 업무관리</div><div class="brand-sub">접수 · 검토 · 보완 · 계약</div></div></div>
   <div class="admin-v2-tools"><button class="btn btn-secondary btn-sm" onclick="App.openNewAppModal()">가맹신청</button><button class="btn btn-secondary btn-sm" onclick="App.openBulkModal()">일괄등록</button><button class="btn btn-secondary btn-sm" onclick="App.loadGoogleData()">새로고침</button><button class="btn btn-secondary btn-sm" onclick="App.logoutAdmin()">로그아웃</button><button class="btn btn-secondary btn-sm" onclick="App.goForm()">접수화면</button></div></div>
   <div class="section-sub" style="margin:16px 0">전체 접수 <b>${all.length}건</b> · 목록 자동 갱신 15초${state.adminLastSync?` · 최근 ${escapeHtml(state.adminLastSync)}`:""}${state.adminRefreshError?" · 갱신 실패 (새로고침 가능)":""}</div>
-  <input class="admin-search" id="admin_search_input" placeholder="상호명 · 대표자 · 사업자번호 · 연락처 검색" value="${escapeHtml(state.adminSearch)}" oninput="App.setAdminSearch(this.value)">
+  <input class="admin-search" id="admin_search_input" placeholder="상호명 · 대표자 · 사업자번호 · 전화 · 이메일 검색" value="${escapeHtml(state.adminSearch)}" oninput="App.setAdminSearch(this.value)">
   <div class="section-sub">검색 결과 ${list.length}건 · 페이지 ${state.adminPage}/${pages}</div>
-  <div class="card admin-v2-list">${list.slice((state.adminPage-1)*25,state.adminPage*25).map(m=>`<button class="merchant-row" onclick="App.openMerchantDetail('${escapeAttr(m.id)}')"><span><strong>${escapeHtml(m.storeName||'-')}</strong><small>${escapeHtml(m.bizType||'')} · ${escapeHtml(String(m.createdAt||'').slice(0,10))}</small></span><span class="merchant-row-owner">${escapeHtml(m.ownerName||'대표자 미확인')}<small>${escapeHtml(m.bizNumber||'사업자번호 미확인')}</small></span><span>${renderOcrStatus(m)}<small>${escapeHtml(m.ownerNameMatch||'대표자 비교 미확인')}</small></span><span aria-hidden="true">›</span></button>`).join('')||'<p style="padding:20px;text-align:center">해당 접수 건이 없습니다.</p>'}</div>
+  <div class="card admin-v2-list">${list.slice((state.adminPage-1)*25,state.adminPage*25).map(m=>`<button class="merchant-row" onclick="App.openMerchantDetail('${escapeAttr(m.id)}')"><span><strong>${escapeHtml(m.storeName||'-')}</strong><small>${escapeHtml(m.bizType||'')} · ${escapeHtml(String(m.createdAt||'').slice(0,10))}</small></span><span class="merchant-row-owner">${escapeHtml(m.ownerName||'대표자 미확인')}<small>${escapeHtml(m.bizNumber||'사업자번호 미확인')}</small></span><span>${renderOcrStatus(m)}<small>${escapeHtml(m.ownerNameMatch||'대표자 비교 미확인')}</small></span><span aria-hidden="true">›</span>${renderMerchantContacts(m)}</button>`).join('')||'<p style="padding:20px;text-align:center">해당 접수 건이 없습니다.</p>'}</div>
   <div class="btn-row"><button class="btn btn-secondary" onclick="App.adminNavigate(-1)" ${state.adminPage===1?'disabled':''}>이전</button><button class="btn btn-secondary" onclick="App.adminNavigate(1)" ${state.adminPage>=pages?'disabled':''}>다음</button></div>
   ${selected?renderMerchantDetail(selected):''}`;
 }
