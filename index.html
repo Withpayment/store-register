@@ -427,6 +427,7 @@ body{
 .merchant-preview-overlay{position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;padding:16px}.merchant-preview-box{width:min(100%,900px);max-height:92vh;overflow:auto;background:var(--paper);border-radius:12px;padding:16px}.merchant-preview-head{display:flex;align-items:center;justify-content:space-between;gap:8px;overflow-wrap:anywhere}.merchant-preview-box img{display:block;max-width:100%;max-height:72vh;object-fit:contain;margin:12px auto}.merchant-preview-box a{display:block;margin-top:12px}
 .contract-page .corp-seal-image{background:transparent!important;mix-blend-mode:normal!important}
 .intake-drop-target{border:2px dashed #9eb7b6;border-radius:12px;padding:22px;text-align:center;background:var(--paper)}.intake-drop-target .btn{margin-top:8px}.dz-drop-hint{font-size:11px;color:var(--ink-soft);margin-top:6px}.intake-drop-target.drag-active,.dropzone.drag-active{border:2px dashed var(--teal)!important;background:#dff5ef!important;outline:2px solid var(--teal);outline-offset:2px}
+.intake-batch.drag-active{outline:2px solid var(--teal);background:#dff5ef!important}.intake-batch[data-intake-drop]{min-height:100px}
 </style>
 </head>
 <body>
@@ -1086,11 +1087,11 @@ function currentIntakeDocs(){
 function renderIntakeBatch(docs){
   if(state.isSupplementMode) return '';
   const items=state.intakeBatch;
-  return `<div class="intake-batch">
+  return `<div class="intake-batch" data-intake-drop="batch">
     <div class="section-title">서류 한 번에 첨부</div>
     <p class="section-sub">선택한 파일을 OCR로 분류합니다. 매장 사진이나 인식이 어려운 서류는 직접 종류를 지정해 주세요. 자동 분류는 제출 승인이나 진위 확인이 아닙니다.</p>
     <input type="file" id="intake_batch_file" accept="image/*,.pdf" multiple hidden onchange="App.addIntakeBatch(this.files)">
-    <div class="intake-drop-target" data-intake-drop="batch" tabindex="0" role="group" aria-label="여러 서류 끌어다 놓기"><b>사진 / PDF를 여기에 끌어다 놓으세요</b><p class="section-sub">여러 파일 동시 첨부 · 또는 아래 버튼으로 선택</p><button type="button" class="btn btn-secondary" onclick="document.getElementById('intake_batch_file').click()" ${state.intakeAnalyzing?'disabled':''}>+ 여러 사진 / PDF 선택</button></div>
+    <div class="intake-drop-target" data-intake-drop="batch" tabindex="0" role="group" aria-label="여러 서류 끌어다 놓기"><b>사진 / PDF를 여기에 끌어다 놓으세요</b><div class="section-sub" role="status">${escapeHtml(state.dropStatus||"일괄 첨부 D2 · 파일 탐색기에서 사진을 드래그하세요")}</div><p class="section-sub">여러 파일 동시 첨부 · 또는 아래 버튼으로 선택</p><button type="button" class="btn btn-secondary" onclick="document.getElementById('intake_batch_file').click()" ${state.intakeAnalyzing?'disabled':''}>+ 여러 사진 / PDF 선택</button></div>
     ${items.length?`<div role="status" aria-live="polite" class="section-sub" style="margin:12px 0">분석 ${items.filter(x=>x.status!=='pending'&&x.status!=='working').length}/${items.length} · 분류 결과를 확인한 후 아래 버튼을 눌러 반영하세요.</div>`:''}
     ${state.intakeAnalyzing?`<button type="button" class="btn btn-secondary" onclick="App.skipIntakeAnalysis()">남은 분석 건너뛰기 (직접 선택)</button>`:''}
     ${items.map(it=>`<div class="intake-batch-row">
@@ -2660,6 +2661,7 @@ const App = {
     if(state.intakeAnalyzing||state.intakeFileBusy||state.submitting||state.isSupplementMode){toast("현재 파일을 처리할 수 없습니다. 잠시 후 다시 첨부해 주세요.");return;}
     const files=Array.from(fileList||[]);
     if(!files.length)return;
+    state.dropStatus=files.length+'개 파일 읽는 중';
     if(state.intakeBatch.length+files.length>20){toast('한 번에 최대 20개까지 선택해 주세요.');return;}
     state.intakeAnalyzing=true;
     state.intakeSkip=false;
@@ -2671,9 +2673,10 @@ const App = {
         try{
           const dataUrl=isImage?await compressImage(file):await readAsDataURL(file);
           if(state.intakeBatch.some(it=>it.dataUrl===dataUrl)||Object.values(state.files).some(arr=>arr.some(it=>it.dataUrl===dataUrl)))continue;
-          const docKey=suggestDocFromName(file.name,currentIntakeDocs().filter(d=>isImage||d.accept.includes('.pdf')));state.intakeBatch.push({id:crypto.randomUUID(),name:file.name,dataUrl,isImage,status:docKey?'suggested':'pending',docKey});
+          const docKey=suggestDocFromName(file.name,currentIntakeDocs().filter(d=>isImage||d.accept.includes('.pdf')));state.intakeBatch.push({id:attachmentUUID(),name:file.name,dataUrl,isImage,status:docKey?'suggested':'pending',docKey});
         }catch(e){toast('파일 읽기 실패: '+file.name);}
       }
+      state.dropStatus='첨부 목록 '+state.intakeBatch.length+'개 · 서류 종류를 확인해 주세요.';
       render();
       if(!state.intakeBatch.some(x=>x.status==='pending'))return;
       if(!state.intakeScanToken){
@@ -2871,7 +2874,7 @@ async submitPaymentApplication(){
   if(submitBtn){ submitBtn.disabled = true; submitBtn.textContent = '제출 중...'; }
   showSubmitOverlay();
 
-  const id = state.pendingReceiptId || (state.pendingReceiptId = 'F-' + crypto.randomUUID());
+  const id = state.pendingReceiptId || (state.pendingReceiptId = 'F-' + attachmentUUID());
   const createdAt = new Date().toISOString();
   // [폴더 규칙] 관리자가 지정한 가맹점명 뒤에 서비스명을 붙여서 저장한다 → "가맹점명-토스" / "가맹점명-네이버"
   const serviceSuffix = state.paymentService === 'naver' ? '네이버' : '토스';
@@ -3208,7 +3211,7 @@ async submitPaymentApplication(){
     if(submitBtn){ submitBtn.disabled = true; submitBtn.textContent = '제출 중...'; }
     showSubmitOverlay();
 
-    const id = state.pendingReceiptId || (state.pendingReceiptId = 'F-' + crypto.randomUUID());
+    const id = state.pendingReceiptId || (state.pendingReceiptId = 'F-' + attachmentUUID());
     const createdAt = new Date().toISOString();
 
     try {
@@ -3600,7 +3603,7 @@ App.bulkSubmit = async function(){
 
   showSubmitOverlay();
   try{
-    const id = state.pendingReceiptId || (state.pendingReceiptId = 'F-' + crypto.randomUUID());
+    const id = state.pendingReceiptId || (state.pendingReceiptId = 'F-' + attachmentUUID());
     const payload = {
       action:'submitAdminBulk', token:state.adminToken,
       id, createdAt: new Date().toISOString(),
@@ -3632,8 +3635,11 @@ App.bulkSubmit = async function(){
 });
 // Delegated file-drop handlers survive the app's full DOM rerenders.
 function intakeDropTarget(target){
-  return target?.closest?.('[data-intake-drop]')||null;
+  return (target?.closest?target:target?.parentElement)?.closest?.('[data-intake-drop]')||null;
 }
+function dropHasFiles(dt){return !!dt&&(Array.from(dt.types||[]).some(t=>String(t).toLowerCase()==='files')||Array.from(dt.items||[]).some(i=>i.kind==='file')||!!dt.files?.length);}
+function droppedFiles(dt){const files=Array.from(dt?.files||[]);return files.length?files:Array.from(dt?.items||[]).filter(i=>i.kind==='file').map(i=>i.getAsFile()).filter(Boolean);}
+function attachmentUUID(){if(typeof globalThis.crypto?.randomUUID==='function')return globalThis.crypto.randomUUID();const bytes=new Uint8Array(16);globalThis.crypto.getRandomValues(bytes);bytes[6]=(bytes[6]&15)|64;bytes[8]=(bytes[8]&63)|128;const h=Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('');return h.slice(0,8)+'-'+h.slice(8,12)+'-'+h.slice(12,16)+'-'+h.slice(16,20)+'-'+h.slice(20);}
 function routeIntakeDrop(key,files){
   if(state.view!=='form'||state.submitting||state.intakeFileBusy||state.intakeAnalyzing){toast('현재 파일 처리 중입니다. 완료 후 다시 첨부해 주세요.');return false;}
   if(!state.isSupplementMode&&state.intakeStep!==2)return false;
@@ -3642,25 +3648,32 @@ function routeIntakeDrop(key,files){
   if(currentIntakeDocs().some(d=>d.key===key)){App.handleFile(key,files);return true;}
   toast('첨부할 서류 종류를 확인해 주세요.');return false;
 }
-document.addEventListener('dragover',e=>{
-  if(!Array.from(e.dataTransfer?.types||[]).includes('Files'))return;
-  e.preventDefault();
+function onIntakeDrag(e){
+  if(!dropHasFiles(e.dataTransfer))return;
   const target=intakeDropTarget(e.target);
+  if(!target)return;
+  e.preventDefault();e.stopPropagation();
+  try{e.dataTransfer.dropEffect='copy';}catch(_){}
   document.querySelectorAll('[data-intake-drop].drag-active').forEach(el=>{if(el!==target)el.classList.remove('drag-active');});
-  if(target){target.classList.add('drag-active');e.dataTransfer.dropEffect='copy';}
-});
+  target.classList.add('drag-active');
+}
+document.addEventListener('dragenter',onIntakeDrag,true);
+document.addEventListener('dragover',onIntakeDrag,true);
 document.addEventListener('dragleave',e=>{
   const target=intakeDropTarget(e.target);
-  if(target&&!target.contains(e.relatedTarget))target.classList.remove('drag-active');
-});
+  if(target&&(!e.relatedTarget||!target.contains(e.relatedTarget)))target.classList.remove('drag-active');
+},true);
 document.addEventListener('drop',e=>{
-  const files=Array.from(e.dataTransfer?.files||[]);
-  if(!files.length&&!Array.from(e.dataTransfer?.types||[]).includes('Files'))return;
-  e.preventDefault();
   const target=intakeDropTarget(e.target);
+  if(!target){if(dropHasFiles(e.dataTransfer)&&!e.target?.closest?.('.modal-overlay'))e.preventDefault();return;}
+  e.preventDefault();e.stopPropagation();
   document.querySelectorAll('[data-intake-drop].drag-active').forEach(el=>el.classList.remove('drag-active'));
-  if(target){e.stopPropagation();routeIntakeDrop(target.dataset.intakeDrop,files);}
-});
+  const files=droppedFiles(e.dataTransfer);
+  if(!files.length){state.dropStatus='파일을 읽지 못했습니다. Windows 파일 탐색기에서 실제 JPG/PNG/PDF를 끌어주세요.';render();return;}
+  state.dropStatus=files.length+'개 파일 감지 · 첨부 처리 시작';
+  if(routeIntakeDrop(target.dataset.intakeDrop,files))toast(files.length+'개 파일 감지');
+  else {state.dropStatus='현재 첨부할 수 없습니다. 처리 완료 후 다시 시도해 주세요.';render();}
+},true);
 document.addEventListener('paste',e=>{
   if(state.view!=='form'||state.showBulkModal)return;
   const files=Array.from(e.clipboardData?.files||[]);
@@ -3687,6 +3700,6 @@ document.addEventListener('input', function(e){
 
 render();
 </script>
-<div style="position:fixed;bottom:0;right:0;z-index:99999;background:#854d0e;color:white;padding:3px 8px;font-size:11px;pointer-events:none" class="no-print">V2 TEST · 운영용 아님</div>
+<div style="position:fixed;bottom:0;right:0;z-index:99999;background:#854d0e;color:white;padding:3px 8px;font-size:11px;pointer-events:none" class="no-print">V2 TEST D2 · 운영용 아님</div>
 </body>
 </html>
