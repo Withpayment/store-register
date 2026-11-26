@@ -3473,7 +3473,7 @@ setCustomSaleFree(idx, isFree){
       const seal=await transparentContractSeal(result.dataUrl);
       if(state.view!=='equipmentSelect'||!state.adminToken)return;
       CORP_SEAL_IMG=seal;
-    }catch(e){if(state.view!=='equipmentSelect')return;if(!confirm('법인인감을 불러오지 못했습니다. 인감 없이 미리보기를 열까요?'))return;CORP_SEAL_IMG='';}
+    }catch(e){if(state.view!=='equipmentSelect')return;CORP_SEAL_IMG='';const reason=e?.name==='AbortError'?'서버 응답 시간 초과':String(e?.message||'원인 미확인').slice(0,240);if(!confirm('법인인감을 불러오지 못했습니다.\n원인: '+reason+'\n\n운영용 Apps Script의 CONTRACT_SEAL_FILE_ID와 파일 접근 권한을 확인해 주세요.\n인감 없이 미리보기를 열까요?'))return;}
     state.view = 'contract';
     render();
   },
