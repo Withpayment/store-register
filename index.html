@@ -428,6 +428,7 @@ body{
 .contract-page .corp-seal-image{background:transparent!important;mix-blend-mode:normal!important}
 .intake-drop-target{border:2px dashed #9eb7b6;border-radius:12px;padding:22px;text-align:center;background:var(--paper)}.intake-drop-target .btn{margin-top:8px}.dz-drop-hint{font-size:11px;color:var(--ink-soft);margin-top:6px}.intake-drop-target.drag-active,.dropzone.drag-active{border:2px dashed var(--teal)!important;background:#dff5ef!important;outline:2px solid var(--teal);outline-offset:2px}
 .intake-batch.drag-active{outline:2px solid var(--teal);background:#dff5ef!important}.intake-batch[data-intake-drop]{min-height:100px}
+.intake-large-thumb{width:140px!important;height:130px!important;flex:0 0 140px!important;object-fit:contain!important;cursor:zoom-in}.intake-photo-dialog{border:0;border-radius:12px;padding:12px;max-width:94vw;max-height:92vh;overflow:auto}.intake-photo-dialog::backdrop{background:rgba(0,0,0,.75)}.intake-photo-dialog img{display:block;max-width:85vw;max-height:76vh;object-fit:contain;margin:10px auto}.intake-photo-dialog button{width:auto;margin-left:auto;display:block}@media(max-width:500px){.intake-large-thumb{width:110px!important;height:110px!important;flex:0 0 110px!important}}
 </style>
 </head>
 <body>
@@ -931,11 +932,9 @@ function toast(msg){
 // 업로드 + 서버 OCR 처리가 문서 개수에 따라 수십 초 걸릴 수 있어,
 // 그 시간 동안 "멈춘 것처럼" 보이지 않도록 스피너/진행바/경과 시간/단계별 안내문구를 보여준다.
 const SUBMIT_OVERLAY_STAGES = [
-  { atSec: 0,  msg: '첨부하신 서류를 업로드하고 있어요...' },
-  { atSec: 4,  msg: 'AI가 서류 내용을 확인하고 있어요...' },
-  { atSec: 12, msg: '사업자등록증·통장사본 정보를 인식하고 있어요...' },
-  { atSec: 25, msg: '거의 다 됐어요, 조금만 더 기다려주세요...' },
-  { atSec: 45, msg: '문서 양이 많아 시간이 더 걸리고 있어요. 창을 닫지 말고 기다려주세요.' }
+  {atSec:0,msg:'서류를 서버에 전송하고 저장하고 있습니다.'},
+  {atSec:15,msg:'파일 전송 및 저장 완료를 확인하고 있습니다.'},
+  {atSec:45,msg:'파일 용량이나 인터넷 연결에 따라 전송 시간이 길어질 수 있습니다.'}
 ];
 
 function showSubmitOverlay(){
@@ -1089,15 +1088,15 @@ function renderIntakeBatch(docs){
   const items=state.intakeBatch;
   return `<div class="intake-batch" data-intake-drop="batch">
     <div class="section-title">서류 한 번에 첨부</div>
-    <p class="section-sub">선택한 파일을 OCR로 분류합니다. 매장 사진이나 인식이 어려운 서류는 직접 종류를 지정해 주세요. 자동 분류는 제출 승인이나 진위 확인이 아닙니다.</p>
+    <p class="section-sub">사진을 첨부한 뒤 서류 종류를 직접 선택해 주세요. 파일명이 명확하면 분류를 제안합니다. 내용 분석은 접수 완료 후 서버에서 진행합니다.</p>
     <input type="file" id="intake_batch_file" accept="image/*,.pdf" multiple hidden onchange="App.addIntakeBatch(this.files)">
     <div class="intake-drop-target" data-intake-drop="batch" tabindex="0" role="group" aria-label="여러 서류 끌어다 놓기"><b>사진 / PDF를 여기에 끌어다 놓으세요</b><div class="section-sub" role="status">${escapeHtml(state.dropStatus||"일괄 첨부 D2 · 파일 탐색기에서 사진을 드래그하세요")}</div><p class="section-sub">여러 파일 동시 첨부 · 또는 아래 버튼으로 선택</p><button type="button" class="btn btn-secondary" onclick="document.getElementById('intake_batch_file').click()" ${state.intakeAnalyzing?'disabled':''}>+ 여러 사진 / PDF 선택</button></div>
-    ${items.length?`<div role="status" aria-live="polite" class="section-sub" style="margin:12px 0">분석 ${items.filter(x=>x.status!=='pending'&&x.status!=='working').length}/${items.length} · 분류 결과를 확인한 후 아래 버튼을 눌러 반영하세요.</div>`:''}
-    ${state.intakeAnalyzing?`<button type="button" class="btn btn-secondary" onclick="App.skipIntakeAnalysis()">남은 분석 건너뛰기 (직접 선택)</button>`:''}
+    ${items.length?`<div role="status" aria-live="polite" class="section-sub" style="margin:12px 0">분류 ${items.filter(x=>x.docKey).length}/${items.length} · 서류 종류를 선택한 뒤 반영하세요.</div>`:''}
+
     ${items.map(it=>`<div class="intake-batch-row">
-      ${it.isImage?`<img class="dz-thumb" src="${it.dataUrl}" alt="첨부 사진">`:'<span class="dz-thumb">PDF</span>'}
+      ${it.isImage?`<img class="dz-thumb intake-large-thumb" src="${it.dataUrl}" alt="첨부 사진" onclick="App.showIntakePhoto(this.src)">`:'<span class="dz-thumb">PDF</span>'}
       <div style="min-width:0;flex:1"><div class="dz-filename">${escapeHtml(it.name)}</div>
-      <small>${it.status==='working'?'분석 중':it.status==='pending'?'대기':it.status==='suggested'?'자동 분류 제안 · 확인 필요':it.status==='error'?'분석 실패 · 직접 선택 가능':'직접 분류 필요'}</small>
+      <small>${it.status==='working'?'분석 중':it.status==='pending'?'대기':it.status==='suggested'?'파일명 분류 제안 · 확인 필요':it.status==='error'?'분석 실패 · 직접 선택 가능':'직접 분류 필요'}</small>
       <select aria-label="서류 종류" onchange="App.setIntakeBatchType('${it.id}',this.value)">
         <option value="">서류 종류 선택</option>
         ${docs.filter(d=>it.isImage||d.accept.includes('.pdf')).map(d=>`<option value="${d.key}" ${it.docKey===d.key?'selected':''}>${escapeHtml(d.label)}</option>`).join('')}
@@ -1105,7 +1104,7 @@ function renderIntakeBatch(docs){
       <button type="button" class="btn btn-secondary btn-sm" onclick="App.removeIntakeBatch('${it.id}')" ${state.intakeAnalyzing?'disabled':''}>삭제</button>
     </div>`).join('')}
     ${items.length?`<button type="button" class="btn btn-primary" onclick="App.applyIntakeBatch()" ${state.intakeAnalyzing?'disabled':''}>확인한 분류 결과 반영</button>`:''}
-    <div class="section-sub" style="margin-top:12px">자동 분류는 선택 기능입니다. 아래 필수서류 목록에서 직접 첨부할 수도 있습니다.</div>
+    <div class="section-sub" style="margin-top:12px">아래 필수서류 칸에 직접 첨부해도 됩니다. 접수 시 OCR을 기다리지 않습니다.</div>
   </div>`;
 }
 function renderIntakeReview(docs,method){
@@ -1337,7 +1336,7 @@ function renderDropzone(d){
     ${hasFiles ? `
       ${filesArr.map((f, idx) => `
         <div class="dz-preview">
-          ${f.isImage ? `<img class="dz-thumb" src="${f.dataUrl}">` : `<div class="dz-thumb" style="display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--ink-soft);">FILE</div>`}
+          ${f.isImage ? `<img class="dz-thumb intake-large-thumb" src="${f.dataUrl}" alt="첨부 사진" onclick="App.showIntakePhoto(this.src)">` : `<div class="dz-thumb" style="display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--ink-soft);">FILE</div>`}
           <div class="dz-filename">${escapeHtml(f.name)}</div>
           <button class="dz-remove" onclick="App.removeFile('${d.key}', ${idx})">삭제</button>
         </div>
@@ -1520,7 +1519,7 @@ function renderBulkModal(){
   const badge = (it) => {
     if (it.status === 'working') return `<span style="font-size:10.5px;color:#6C63FF;font-weight:600;">🔍 분석 중…</span>`;
     if (it.status === 'pending') return `<span style="font-size:10.5px;color:var(--ink-soft);">대기 중</span>`;
-    if (it.docKey && it.auto) return `<span style="font-size:10.5px;color:var(--forest);font-weight:600;">🤖 자동분류</span>`;
+    if (it.docKey && it.auto) return `<span style="font-size:10.5px;color:var(--forest);font-weight:600;">파일명 제안</span>`;
     if (!it.docKey && (it.status === 'none' || it.status === 'error')) return `<span style="font-size:10.5px;color:#B26A00;">직접 선택해 주세요</span>`;
     return '';
   };
@@ -1529,7 +1528,7 @@ function renderBulkModal(){
   <div class="modal-overlay" onclick="App.closeBulkModal()">
     <div class="modal-box" style="max-width:720px;" onclick="event.stopPropagation()">
       <div class="modal-title">사진 일괄등록</div>
-      <div class="modal-sub">받은 사진을 한꺼번에 끌어다 놓으면 서류 종류를 자동으로 분류합니다. (글자가 없는 매장 사진은 직접 선택)</div>
+      <div class="modal-sub">사진을 한꺼번에 끌어다 놓고 서류 종류를 직접 선택하세요. 파일명이 명확하면 분류를 제안합니다.</div>
 
       <div class="grid2">
         <div class="field"><label>상호명 <span class="req">*</span> <span class="optional">(사업자등록증이 인식되면 자동 입력)</span></label>
@@ -1566,7 +1565,7 @@ function renderBulkModal(){
         ${state.bulkItems.map(it => `
           <div style="display:flex; gap:8px; align-items:center; border:1.5px solid ${it.docKey?'var(--forest)':'var(--line)'}; border-radius:10px; padding:8px; background:${it.docKey?'var(--forest-bg)':'#FBFBFC'};">
             ${it.isImage
-              ? `<img class="dz-thumb" src="${it.dataUrl}" style="width:56px;height:56px;flex:0 0 56px;">`
+              ? `<img class="dz-thumb" src="${it.dataUrl}" style="width:120px;height:110px;flex:0 0 120px;object-fit:contain;cursor:zoom-in;" onclick="App.showIntakePhoto(this.src)">`
               : `<div class="dz-thumb" style="display:flex;align-items:center;justify-content:center;font-size:10px;width:56px;height:56px;flex:0 0 56px;">PDF</div>`}
             <div style="flex:1; min-width:0;">
               <div style="margin-bottom:3px;">${badge(it)}</div>
@@ -2673,33 +2672,15 @@ const App = {
         try{
           const dataUrl=isImage?await compressImage(file):await readAsDataURL(file);
           if(state.intakeBatch.some(it=>it.dataUrl===dataUrl)||Object.values(state.files).some(arr=>arr.some(it=>it.dataUrl===dataUrl)))continue;
-          const docKey=suggestDocFromName(file.name,currentIntakeDocs().filter(d=>isImage||d.accept.includes('.pdf')));state.intakeBatch.push({id:attachmentUUID(),name:file.name,dataUrl,isImage,status:docKey?'suggested':'pending',docKey});
+          const docKey=suggestDocFromName(file.name,currentIntakeDocs().filter(d=>isImage||d.accept.includes('.pdf')));state.intakeBatch.push({id:attachmentUUID(),name:file.name,dataUrl,isImage,status:docKey?'suggested':'manual',docKey});
         }catch(e){toast('파일 읽기 실패: '+file.name);}
       }
       state.dropStatus='첨부 목록 '+state.intakeBatch.length+'개 · 서류 종류를 확인해 주세요.';
       render();
-      if(!state.intakeBatch.some(x=>x.status==='pending'))return;
-      if(!state.intakeScanToken){
-        try{
-          const res=await classifyWithTimeout({action:'beginIntakeScan'},10000);
-          if(res.status==='success')state.intakeScanToken=res.scanToken;
-        }catch(e){}
-      }
-      for(const it of state.intakeBatch.filter(x=>x.status==='pending')){
-        if(state.intakeSkip||it.status!=='pending'){if(it.status==='pending')it.status='manual';continue;}
-        it.status='working';render();
-        try{
-          if(!state.intakeScanToken)throw Error('scan unavailable');
-          const res=await classifyWithTimeout({action:'classifyIntakeImage',scanToken:state.intakeScanToken,dataUrl:it.dataUrl});
-          if(res.status!=='success'){if(res.status==='expired')state.intakeScanToken=null;throw Error('scan failed');}
-          const d=currentIntakeDocs().find(d=>d.key===res.docKey && (it.isImage||d.accept.includes('.pdf')));
-          if(it.status==='working'){it.docKey=d?d.key:'';it.status=d?'suggested':'manual';}
-        }catch(e){if(it.status==='working')it.status='error';}
-        render();
-      }
     }finally{state.intakeAnalyzing=false;render();}
   },
   skipIntakeAnalysis(){state.intakeSkip=true;for(const it of state.intakeBatch)if(['pending','working'].includes(it.status))it.status='manual';render();},
+  showIntakePhoto(src){if(!/^data:image\/(?:jpeg|png|webp|gif);base64,/.test(src))return;const dlg=document.createElement('dialog');dlg.className='intake-photo-dialog';const img=document.createElement('img');img.src=src;img.alt='첨부 사진 확대';const btn=document.createElement('button');btn.className='btn btn-secondary';btn.textContent='닫기';btn.onclick=()=>dlg.close();dlg.append(btn,img);dlg.addEventListener('close',()=>dlg.remove(),{once:true});document.body.append(dlg);dlg.showModal();},
   setIntakeBatchType(id,key){
     const it=state.intakeBatch.find(x=>x.id===id);
     if(!it)return;
@@ -3528,13 +3509,13 @@ App.bulkAddFiles = async function(fileList){
       state.bulkItems.push({
         id: 'b' + Date.now() + Math.floor(Math.random()*1000),
         name: file.name, dataUrl, isImage,
-        docKey, auto: !!docKey, status: docKey?'done':'pending'
+        docKey, auto: !!docKey, status: docKey?'done':'none'
       });
     }catch(e){ toast('처리 실패: ' + file.name); }
   }
   state.bulkReading=false;
   render();
-  App.bulkRunClassify();
+  // V10: manual classification; no pre-submit OCR.
 };
 
 // 대기 중인 사진을 한 장씩 서버 OCR로 분류 (서버 OCR이 느려서 순차 처리)
@@ -3700,6 +3681,6 @@ document.addEventListener('input', function(e){
 
 render();
 </script>
-<div style="position:fixed;bottom:0;right:0;z-index:99999;background:#854d0e;color:white;padding:3px 8px;font-size:11px;pointer-events:none" class="no-print">V2 TEST D2 · 운영용 아님</div>
+<div style="position:fixed;bottom:0;right:0;z-index:99999;background:#854d0e;color:white;padding:3px 8px;font-size:11px;pointer-events:none" class="no-print">V2 TEST V10 · 운영용 아님</div>
 </body>
 </html>
